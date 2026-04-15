@@ -62,6 +62,8 @@ const MOCK_PROBLEMS: Problem[] = [
 
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
@@ -93,11 +95,15 @@ export default function App() {
         window.location.reload();
       }
 
-      // Swipe back (left to right)
-      if (touchEndX - touchStartX > 100 && Math.abs(touchEnd - touchStart) < 50) {
+      // Swipe back (left to right) - Edge swipe detection (0-30px)
+      if (touchStartX < 30 && touchEndX - touchStartX > 100 && Math.abs(touchEnd - touchStart) < 50) {
         if (view !== 'dashboard') {
-          if (view === 'detail') setView('list');
-          else setView('dashboard');
+          setIsSwiping(true);
+          setTimeout(() => {
+            if (view === 'detail') setView('list');
+            else setView('dashboard');
+            setIsSwiping(false);
+          }, 300);
         }
       }
     };
@@ -459,9 +465,15 @@ export default function App() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 h-[64px] bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
-            <div className="w-8 h-8 bg-bca-blue rounded-lg flex items-center justify-center shadow-lg shadow-bca-blue/20">
-              <Target className="text-white w-5 h-5" />
+          <div 
+            className="flex items-center gap-3 cursor-pointer group" 
+            onClick={() => {
+              if (window.innerWidth < 768) setIsSidebarOpen(true);
+              else setView('dashboard');
+            }}
+          >
+            <div className="w-8 h-8 border-2 border-bca-blue rounded-lg flex items-center justify-center transition-all group-active:scale-90">
+              <Target className="text-bca-blue w-5 h-5" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
@@ -507,7 +519,86 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-[1400px] mx-auto px-6 py-6 min-h-[calc(100vh-64px)]">
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
+            />
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] md:hidden shadow-2xl flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center gap-3">
+                <div className="w-8 h-8 border-2 border-bca-blue rounded-lg flex items-center justify-center">
+                  <Target className="text-bca-blue w-5 h-5" />
+                </div>
+                <h1 className="text-xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
+              </div>
+              
+              <div className="flex-1 p-4 space-y-2">
+                <button 
+                  onClick={() => { setView('dashboard'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'dashboard' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <LayoutDashboard className="w-5 h-5" />
+                  Dashboard
+                </button>
+                <button 
+                  onClick={() => { setView('list'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'list' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <ListTodo className="w-5 h-5" />
+                  Problem List
+                </button>
+                <button 
+                  onClick={() => { setView('suplement'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'suplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Suplement
+                </button>
+              </div>
+
+              <div className="p-6 border-t border-slate-100">
+                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                  <div className="w-8 h-8 bg-bca-blue/10 rounded-lg flex items-center justify-center">
+                    <User className="w-4 h-4 text-bca-blue" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700">{PROFILE_NAME}</span>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <motion.main 
+        animate={{ 
+          scale: isSwiping ? 0.96 : 1,
+          opacity: isSwiping ? 0.7 : 1,
+          x: isSwiping ? 20 : 0
+        }}
+        transition={{ duration: 0.3 }}
+        className="max-w-[1400px] mx-auto px-6 py-6 min-h-[calc(100vh-64px)]"
+      >
         <AnimatePresence mode="wait">
           {view === 'dashboard' && (
             <motion.div 
@@ -1119,7 +1210,7 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </motion.main>
 
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-slate-200 mt-20">
