@@ -15,7 +15,7 @@ import {
   User,
   Target
 } from 'lucide-react';
-import { Problem, Status, RootCause, ActionPlan } from '@/src/lib/supabase';
+import { Problem, Status, RootCause, ActionPlan, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
@@ -41,11 +41,43 @@ const MOCK_PROBLEMS: Problem[] = [
 
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'detail' | 'create'>('dashboard');
-  const [problems, setProblems] = useState<Problem[]>(MOCK_PROBLEMS);
+  const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [causes, setCauses] = useState<RootCause[]>([]);
   const [plans, setPlans] = useState<ActionPlan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
+
+  useEffect(() => {
+    fetchProblems();
+  }, []);
+
+  const fetchProblems = async () => {
+    const { data, error } = await supabase
+      .from('problems')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) {
+      setProblems(data);
+      // Extract unique categories from existing problems
+      const existingCategories = Array.from(new Set(data.map(p => p.category)));
+      setCategories(prev => Array.from(new Set([...prev, ...existingCategories])));
+    }
+    if (error) console.error('Error fetching problems:', error);
+  };
+
+  const fetchDetails = async (problemId: string) => {
+    const [causesRes, plansRes] = await Promise.all([
+      supabase.from('root_causes').select('*').eq('problem_id', problemId).order('created_at', { ascending: true }),
+      supabase.from('action_plans').select('*').eq('problem_id', problemId).order('created_at', { ascending: true })
+    ]);
+
+    if (causesRes.data) setCauses(causesRes.data);
+    if (plansRes.data) setPlans(plansRes.data);
+  };
 
   // Form states for new problem
   const [newProblem, setNewProblem] = useState<Partial<Problem>>({
@@ -62,54 +94,134 @@ export default function App() {
     p.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateProblem = () => {
-    const problem: Problem = {
-      ...newProblem as Problem,
-      id: Math.random().toString(36).substr(2, 9),
-      created_at: new Date().toISOString(),
-      user_id: 'current-user'
-    };
-    setProblems([problem, ...problems]);
-    setNewProblem({
-      title: '',
-      category: 'Technical',
-      context: '',
-      significance: 5,
-      impact: '',
-      status: 'Pending'
-    });
-    setView('dashboard');
+  const handleCreateProblem = async () => {
+    const categoryToUse = showCustomCategory ? customCategory : newProblem.category;
+    
+    if (!categoryToUse) return;
+
+    const { data: userData } = await supabase.auth.getUser();
+    
+    const { data, error } = await supabase
+      .from('problems')
+      .insert([{
+        ...newProblem,
+        category: categoryToUse,
+        user_id: userData.user?.id || '00000000-0000-0000-0000-000000000000'
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating problem:', error);
+      return;
+    }
+
+    if (data) {
+      setProblems([data, ...problems]);
+      if (showCustomCategory) {
+        setCategories(prev => Array.from(new Set([...prev, customCategory])));
+      }
+      setNewProblem({
+        title: '',
+        category: 'Technical',
+        context: '',
+        significance: 5,
+        impact: '',
+        status: 'Pending'
+      });
+      setCustomCategory('');
+      setShowCustomCategory(false);
+      handleSelectProblem(data);
+    }
   };
 
-  const handleSelectProblem = (problem: Problem) => {
+  const handleSelectProblem = async (problem: Problem) => {
     setSelectedProblem(problem);
-    // In real app, fetch causes and plans from Supabase here
-    setCauses([]);
-    setPlans([]);
+    await fetchDetails(problem.id);
     setView('detail');
   };
 
-  const handleAddCause = (cause: string, parentId: string | null) => {
-    const newCause: RootCause = {
-      id: Math.random().toString(36).substr(2, 9),
-      problem_id: selectedProblem!.id,
-      cause,
-      parent_id: parentId,
-      is_highlighted: false,
-      status: 'Pending',
-      created_at: new Date().toISOString()
-    };
-    setCauses([...causes, newCause]);
+  const handleAddCause = async (cause: string, parentId: string | null) => {
+    const { data, error } = await supabase
+      .from('root_causes')
+      .insert([{
+        problem_id: selectedProblem!.id,
+        cause,
+        parent_id: parentId,
+        is_highlighted: false,
+        status: 'Pending'
+      }])
+      .select()
+      .single();
+
+    if (data) setCauses([...causes, data]);
+    if (error) console.error('Error adding cause:', error);
   };
 
-  const handleAddPlan = (plan: Partial<ActionPlan>) => {
-    const newPlan: ActionPlan = {
-      ...plan as ActionPlan,
-      id: Math.random().toString(36).substr(2, 9),
-      problem_id: selectedProblem!.id,
-      created_at: new Date().toISOString()
-    };
-    setPlans([...plans, newPlan]);
+  const handleDeleteCause = async (id: string) => {
+    const { error } = await supabase.from('root_causes').delete().eq('id', id);
+    if (!error) setCauses(causes.filter(c => c.id !== id));
+  };
+
+  const handleUpdateCauseStatus = async (id: string, status: Status) => {
+    const { error } = await supabase.from('root_causes').update({ status }).eq('id', id);
+    if (!error) setCauses(causes.map(c => c.id === id ? { ...c, status } : c));
+  };
+
+  const handleToggleCauseHighlight = async (id: string) => {
+    const cause = causes.find(c => c.id === id);
+    if (!cause) return;
+    
+    // First, unhighlight all for this problem
+    await supabase.from('root_causes').update({ is_highlighted: false }).eq('problem_id', selectedProblem!.id);
+    
+    const { error } = await supabase.from('root_causes').update({ is_highlighted: !cause.is_highlighted }).eq('id', id);
+    if (!error) {
+      setCauses(causes.map(c => ({
+        ...c,
+        is_highlighted: c.id === id ? !c.is_highlighted : false
+      })));
+    }
+  };
+
+  const handleAddPlan = async (plan: Partial<ActionPlan>) => {
+    const { data, error } = await supabase
+      .from('action_plans')
+      .insert([{
+        ...plan,
+        problem_id: selectedProblem!.id
+      }])
+      .select()
+      .single();
+
+    if (data) setPlans([...plans, data]);
+    if (error) console.error('Error adding plan:', error);
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    const { error } = await supabase.from('action_plans').delete().eq('id', id);
+    if (!error) setPlans(plans.filter(p => p.id !== id));
+  };
+
+  const handleUpdatePlan = async (id: string, updates: Partial<ActionPlan>) => {
+    const { error } = await supabase.from('action_plans').update(updates).eq('id', id);
+    if (!error) setPlans(plans.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const handleUpdateProblemOutcome = async () => {
+    if (!selectedProblem) return;
+    const { error } = await supabase
+      .from('problems')
+      .update({ 
+        outcome: selectedProblem.outcome,
+        status: selectedProblem.status,
+        completion_date: selectedProblem.status === 'Success' ? new Date().toISOString() : null
+      })
+      .eq('id', selectedProblem.id);
+    
+    if (!error) {
+      setProblems(problems.map(p => p.id === selectedProblem.id ? selectedProblem : p));
+    }
   };
 
   return (
@@ -148,7 +260,7 @@ export default function App() {
                 </div>
                 <Button onClick={() => setView('create')} className="h-11 px-6">
                   <Plus className="w-4 h-4 mr-2" />
-                  Log New Problem
+                  New Problem
                 </Button>
               </div>
 
@@ -234,16 +346,33 @@ export default function App() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
-                      <Select 
-                        value={newProblem.category}
-                        onChange={e => setNewProblem({ ...newProblem, category: e.target.value })}
-                      >
-                        <option value="Technical">Technical</option>
-                        <option value="Infrastructure">Infrastructure</option>
-                        <option value="Process">Process</option>
-                        <option value="Human Resource">Human Resource</option>
-                        <option value="Financial">Financial</option>
-                      </Select>
+                      {!showCustomCategory ? (
+                        <Select 
+                          value={newProblem.category}
+                          onChange={e => {
+                            if (e.target.value === 'ADD_NEW') {
+                              setShowCustomCategory(true);
+                            } else {
+                              setNewProblem({ ...newProblem, category: e.target.value });
+                            }
+                          }}
+                        >
+                          {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                          <option value="ADD_NEW" className="text-bca-blue font-bold">+ Add New Category...</option>
+                        </Select>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="Type new category..." 
+                            value={customCategory}
+                            onChange={e => setCustomCategory(e.target.value)}
+                            autoFocus
+                          />
+                          <Button variant="secondary" onClick={() => setShowCustomCategory(false)} className="px-3">Cancel</Button>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Significance (1-10)</label>
@@ -348,14 +477,9 @@ export default function App() {
                     <Fishbone 
                       causes={causes}
                       onAdd={handleAddCause}
-                      onDelete={(id) => setCauses(causes.filter(c => c.id !== id))}
-                      onToggleHighlight={(id) => setCauses(causes.map(c => ({
-                        ...c,
-                        is_highlighted: c.id === id ? !c.is_highlighted : false
-                      })))}
-                      onUpdateStatus={(id, status) => setCauses(causes.map(c => 
-                        c.id === id ? { ...c, status } : c
-                      ))}
+                      onDelete={handleDeleteCause}
+                      onToggleHighlight={handleToggleCauseHighlight}
+                      onUpdateStatus={handleUpdateCauseStatus}
                     />
                   </GlassCard>
                 </div>
@@ -366,10 +490,8 @@ export default function App() {
                     <ActionPlanManager 
                       plans={plans}
                       onAdd={handleAddPlan}
-                      onDelete={(id) => setPlans(plans.filter(p => p.id !== id))}
-                      onUpdate={(id, updates) => setPlans(plans.map(p => 
-                        p.id === id ? { ...p, ...updates } : p
-                      ))}
+                      onDelete={handleDeletePlan}
+                      onUpdate={handleUpdatePlan}
                     />
                   </GlassCard>
 
@@ -398,7 +520,13 @@ export default function App() {
                           <option value="Success" className="text-slate-900">Success</option>
                           <option value="Cancel" className="text-slate-900">Cancel</option>
                         </Select>
-                        <Button variant="secondary" className="bg-white text-bca-blue border-none text-[11px] px-3">Update</Button>
+                        <Button 
+                          variant="secondary" 
+                          className="bg-white text-bca-blue border-none text-[11px] px-3"
+                          onClick={handleUpdateProblemOutcome}
+                        >
+                          Update
+                        </Button>
                       </div>
                     </div>
                   </GlassCard>
