@@ -66,6 +66,81 @@
   border-radius: 10px;
 }
 
+/* Tiptap Editor Styles */
+.ProseMirror {
+  outline: none;
+  min-height: 120px;
+}
+
+.ProseMirror p {
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5em;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  margin-top: 0.3rem;
+  cursor: pointer;
+  accent-color: #003399;
+}
+
+.ProseMirror strike {
+  text-decoration: line-through;
+}
+
+.reflection-content ul, .reflection-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.reflection-content ul {
+  list-style-type: disc;
+}
+
+.reflection-content ol {
+  list-style-type: decimal;
+}
+
+.reflection-content ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+.reflection-content ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.reflection-content ul[data-type="taskList"] input[type="checkbox"] {
+  margin-top: 0.3rem;
+  accent-color: #003399;
+}
+
 body {
   @apply bg-bg-page text-text-main min-h-screen font-sans antialiased;
   overscroll-behavior-y: contain;

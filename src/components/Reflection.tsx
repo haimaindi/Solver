@@ -9,13 +9,28 @@ import {
   Calendar,
   Clock as ClockIcon,
   BookOpen,
-  ArrowLeft
+  ArrowLeft,
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  List,
+  ListOrdered,
+  CheckSquare,
+  Palette
 } from 'lucide-react';
 import { Reflection, supabase } from '@/src/lib/supabase';
-import { GlassCard, Button, Input, TextArea, Badge } from './UI';
+import { GlassCard, Button, Input, Badge } from './UI';
 import { format } from 'date-fns';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 
 type Mode = 'GIBBS' | 'ROLFE' | '4L';
 
@@ -47,6 +62,141 @@ const MODE_FIELDS: Record<Mode, { id: string; label: string; placeholder: string
     { id: 'longed', label: 'Longed for', placeholder: 'What did you wish for or hope to happen?' },
     { id: 'action', label: 'Action Plan', placeholder: 'What are your next steps?' }
   ]
+};
+
+const COLORS = [
+  { name: 'Default', color: 'inherit' },
+  { name: 'Primary', color: '#003399' },
+  { name: 'Red', color: '#ef4444' },
+  { name: 'Green', color: '#10b981' },
+  { name: 'Amber', color: '#f59e0b' },
+  { name: 'Slate', color: '#64748b' }
+];
+
+const MenuBar = ({ editor }: { editor: any }) => {
+  if (!editor) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
+      <button
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('bold') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <Bold className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('italic') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <Italic className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('underline') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <UnderlineIcon className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('strike') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <Strikethrough className="w-4 h-4" />
+      </button>
+      
+      <div className="w-px h-4 bg-slate-200 mx-1" />
+
+      <button
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('bulletList') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <List className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('orderedList') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <ListOrdered className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleTaskList().run()}
+        className={cn(
+          "p-2 rounded-lg transition-all",
+          editor.isActive('taskList') ? "bg-bca-blue text-white shadow-sm" : "text-slate-500 hover:bg-slate-200"
+        )}
+      >
+        <CheckSquare className="w-4 h-4" />
+      </button>
+
+      <div className="w-px h-4 bg-slate-200 mx-1" />
+
+      <div className="relative group">
+        <button className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 transition-all flex items-center gap-1">
+          <Palette className="w-4 h-4" />
+          <div className="w-3 h-3 rounded-full border border-slate-200" style={{ backgroundColor: editor.getAttributes('textStyle').color || 'transparent' }} />
+        </button>
+        <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-2 hidden group-hover:grid grid-cols-3 gap-1 z-50">
+          {COLORS.map(c => (
+            <button
+              key={c.name}
+              onClick={() => editor.chain().focus().setColor(c.color).run()}
+              className="w-6 h-6 rounded-md border border-slate-100 transition-transform hover:scale-110"
+              style={{ backgroundColor: c.color === 'inherit' ? '#fff' : c.color }}
+              title={c.name}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RichTextEditor = ({ value, onChange, placeholder }: { value: string, onChange: (val: string) => void, placeholder: string }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextStyle,
+      Color,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+    ],
+    content: value,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm max-w-none focus:outline-none p-4 min-h-[150px]',
+      },
+    },
+  });
+
+  return (
+    <div className="w-full rounded-xl border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-bca-blue/10 focus-within:border-bca-blue transition-all overflow-hidden">
+      <MenuBar editor={editor} />
+      <EditorContent editor={editor} />
+    </div>
+  );
 };
 
 export function ReflectionManager() {
@@ -192,11 +342,10 @@ export function ReflectionManager() {
                   {MODE_FIELDS[currentMode].map(field => (
                     <div key={field.id} className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</label>
-                      <TextArea 
+                      <RichTextEditor 
                         placeholder={field.placeholder}
                         value={formData[field.id] || ''}
-                        onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
-                        className="min-h-[120px] bg-slate-50/50"
+                        onChange={val => setFormData({ ...formData, [field.id]: val })}
                       />
                     </div>
                   ))}
@@ -251,9 +400,10 @@ export function ReflectionManager() {
                 {MODE_FIELDS[selectedReflection.mode].map(field => (
                   <div key={field.id} className="space-y-3">
                     <div className="text-[10px] font-bold text-bca-blue uppercase tracking-widest">{field.label}</div>
-                    <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed whitespace-pre-wrap">
-                      {selectedReflection.content[field.id] || <span className="text-slate-300 italic">No content provided.</span>}
-                    </div>
+                    <div 
+                      className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed reflection-content"
+                      dangerouslySetInnerHTML={{ __html: selectedReflection.content[field.id] || '<span class="text-slate-300 italic">No content provided.</span>' }}
+                    />
                   </div>
                 ))}
               </div>
