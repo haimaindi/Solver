@@ -21,6 +21,7 @@ import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
 import { cn } from '@/src/lib/utils';
 import { format } from 'date-fns';
+import { PROFILE_NAME } from './profile';
 
 // Mock Data for initial view if Supabase is not connected
 const MOCK_PROBLEMS: Problem[] = [
@@ -46,6 +47,7 @@ export default function App() {
   const [causes, setCauses] = useState<RootCause[]>([]);
   const [plans, setPlans] = useState<ActionPlan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCustomCategory, setShowCustomCategory] = useState(false);
   const [customCategory, setCustomCategory] = useState('');
@@ -89,10 +91,12 @@ export default function App() {
     status: 'Pending'
   });
 
-  const filteredProblems = problems.filter(p => 
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProblems = problems.filter(p => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         p.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const handleCreateProblem = async () => {
     const categoryToUse = showCustomCategory ? customCategory : newProblem.category;
@@ -237,8 +241,7 @@ export default function App() {
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-[13px] font-medium text-slate-900">Eng. Ridwan Saputra</span>
-            <div className="w-8 h-8 rounded-full bg-bca-blue text-white flex items-center justify-center text-xs font-bold">RS</div>
+            <span className="text-[13px] font-medium text-slate-900">{PROFILE_NAME}</span>
           </div>
         </div>
       </nav>
@@ -258,9 +261,9 @@ export default function App() {
                   <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Problem Dashboard</h2>
                   <p className="text-slate-500 mt-1">Track and solve engineering challenges systematically.</p>
                 </div>
-                <Button onClick={() => setView('create')} className="h-11 px-6">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Problem
+                <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  <span>New Problem</span>
                 </Button>
               </div>
 
@@ -274,10 +277,18 @@ export default function App() {
                     onChange={e => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Button variant="secondary" className="h-11 px-6">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filter
-                </Button>
+                <div className="w-full md:w-48">
+                  <Select 
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as Status | 'All')}
+                    className="h-11"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Success">Success</option>
+                    <option value="Cancel">Cancel</option>
+                  </Select>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
