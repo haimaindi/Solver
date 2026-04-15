@@ -18,6 +18,7 @@ create table if not exists public.habit_logs (
   id uuid default gen_random_uuid() primary key,
   habit_id uuid references public.habits(id) on delete cascade,
   completed_at date not null,
+  comment text,
   created_at timestamp with time zone default now(),
   unique(habit_id, completed_at)
 );

@@ -64,7 +64,7 @@ const MOCK_PROBLEMS: Problem[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement' | 'reflection' | 'habits'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -503,16 +503,6 @@ export default function App() {
               Problem List
             </button>
             <button 
-              onClick={() => setView('suplement')}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'suplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <Sparkles className="w-4 h-4" />
-              Suplement
-            </button>
-            <button 
               onClick={() => setView('reflection')}
               className={cn(
                 "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
@@ -529,8 +519,18 @@ export default function App() {
                 view === 'habits' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
-              <Target className="w-4 h-4" />
+              <TrendingUp className="w-4 h-4" />
               Habit Tracker
+            </button>
+            <button 
+              onClick={() => setView('supplement')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'supplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Sparkles className="w-4 h-4" />
+              Supplement
             </button>
           </div>
         </div>
@@ -589,16 +589,6 @@ export default function App() {
                   Problem List
                 </button>
                 <button 
-                  onClick={() => { setView('suplement'); setIsSidebarOpen(false); }}
-                  className={cn(
-                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
-                    view === 'suplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <Sparkles className="w-5 h-5" />
-                  Suplement
-                </button>
-                <button 
                   onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
                   className={cn(
                     "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
@@ -615,8 +605,18 @@ export default function App() {
                     view === 'habits' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
                   )}
                 >
-                  <Target className="w-5 h-5" />
+                  <TrendingUp className="w-5 h-5" />
                   Habit Tracker
+                </button>
+                <button 
+                  onClick={() => { setView('supplement'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'supplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Supplement
                 </button>
               </div>
 
@@ -793,8 +793,8 @@ export default function App() {
                   <h3 className="text-lg font-bold text-slate-900">Upcoming Action Plan Deadlines</h3>
                   <Badge variant="Pending">Critical Attention</Badge>
                 </div>
-                <div className="overflow-x-auto hide-scrollbar -mx-6 px-6">
-                  <table className="w-full text-left min-w-[600px]">
+                <div className="overflow-x-auto -mx-6 px-6 pb-4">
+                  <table className="w-full text-left min-w-[800px]">
                     <thead>
                       <tr className="border-b border-slate-100">
                         <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Problem Title</th>
@@ -942,9 +942,9 @@ export default function App() {
             </motion.div>
           )}
 
-          {view === 'suplement' && (
+          {view === 'supplement' && (
             <motion.div 
-              key="suplement"
+              key="supplement"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -953,7 +953,7 @@ export default function App() {
               <div className="w-24 h-24 bg-bca-blue/5 rounded-3xl flex items-center justify-center mb-6">
                 <Sparkles className="w-12 h-12 text-bca-blue" />
               </div>
-              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Suplement Coming Soon</h2>
+              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Supplement Coming Soon</h2>
               <p className="text-slate-500 max-w-md">We are building advanced engineering tools and methodologies to help you solve problems even faster. Stay tuned!</p>
               <Button onClick={() => setView('dashboard')} variant="secondary" className="mt-8">Back to Dashboard</Button>
             </motion.div>

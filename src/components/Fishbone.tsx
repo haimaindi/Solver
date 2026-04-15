@@ -182,14 +182,16 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
         )}
       </AnimatePresence>
 
-      <div className="space-y-2">
-        {rootLevel.length === 0 ? (
-          <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-            <p className="text-slate-400">No root causes documented yet.</p>
-          </div>
-        ) : (
-          rootLevel.map(cause => renderCause(cause))
-        )}
+      <div className="overflow-x-auto pb-4 -mx-2 px-2">
+        <div className="min-w-[600px] space-y-2">
+          {rootLevel.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+              <p className="text-slate-400">No root causes documented yet.</p>
+            </div>
+          ) : (
+            rootLevel.map(cause => renderCause(cause))
+          )}
+        </div>
       </div>
     </div>
   );

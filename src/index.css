@@ -28,8 +28,8 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -49,6 +49,8 @@
 .overflow-x-auto {
   scrollbar-width: thin;
   scrollbar-color: #003399 transparent;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px; /* Space for scrollbar */
 }
 
 .overflow-x-auto::-webkit-scrollbar {
@@ -57,12 +59,12 @@
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb {
-  background: #003399;
+  background: #003399 !important;
   border-radius: 10px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-track {
-  background: rgba(0, 51, 153, 0.05);
+  background: rgba(0, 51, 153, 0.05) !important;
   border-radius: 10px;
 }
 

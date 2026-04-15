@@ -75,5 +75,6 @@ export interface HabitLog {
   id: string;
   habit_id: string;
   completed_at: string; // YYYY-MM-DD
+  comment?: string;
   created_at: string;
 }
