@@ -27,6 +27,7 @@ import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
 import { ReflectionManager } from './components/Reflection';
+import { HabitTracker } from './components/HabitTracker';
 import { cn } from '@/src/lib/utils';
 import { format, isAfter, addDays } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -63,7 +64,7 @@ const MOCK_PROBLEMS: Problem[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement' | 'reflection'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement' | 'reflection' | 'habits'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -521,6 +522,16 @@ export default function App() {
               <BookOpen className="w-4 h-4" />
               Reflection
             </button>
+            <button 
+              onClick={() => setView('habits')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'habits' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Target className="w-4 h-4" />
+              Habit Tracker
+            </button>
           </div>
         </div>
         
@@ -596,6 +607,16 @@ export default function App() {
                 >
                   <BookOpen className="w-5 h-5" />
                   Reflection
+                </button>
+                <button 
+                  onClick={() => { setView('habits'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'habits' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <Target className="w-5 h-5" />
+                  Habit Tracker
                 </button>
               </div>
 
@@ -946,6 +967,17 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
             >
               <ReflectionManager />
+            </motion.div>
+          )}
+
+          {view === 'habits' && (
+            <motion.div 
+              key="habits"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <HabitTracker />
             </motion.div>
           )}
 

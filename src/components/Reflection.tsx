@@ -64,6 +64,14 @@ const MODE_FIELDS: Record<Mode, { id: string; label: string; placeholder: string
   ]
 };
 
+const SATISFACTION_LEVELS = [
+  { label: 'Need Evaluation', color: '#ef4444', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-600' },
+  { label: 'Dissatisfied', color: '#f59e0b', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600' },
+  { label: 'Neutral', color: '#eab308', bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-600' },
+  { label: 'Satisfied', color: '#10b981', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-600' },
+  { label: 'Very Satisfied', color: '#003399', bg: 'bg-bca-blue/5', border: 'border-bca-blue/20', text: 'text-bca-blue' }
+];
+
 const COLORS = [
   { name: 'Default', color: 'inherit' },
   { name: 'Primary', color: '#003399' },
@@ -206,6 +214,7 @@ export function ReflectionManager() {
   const [currentMode, setCurrentMode] = useState<Mode>('GIBBS');
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [title, setTitle] = useState('');
+  const [satisfaction, setSatisfaction] = useState(SATISFACTION_LEVELS[2]); // Default Neutral
 
   useEffect(() => {
     fetchReflections();
@@ -231,8 +240,20 @@ export function ReflectionManager() {
       mode: currentMode,
       title,
       content: formData,
+      satisfaction_label: satisfaction.label as any,
+      satisfaction_color: satisfaction.color,
       created_at: new Date().toISOString()
     };
+
+    // Optimistic Update
+    const tempId = Math.random().toString();
+    const optimisticReflection: Reflection = {
+      ...reflectionData,
+      id: tempId,
+      user_id: null
+    };
+    setReflections([optimisticReflection, ...reflections]);
+    setIsAdding(false);
 
     const { data, error } = await supabase
       .from('reflections')
@@ -241,14 +262,23 @@ export function ReflectionManager() {
       .single();
 
     if (data) {
-      setReflections([data, ...reflections]);
-      setIsAdding(false);
+      setReflections(prev => prev.map(r => r.id === tempId ? data : r));
       setTitle('');
       setFormData({});
-      Swal.fire('Success', 'Reflection saved successfully', 'success');
+      setSatisfaction(SATISFACTION_LEVELS[2]);
+      Swal.fire({
+        title: 'Success',
+        text: 'Reflection saved successfully',
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
     }
     if (error) {
       console.error('Error saving reflection:', error);
+      setReflections(reflections);
       Swal.fire('Error', 'Failed to save reflection', 'error');
     }
   };
@@ -266,11 +296,15 @@ export function ReflectionManager() {
     });
 
     if (result.isConfirmed) {
+      // Optimistic Update
+      const originalReflections = [...reflections];
+      setReflections(reflections.filter(r => r.id !== id));
+      if (selectedReflection?.id === id) setSelectedReflection(null);
+
       const { error } = await supabase.from('reflections').delete().eq('id', id);
-      if (!error) {
-        setReflections(reflections.filter(r => r.id !== id));
-        if (selectedReflection?.id === id) setSelectedReflection(null);
-        Swal.fire('Deleted!', 'Your reflection has been deleted.', 'success');
+      if (error) {
+        setReflections(originalReflections);
+        Swal.fire('Error', 'Failed to delete reflection', 'error');
       }
     }
   };
@@ -339,6 +373,27 @@ export function ReflectionManager() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Overall Satisfaction</label>
+                    <div className="flex flex-wrap gap-2">
+                      {SATISFACTION_LEVELS.map(level => (
+                        <button
+                          key={level.label}
+                          onClick={() => setSatisfaction(level)}
+                          className={cn(
+                            "px-4 py-2 rounded-xl text-xs font-bold transition-all border-2",
+                            satisfaction.label === level.label 
+                              ? `border-transparent text-white` 
+                              : "border-slate-100 text-slate-400 hover:border-slate-200"
+                          )}
+                          style={{ backgroundColor: satisfaction.label === level.label ? level.color : undefined }}
+                        >
+                          {level.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {MODE_FIELDS[currentMode].map(field => (
                     <div key={field.id} className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</label>
@@ -417,39 +472,51 @@ export function ReflectionManager() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {reflections.length > 0 ? (
-              reflections.map((r, idx) => (
-                <GlassCard 
-                  key={r.id} 
-                  delay={idx * 0.05}
-                  onClick={() => setSelectedReflection(r)}
-                  className="p-6 cursor-pointer group hover:border-bca-blue/30 transition-all"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2 bg-bca-blue/5 rounded-lg text-bca-blue group-hover:bg-bca-blue group-hover:text-white transition-colors">
-                      <BookOpen className="w-5 h-5" />
+              reflections.map((r, idx) => {
+                const sat = SATISFACTION_LEVELS.find(l => l.label === r.satisfaction_label) || SATISFACTION_LEVELS[2];
+                return (
+                  <GlassCard 
+                    key={r.id} 
+                    delay={idx * 0.05}
+                    onClick={() => setSelectedReflection(r)}
+                    className={cn(
+                      "p-6 cursor-pointer group transition-all border-l-4",
+                      sat.border
+                    )}
+                    style={{ borderLeftColor: r.satisfaction_color }}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="p-2 bg-bca-blue/5 rounded-lg text-bca-blue group-hover:bg-bca-blue group-hover:text-white transition-colors">
+                        <BookOpen className="w-5 h-5" />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="Success" className="bg-slate-100 text-slate-500 group-hover:bg-bca-blue/10 group-hover:text-bca-blue transition-colors">
+                          {r.mode}
+                        </Badge>
+                        <span className={cn("text-[9px] font-bold uppercase tracking-tighter", sat.text)}>
+                          {r.satisfaction_label}
+                        </span>
+                      </div>
                     </div>
-                    <Badge variant="Success" className="bg-slate-100 text-slate-500 group-hover:bg-bca-blue/10 group-hover:text-bca-blue transition-colors">
-                      {r.mode}
-                    </Badge>
-                  </div>
-                  <h4 className="font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-bca-blue transition-colors">{r.title}</h4>
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {format(new Date(r.created_at), 'MMM d, yyyy')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ClockIcon className="w-3 h-3" />
-                      {format(new Date(r.created_at), 'HH:mm')}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex justify-end">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-bca-blue group-hover:bg-bca-blue/5 transition-all">
-                      <ChevronRight className="w-5 h-5" />
+                    <h4 className="font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-bca-blue transition-colors">{r.title}</h4>
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {format(new Date(r.created_at), 'MMM d, yyyy')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <ClockIcon className="w-3 h-3" />
+                        {format(new Date(r.created_at), 'HH:mm')}
+                      </span>
                     </div>
-                  </div>
-                </GlassCard>
-              ))
+                    <div className="mt-4 flex justify-end">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-bca-blue group-hover:bg-bca-blue/5 transition-all">
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </GlassCard>
+                );
+              })
             ) : (
               <div className="col-span-full py-20 text-center">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">

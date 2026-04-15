@@ -141,6 +141,34 @@
   accent-color: #003399;
 }
 
+/* Habit Tracker Styles */
+.habit-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.habit-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.habit-cell-active {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes check-bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.animate-check {
+  animation: check-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
 body {
   @apply bg-bg-page text-text-main min-h-screen font-sans antialiased;
   overscroll-behavior-y: contain;

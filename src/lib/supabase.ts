@@ -55,6 +55,25 @@ export interface Reflection {
   mode: 'GIBBS' | 'ROLFE' | '4L';
   title: string;
   content: Record<string, any>;
+  satisfaction_label: 'Need Evaluation' | 'Dissatisfied' | 'Neutral' | 'Satisfied' | 'Very Satisfied';
+  satisfaction_color: string;
   created_at: string;
   user_id: string | null;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  description: string;
+  type: 'build' | 'break';
+  color: string;
+  created_at: string;
+  user_id: string | null;
+}
+
+export interface HabitLog {
+  id: string;
+  habit_id: string;
+  completed_at: string; // YYYY-MM-DD
+  created_at: string;
 }
