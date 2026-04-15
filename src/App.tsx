@@ -17,10 +17,12 @@ import {
   Pencil,
   Trash2,
   TrendingUp,
-  ListTodo,
+  ListTodo, 
   Sparkles,
   ChevronDown,
-  BookOpen
+  Waypoints, 
+  BookOpen,
+  Loader2
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
@@ -28,6 +30,7 @@ import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
 import { ReflectionManager } from './components/Reflection';
 import { HabitTracker } from './components/HabitTracker';
+import { Supplement } from './components/Supplement';
 import { cn } from '@/src/lib/utils';
 import { format, isAfter, addDays } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -63,6 +66,74 @@ const MOCK_PROBLEMS: Problem[] = [
   }
 ];
 
+function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boolean, onLogin: (code: string, pass: string) => void, children: React.ReactNode }) {
+  const [code, setCode] = useState('');
+  const [pass, setPass] = useState('');
+
+  if (isAuthenticated) return <>{children}</>;
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-slate-900 flex items-center justify-center p-6 overflow-hidden">
+      {/* Background Decoration */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/4 -left-1/4 w-1/2 h-1/2 bg-bca-blue/20 rounded-full blur-[120px]" />
+        <div className="absolute -bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-bca-blue/10 rounded-full blur-[120px]" />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md relative"
+      >
+        <GlassCard className="p-8 space-y-8 border-white/20 shadow-2xl">
+          <div className="text-center space-y-2">
+            <div className="w-16 h-16 bg-bca-blue rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-bca-blue/20">
+              <Waypoints className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Solver Access</h2>
+            <p className="text-slate-500 text-sm">Please enter your credentials to access the platform.</p>
+          </div>
+
+          <form 
+            onSubmit={(e) => { e.preventDefault(); onLogin(code, pass); }}
+            className="space-y-6"
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Access Code</label>
+                <Input 
+                  placeholder="Enter code" 
+                  value={code}
+                  onChange={e => setCode(e.target.value)}
+                  className="h-12 bg-white/50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
+                <Input 
+                  type="password"
+                  placeholder="Enter password" 
+                  value={pass}
+                  onChange={e => setPass(e.target.value)}
+                  className="h-12 bg-white/50"
+                />
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full h-12 text-sm font-bold uppercase tracking-widest">
+              Unlock Platform
+            </Button>
+          </form>
+
+          <div className="pt-6 border-t border-slate-100 text-center">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Daily Solver Engineering</p>
+          </div>
+        </GlassCard>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -76,8 +147,13 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
+    checkAuth();
     fetchProblems();
 
     // Mobile Gestures
@@ -119,6 +195,44 @@ export default function App() {
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [view]);
+
+  const checkAuth = () => {
+    const auth = localStorage.getItem('solver_auth');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    }
+    setIsAuthChecking(false);
+  };
+
+  const handleLogin = async (code: string, pass: string) => {
+    const { data, error } = await supabase
+      .from('app_access')
+      .select('*')
+      .eq('code', code)
+      .eq('password', pass)
+      .single();
+
+    if (data) {
+      localStorage.setItem('solver_auth', 'true');
+      setIsAuthenticated(true);
+      Swal.fire({
+        title: 'Access Granted',
+        text: 'Welcome back to Solver',
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    } else {
+      Swal.fire('Access Denied', 'Invalid code or password', 'error');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('solver_auth');
+    setIsAuthenticated(false);
+  };
 
   const fetchProblems = async () => {
     const { data, error } = await supabase
@@ -463,8 +577,17 @@ export default function App() {
     }
   };
 
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-bca-blue animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-bca-blue/10 selection:text-bca-blue">
+    <AuthGate isAuthenticated={isAuthenticated} onLogin={handleLogin}>
+      <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-bca-blue/10 selection:text-bca-blue">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 h-[64px] bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-8">
@@ -538,6 +661,13 @@ export default function App() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3">
             <span className="text-[13px] font-medium text-slate-900">{PROFILE_NAME}</span>
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </nav>
@@ -945,17 +1075,11 @@ export default function App() {
           {view === 'supplement' && (
             <motion.div 
               key="supplement"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center justify-center py-40 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
             >
-              <div className="w-24 h-24 bg-bca-blue/5 rounded-3xl flex items-center justify-center mb-6">
-                <Sparkles className="w-12 h-12 text-bca-blue" />
-              </div>
-              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Supplement Coming Soon</h2>
-              <p className="text-slate-500 max-w-md">We are building advanced engineering tools and methodologies to help you solve problems even faster. Stay tuned!</p>
-              <Button onClick={() => setView('dashboard')} variant="secondary" className="mt-8">Back to Dashboard</Button>
+              <Supplement />
             </motion.div>
           )}
 
@@ -1281,17 +1405,14 @@ export default function App() {
       <footer className="py-12 px-6 border-t border-slate-200 mt-20">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-bca-blue" />
+            <Waypoints className="w-5 h-5 text-bca-blue" />
             <span className="font-bold text-slate-900">Solver</span>
-            <span className="text-slate-400 text-sm">© 2026 Problem Solver Engineering</span>
+            <span className="text-slate-400 text-sm">© 2026 Daily Solver Engineering</span>
           </div>
-          <div className="flex gap-8 text-sm font-medium text-slate-500">
-            <a href="#" className="hover:text-bca-blue transition-colors">Documentation</a>
-            <a href="#" className="hover:text-bca-blue transition-colors">Methodology</a>
-            <a href="#" className="hover:text-bca-blue transition-colors">Support</a>
-          </div>
+
         </div>
       </footer>
-    </div>
+      </div>
+    </AuthGate>
   );
 }

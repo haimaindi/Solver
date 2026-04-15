@@ -78,3 +78,10 @@ export interface HabitLog {
   comment?: string;
   created_at: string;
 }
+
+export interface AppAccess {
+  id: string;
+  code: string;
+  password: string;
+  created_at: string;
+}
