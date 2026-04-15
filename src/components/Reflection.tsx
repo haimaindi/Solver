@@ -17,7 +17,8 @@ import {
   List,
   ListOrdered,
   CheckSquare,
-  Palette
+  Palette,
+  Pencil
 } from 'lucide-react';
 import { Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge } from './UI';
@@ -199,6 +200,12 @@ const RichTextEditor = ({ value, onChange, placeholder }: { value: string, onCha
     },
   });
 
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
+    }
+  }, [value, editor]);
+
   return (
     <div className="w-full rounded-xl border border-slate-200 bg-white focus-within:ring-2 focus-within:ring-bca-blue/10 focus-within:border-bca-blue transition-all overflow-hidden">
       <MenuBar editor={editor} />
@@ -215,6 +222,7 @@ export function ReflectionManager() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [title, setTitle] = useState('');
   const [satisfaction, setSatisfaction] = useState(SATISFACTION_LEVELS[2]); // Default Neutral
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchReflections();
@@ -242,24 +250,32 @@ export function ReflectionManager() {
       content: formData,
       satisfaction_label: satisfaction.label as any,
       satisfaction_color: satisfaction.color,
-      created_at: new Date().toISOString()
+      created_at: editingId ? reflections.find(r => r.id === editingId)?.created_at : new Date().toISOString()
     };
 
     // Optimistic Update
-    const tempId = Math.random().toString();
+    const tempId = editingId || Math.random().toString();
     const optimisticReflection: Reflection = {
       ...reflectionData,
       id: tempId,
-      user_id: null
+      user_id: null,
+      created_at: reflectionData.created_at || new Date().toISOString()
     };
-    setReflections([optimisticReflection, ...reflections]);
-    setIsAdding(false);
 
-    const { data, error } = await supabase
-      .from('reflections')
-      .insert([reflectionData])
-      .select()
-      .single();
+    if (editingId) {
+      setReflections(reflections.map(r => r.id === editingId ? optimisticReflection : r));
+    } else {
+      setReflections([optimisticReflection, ...reflections]);
+    }
+    
+    setIsAdding(false);
+    setEditingId(null);
+
+    const query = editingId 
+      ? supabase.from('reflections').update(reflectionData).eq('id', editingId)
+      : supabase.from('reflections').insert([reflectionData]);
+
+    const { data, error } = await query.select().single();
 
     if (data) {
       setReflections(prev => prev.map(r => r.id === tempId ? data : r));
@@ -268,7 +284,7 @@ export function ReflectionManager() {
       setSatisfaction(SATISFACTION_LEVELS[2]);
       Swal.fire({
         title: 'Success',
-        text: 'Reflection saved successfully',
+        text: `Reflection ${editingId ? 'updated' : 'saved'} successfully`,
         icon: 'success',
         toast: true,
         position: 'top-end',
@@ -278,9 +294,20 @@ export function ReflectionManager() {
     }
     if (error) {
       console.error('Error saving reflection:', error);
-      setReflections(reflections);
+      fetchReflections(); // Rollback
       Swal.fire('Error', 'Failed to save reflection', 'error');
     }
+  };
+
+  const handleEdit = (reflection: Reflection, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentMode(reflection.mode);
+    setTitle(reflection.title);
+    setFormData(reflection.content as Record<string, string>);
+    setSatisfaction(SATISFACTION_LEVELS.find(l => l.label === reflection.satisfaction_label) || SATISFACTION_LEVELS[2]);
+    setEditingId(reflection.id);
+    setIsAdding(true);
+    setSelectedReflection(null);
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -335,10 +362,10 @@ export function ReflectionManager() {
             <GlassCard className="p-8 space-y-8">
               <div className="flex items-center justify-between border-b border-slate-100 pb-6">
                 <div className="flex items-center gap-4">
-                  <Button variant="ghost" onClick={() => setIsAdding(false)} className="p-2">
+                  <Button variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); setTitle(''); setFormData({}); }} className="p-2">
                     <ArrowLeft className="w-5 h-5" />
                   </Button>
-                  <h3 className="text-xl font-bold text-slate-900">Create New Reflection</h3>
+                  <h3 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Reflection' : 'Create New Reflection'}</h3>
                 </div>
                 <div className="flex gap-2">
                   {MODES.map(m => (
@@ -407,10 +434,10 @@ export function ReflectionManager() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-                  <Button variant="ghost" onClick={() => setIsAdding(false)}>Cancel</Button>
+                  <Button variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); setTitle(''); setFormData({}); }}>Cancel</Button>
                   <Button onClick={handleSave} className="px-8 flex items-center gap-2">
                     <Save className="w-4 h-4" />
-                    <span>Save Reflection</span>
+                    <span>{editingId ? 'Update Reflection' : 'Save Reflection'}</span>
                   </Button>
                 </div>
               </div>
@@ -446,9 +473,14 @@ export function ReflectionManager() {
                     </div>
                   </div>
                 </div>
-                <Button variant="danger" onClick={(e) => handleDelete(selectedReflection.id, e)} className="p-2">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" onClick={(e) => handleEdit(selectedReflection, e)} className="p-2 text-bca-blue hover:bg-bca-blue/5">
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button variant="danger" onClick={(e) => handleDelete(selectedReflection.id, e)} className="p-2">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-8">
@@ -509,7 +541,13 @@ export function ReflectionManager() {
                         {format(new Date(r.created_at), 'HH:mm')}
                       </span>
                     </div>
-                    <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex justify-between items-center">
+                      <button 
+                        onClick={(e) => handleEdit(r, e)}
+                        className="p-2 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-bca-blue group-hover:bg-bca-blue/5 transition-all">
                         <ChevronRight className="w-5 h-5" />
                       </div>
