@@ -36,17 +36,21 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
         <div className="flex-1">
           <p className="text-[12px] font-semibold text-slate-900 leading-tight">{plan.description}</p>
           <div className="flex items-center gap-3 mt-2">
-            <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
-              <Calendar className="w-3 h-3" />
-              {plan.scheduled_date ? format(new Date(plan.scheduled_date), 'MMM d, yyyy') : 'No date'}
-            </div>
-            <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-tight">
-              {plan.is_feasible ? (
-                <span className="text-emerald-500 flex items-center gap-0.5">✓ Feasible</span>
-              ) : (
-                <span className="text-slate-400 flex items-center gap-0.5">X Not Feasible</span>
-              )}
-            </div>
+            {plan.is_controllable && (
+              <>
+                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                  <Calendar className="w-3 h-3" />
+                  {plan.scheduled_date ? format(new Date(plan.scheduled_date), 'MMM d, yyyy') : 'No date'}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-tight">
+                  {plan.is_feasible ? (
+                    <span className="text-emerald-500 flex items-center gap-0.5">✓ Feasible</span>
+                  ) : (
+                    <span className="text-slate-400 flex items-center gap-0.5">X Not Feasible</span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
         <Badge variant={plan.status} className="text-[9px] px-1.5 py-0.5">{plan.status}</Badge>
@@ -127,22 +131,6 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase">Schedule Date</label>
-              <Input 
-                type={newPlan.scheduled_date ? "date" : "text"}
-                placeholder="dd/mm/yyyy"
-                value={newPlan.scheduled_date || ''}
-                onFocus={(e) => (e.target.type = "date")}
-                onBlur={(e) => {
-                  if (!e.target.value) e.target.type = "text";
-                }}
-                onChange={e => setNewPlan({ ...newPlan, scheduled_date: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase">Control</label>
               <Select 
                 value={newPlan.is_controllable ? 'true' : 'false'}
@@ -152,16 +140,36 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
                 <option value="false">Uncontrollable</option>
               </Select>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 uppercase">Feasibility</label>
-              <Select 
-                value={newPlan.is_feasible ? 'true' : 'false'}
-                onChange={e => setNewPlan({ ...newPlan, is_feasible: e.target.value === 'true' })}
-              >
-                <option value="true">Feasible</option>
-                <option value="false">Not Feasible</option>
-              </Select>
-            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {newPlan.is_controllable && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Schedule Date</label>
+                  <Input 
+                    type={newPlan.scheduled_date ? "date" : "text"}
+                    placeholder="dd/mm/yyyy"
+                    value={newPlan.scheduled_date || ''}
+                    onFocus={(e) => (e.target.type = "date")}
+                    onBlur={(e) => {
+                      if (!e.target.value) e.target.type = "text";
+                    }}
+                    onChange={e => setNewPlan({ ...newPlan, scheduled_date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Feasibility</label>
+                  <Select 
+                    value={newPlan.is_feasible ? 'true' : 'false'}
+                    onChange={e => setNewPlan({ ...newPlan, is_feasible: e.target.value === 'true' })}
+                  >
+                    <option value="true">Feasible</option>
+                    <option value="false">Not Feasible</option>
+                  </Select>
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase">Initial Status</label>
               <Select 

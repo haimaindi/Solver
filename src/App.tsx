@@ -164,6 +164,7 @@ export default function App() {
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
   const [causes, setCauses] = useState<RootCause[]>([]);
   const [plans, setPlans] = useState<ActionPlan[]>([]);
+  const [dashboardPlans, setDashboardPlans] = useState<(ActionPlan & { problem_title?: string })[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
@@ -176,6 +177,7 @@ export default function App() {
   useEffect(() => {
     checkAuth();
     fetchProblems();
+    fetchDashboardPlans();
 
     // Mobile Gestures
     let touchStart = 0;
@@ -267,6 +269,32 @@ export default function App() {
       setCategories(prev => Array.from(new Set([...prev, ...existingCategories])));
     }
     if (error) console.error('Error fetching problems:', error);
+  };
+
+  const fetchDashboardPlans = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data, error } = await supabase
+      .from('action_plans')
+      .select(`
+        *,
+        problems (
+          title
+        )
+      `)
+      .eq('is_controllable', true)
+      .eq('status', 'Pending')
+      .lte('scheduled_date', addDays(new Date(), 3).toISOString().split('T')[0])
+      .order('scheduled_date', { ascending: true });
+
+    if (data) {
+      const formattedPlans = data.map((plan: any) => ({
+        ...plan,
+        problem_title: plan.problems?.title || 'Unknown Problem'
+      }));
+      setDashboardPlans(formattedPlans);
+    }
+    if (error) console.error('Error fetching dashboard plans:', error);
   };
 
   const fetchDetails = async (problemId: string) => {
@@ -948,43 +976,50 @@ export default function App() {
                   <table className="w-full text-left min-w-[800px]">
                     <thead>
                       <tr className="border-b border-slate-100">
+                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Action</th>
                         <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Problem Title</th>
-                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</th>
                         <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deadline</th>
                         <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
-                      {problems
-                        .filter(p => p.status === 'Pending')
-                        .slice(0, 5)
-                        .map(problem => (
-                        <tr key={problem.id} className="group hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4">
-                            <span className="text-[13px] font-bold text-slate-900">{problem.title}</span>
-                          </td>
-                          <td className="py-4">
-                            <span className="text-[11px] font-medium text-slate-500">{problem.category}</span>
-                          </td>
-                          <td className="py-4">
-                            <span className="text-[11px] font-bold text-amber-600">
-                              {format(addDays(new Date(problem.created_at), 7), 'MMM d, yyyy')}
-                            </span>
-                          </td>
-                          <td className="py-4">
-                            <Badge variant={problem.status}>{problem.status}</Badge>
-                          </td>
-                          <td className="py-4">
-                            <button 
-                              onClick={() => handleSelectProblem(problem)}
-                              className="text-bca-blue hover:underline text-[11px] font-bold"
-                            >
-                              Analyze Now
-                            </button>
+                      {dashboardPlans.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-slate-400 text-sm italic">
+                            No upcoming deadlines found.
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        dashboardPlans.map(plan => (
+                          <tr 
+                            key={plan.id} 
+                            className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
+                            onClick={async () => {
+                              const { data: problem } = await supabase
+                                .from('problems')
+                                .select('*')
+                                .eq('id', plan.problem_id)
+                                .single();
+                              if (problem) handleSelectProblem(problem);
+                            }}
+                          >
+                            <td className="py-4">
+                              <span className="text-[13px] font-bold text-slate-900">{plan.description}</span>
+                            </td>
+                            <td className="py-4">
+                              <span className="text-[11px] font-medium text-slate-500">{plan.problem_title}</span>
+                            </td>
+                            <td className="py-4">
+                              <span className="text-[11px] font-bold text-amber-600">
+                                {plan.scheduled_date ? format(new Date(plan.scheduled_date), 'MMM d, yyyy') : 'No date'}
+                              </span>
+                            </td>
+                            <td className="py-4">
+                              <Badge variant={plan.status}>{plan.status}</Badge>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
