@@ -128,18 +128,21 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-          <Target className="w-5 h-5 text-bca-blue" />
-          Root Cause Analysis (Fishbone)
-        </h3>
+      <div className="flex items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
+            <Target className="w-5 h-5 text-bca-blue" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis (Fishbone)</h3>
+        </div>
         <Button 
+          onClick={() => setActiveParent(activeParent === 'root' ? null : 'root')} 
           variant="secondary" 
-          onClick={() => setActiveParent(activeParent === 'root' ? null : 'root')}
-          className="text-sm"
+          className="h-10 px-4 flex items-center gap-2 border-bca-blue/20 text-bca-blue hover:bg-bca-blue/5 whitespace-nowrap"
         >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Primary Cause
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Add Primary Cause</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 

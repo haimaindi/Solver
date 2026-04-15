@@ -13,7 +13,9 @@ import {
   LayoutDashboard,
   LogOut,
   User,
-  Target
+  Target,
+  Settings,
+  Trash2
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
@@ -41,16 +43,15 @@ const MOCK_PROBLEMS: Problem[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'detail' | 'create'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'detail' | 'create' | 'edit'>('dashboard');
   const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
+  const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
   const [causes, setCauses] = useState<RootCause[]>([]);
   const [plans, setPlans] = useState<ActionPlan[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
-  const [showCustomCategory, setShowCustomCategory] = useState(false);
-  const [customCategory, setCustomCategory] = useState('');
 
   useEffect(() => {
     fetchProblems();
@@ -64,7 +65,6 @@ export default function App() {
     
     if (data) {
       setProblems(data);
-      // Extract unique categories from existing problems
       const existingCategories = Array.from(new Set(data.map(p => p.category)));
       setCategories(prev => Array.from(new Set([...prev, ...existingCategories])));
     }
@@ -99,15 +99,13 @@ export default function App() {
   });
 
   const handleCreateProblem = async () => {
-    const categoryToUse = showCustomCategory ? customCategory : newProblem.category;
-    
-    if (!categoryToUse) return;
+    if (!newProblem.category) return;
 
     const { data, error } = await supabase
       .from('problems')
       .insert([{
         ...newProblem,
-        category: categoryToUse
+        category: newProblem.category
       }])
       .select()
       .single();
@@ -119,9 +117,7 @@ export default function App() {
 
     if (data) {
       setProblems([data, ...problems]);
-      if (showCustomCategory) {
-        setCategories(prev => Array.from(new Set([...prev, customCategory])));
-      }
+      setCategories(prev => Array.from(new Set([...prev, data.category])));
       setNewProblem({
         title: '',
         category: 'Technical',
@@ -130,9 +126,52 @@ export default function App() {
         impact: '',
         status: 'Pending'
       });
-      setCustomCategory('');
-      setShowCustomCategory(false);
       handleSelectProblem(data);
+    }
+  };
+
+  const handleUpdateProblem = async () => {
+    if (!editingProblem) return;
+
+    const { data, error } = await supabase
+      .from('problems')
+      .update({
+        title: editingProblem.title,
+        category: editingProblem.category,
+        context: editingProblem.context,
+        significance: editingProblem.significance,
+        impact: editingProblem.impact,
+        status: editingProblem.status
+      })
+      .eq('id', editingProblem.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating problem:', error);
+      return;
+    }
+
+    if (data) {
+      setProblems(problems.map(p => p.id === data.id ? data : p));
+      setEditingProblem(null);
+      setView('dashboard');
+    }
+  };
+
+  const handleDeleteProblem = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this problem? All related root causes and action plans will be removed.')) return;
+
+    const { error } = await supabase.from('problems').delete().eq('id', id);
+    if (!error) {
+      setProblems(problems.filter(p => p.id !== id));
+      if (selectedProblem?.id === id) {
+        setSelectedProblem(null);
+        setView('dashboard');
+      }
+    } else {
+      console.error('Error deleting problem:', error);
     }
   };
 
@@ -296,12 +335,29 @@ export default function App() {
                     onClick={() => handleSelectProblem(problem)}
                     className="group cursor-pointer hover:ring-2 hover:ring-bca-blue/20 transition-all"
                   >
-                    <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <Badge variant={problem.status}>{problem.status}</Badge>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{problem.category}</span>
+                    <div className="flex justify-between items-start mb-4">
+                      <Badge variant={problem.status}>{problem.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingProblem(problem);
+                            setView('edit');
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-md transition-all"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteProblem(problem.id, e)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">{problem.category}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900 group-hover:text-bca-blue transition-colors mb-2">{problem.title}</h3>
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 group-hover:text-bca-blue transition-colors mb-2">{problem.title}</h3>
                       <p className="text-sm text-slate-500 line-clamp-2 mb-6">{problem.impact}</p>
                       
                       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
@@ -313,8 +369,7 @@ export default function App() {
                         </div>
                         <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-bca-blue group-hover:translate-x-1 transition-all" />
                       </div>
-                    </div>
-                  </GlassCard>
+                    </GlassCard>
                 ))}
                 
                 {filteredProblems.length === 0 && (
@@ -330,66 +385,70 @@ export default function App() {
             </motion.div>
           )}
 
-          {view === 'create' && (
+          {(view === 'create' || view === 'edit') && (
             <motion.div 
-              key="create"
+              key={view}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="max-w-3xl mx-auto"
             >
               <GlassCard className="p-8">
-                <h2 className="text-2xl font-bold text-slate-900 mb-8">Log New Problem</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-8">
+                  {view === 'create' ? 'Log New Problem' : 'Edit Problem Log'}
+                </h2>
                 
                 <div className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Problem Title</label>
                     <Input 
                       placeholder="e.g., Database connection timeouts in production" 
-                      value={newProblem.title}
-                      onChange={e => setNewProblem({ ...newProblem, title: e.target.value })}
+                      value={view === 'create' ? newProblem.title : editingProblem?.title}
+                      onChange={e => view === 'create' 
+                        ? setNewProblem({ ...newProblem, title: e.target.value })
+                        : setEditingProblem({ ...editingProblem!, title: e.target.value })
+                      }
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
-                      {!showCustomCategory ? (
-                        <Select 
-                          value={newProblem.category}
-                          onChange={e => {
-                            if (e.target.value === 'ADD_NEW') {
-                              setShowCustomCategory(true);
-                            } else {
-                              setNewProblem({ ...newProblem, category: e.target.value });
-                            }
-                          }}
-                        >
-                          {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                          <option value="ADD_NEW" className="text-bca-blue font-bold">+ Add New Category...</option>
-                        </Select>
-                      ) : (
-                        <div className="flex gap-2">
-                          <Input 
-                            placeholder="Type new category..." 
-                            value={customCategory}
-                            onChange={e => setCustomCategory(e.target.value)}
-                            autoFocus
-                          />
-                          <Button variant="secondary" onClick={() => setShowCustomCategory(false)} className="px-3">Cancel</Button>
-                        </div>
-                      )}
+                      <Input 
+                        list="category-suggestions"
+                        placeholder="Type or select category..."
+                        value={view === 'create' ? newProblem.category : editingProblem?.category}
+                        onChange={e => view === 'create'
+                          ? setNewProblem({ ...newProblem, category: e.target.value })
+                          : setEditingProblem({ ...editingProblem!, category: e.target.value })
+                        }
+                      />
+                      <datalist id="category-suggestions">
+                        {categories.map(cat => (
+                          <option key={cat} value={cat} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Significance (1-10)</label>
-                      <Input 
-                        type="number" 
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Significance (1-10)</label>
+                        <span className="text-sm font-bold text-bca-blue">
+                          {view === 'create' ? newProblem.significance : editingProblem?.significance}
+                        </span>
+                      </div>
+                      <input 
+                        type="range" 
                         min="1" 
                         max="10" 
-                        value={newProblem.significance}
-                        onChange={e => setNewProblem({ ...newProblem, significance: parseInt(e.target.value) })}
+                        step="1"
+                        className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-bca-blue"
+                        value={view === 'create' ? newProblem.significance : editingProblem?.significance}
+                        onChange={e => {
+                          const val = parseInt(e.target.value);
+                          view === 'create'
+                            ? setNewProblem({ ...newProblem, significance: val })
+                            : setEditingProblem({ ...editingProblem!, significance: val });
+                        }}
                       />
                     </div>
                   </div>
@@ -398,8 +457,11 @@ export default function App() {
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Context / Goal</label>
                     <Input 
                       placeholder="What is the context or goal this problem hinders?" 
-                      value={newProblem.context}
-                      onChange={e => setNewProblem({ ...newProblem, context: e.target.value })}
+                      value={view === 'create' ? newProblem.context : editingProblem?.context}
+                      onChange={e => view === 'create'
+                        ? setNewProblem({ ...newProblem, context: e.target.value })
+                        : setEditingProblem({ ...editingProblem!, context: e.target.value })
+                      }
                     />
                   </div>
 
@@ -407,14 +469,25 @@ export default function App() {
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Impact Description</label>
                     <TextArea 
                       placeholder="Describe the long-term impact of this problem..." 
-                      value={newProblem.impact}
-                      onChange={e => setNewProblem({ ...newProblem, impact: e.target.value })}
+                      value={view === 'create' ? newProblem.impact : editingProblem?.impact}
+                      onChange={e => view === 'create'
+                        ? setNewProblem({ ...newProblem, impact: e.target.value })
+                        : setEditingProblem({ ...editingProblem!, impact: e.target.value })
+                      }
                     />
                   </div>
 
                   <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-                    <Button variant="ghost" onClick={() => setView('dashboard')}>Cancel</Button>
-                    <Button onClick={handleCreateProblem} className="px-8">Create Problem Log</Button>
+                    <Button variant="ghost" onClick={() => {
+                      setView('dashboard');
+                      setEditingProblem(null);
+                    }}>Cancel</Button>
+                    <Button 
+                      onClick={view === 'create' ? handleCreateProblem : handleUpdateProblem} 
+                      className="px-8"
+                    >
+                      {view === 'create' ? 'Create Problem Log' : 'Save Changes'}
+                    </Button>
                   </div>
                 </div>
               </GlassCard>
@@ -445,33 +518,45 @@ export default function App() {
               <div className="space-y-6">
                 {/* Section 1: Top - Full Width (Problem Info) */}
                 <GlassCard className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Kategori</div>
-                      <div className="text-[15px] font-bold text-bca-blue">{selectedProblem.category}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Signifikansi</div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-bca-blue" 
-                            style={{ width: `${selectedProblem.significance * 10}%` }} 
-                          />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    {/* Left Grid: Context & Goal (rata kiri) */}
+                    <div className="flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">KONTEKS & TUJUAN</div>
+                        <div className="text-[15px] font-medium text-slate-700 leading-relaxed text-left">
+                          {selectedProblem.context}
                         </div>
-                        <span className="text-[13px] font-bold text-slate-700">{selectedProblem.significance}/10</span>
                       </div>
                     </div>
-                    <div className="space-y-1 lg:col-span-2">
-                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Konteks & Tujuan</div>
-                      <div className="text-[14px] font-medium text-slate-700 leading-snug">{selectedProblem.context}</div>
+
+                    {/* Right Grid: Category & Significance (rata kiri) */}
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">KATEGORI</div>
+                        <div className="text-[18px] font-bold text-bca-blue text-left">
+                          {selectedProblem.category}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">SIGNIFIKANSI</div>
+                        <div className="flex items-center gap-4">
+                          <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden max-w-[200px]">
+                            <div 
+                              className="h-full bg-bca-blue" 
+                              style={{ width: `${selectedProblem.significance * 10}%` }} 
+                            />
+                          </div>
+                          <span className="text-[14px] font-bold text-slate-700">{selectedProblem.significance}/10</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-6 pt-6 border-t border-slate-100">
-                    <div className="text-[10px] text-red-600 uppercase font-bold tracking-wider mb-2">Dampak Utama</div>
-                    <p className="text-[14px] text-slate-700 leading-relaxed bg-red-50/50 p-4 rounded-xl border border-red-100/50">
+
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <div className="text-[10px] text-red-600 uppercase font-bold tracking-wider mb-3">DAMPAK UTAMA</div>
+                    <div className="text-[15px] text-slate-700 leading-relaxed bg-[#fff5f5] p-5 rounded-2xl border border-red-100/30">
                       {selectedProblem.impact}
-                    </p>
+                    </div>
                   </div>
                 </GlassCard>
 
@@ -498,42 +583,50 @@ export default function App() {
                 </div>
 
                 {/* Section 3: Bottom - Full Width (Outcome) */}
-                <GlassCard className="p-6 bg-bca-blue text-white border-none">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex-1 space-y-4">
-                      <div className="text-[10px] text-white/70 uppercase font-bold tracking-wider">Final Outcome</div>
-                      <TextArea 
-                        className="bg-white/10 border-white/20 text-white text-[14px] placeholder:text-white/40 focus:ring-white/30 min-h-[100px]"
-                        placeholder="What was the final result?"
-                        value={selectedProblem.outcome}
-                        onChange={e => setSelectedProblem({ ...selectedProblem, outcome: e.target.value })}
-                      />
-                    </div>
-                    <div className="w-full md:w-72 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[13px] font-medium text-white/80">Status Penyelesaian:</span>
-                        <Badge variant={selectedProblem.status} className="bg-white/20 text-white border-none">
-                          {selectedProblem.status}
-                        </Badge>
+                <GlassCard className="p-8 bg-white border border-slate-200 shadow-sm">
+                  <div className="flex flex-col md:flex-row gap-10">
+                    <div className="flex-1 space-y-6">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">FINAL OUTCOME</div>
+                      <div className="space-y-4">
+                        <TextArea 
+                          className="bg-slate-50 border-slate-200 text-bca-blue font-semibold text-[15px] placeholder:text-slate-300 focus:ring-bca-blue/10 min-h-[120px]"
+                          placeholder="What was the final result?"
+                          value={selectedProblem.outcome}
+                          onChange={e => setSelectedProblem({ ...selectedProblem, outcome: e.target.value })}
+                        />
                       </div>
-                      <div className="flex gap-2">
+                    </div>
+                    <div className="w-full md:w-80 space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[13px] font-bold text-slate-600 uppercase tracking-tight">Status:</span>
+                          <Badge variant={selectedProblem.status}>{selectedProblem.status}</Badge>
+                        </div>
                         <Select 
-                          className="flex-1 bg-white/10 border-white/20 text-white text-[13px]"
+                          className="w-full bg-slate-50 border-slate-200 text-slate-700 text-[13px]"
                           value={selectedProblem.status}
                           onChange={e => setSelectedProblem({ ...selectedProblem, status: e.target.value as Status })}
                         >
-                          <option value="Pending" className="text-slate-900">Pending</option>
-                          <option value="Success" className="text-slate-900">Success</option>
-                          <option value="Cancel" className="text-slate-900">Cancel</option>
+                          <option value="Pending">Pending</option>
+                          <option value="Success">Success</option>
+                          <option value="Cancel">Cancel</option>
                         </Select>
-                        <Button 
-                          variant="secondary" 
-                          className="bg-white text-bca-blue border-none text-[13px] px-6"
-                          onClick={handleUpdateProblemOutcome}
-                        >
-                          Update
-                        </Button>
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completion Date</label>
+                        <Input 
+                          type="date"
+                          className="bg-slate-50 border-slate-200 text-[13px]"
+                          value={selectedProblem.completion_date ? format(new Date(selectedProblem.completion_date), 'yyyy-MM-dd') : ''}
+                          onChange={e => setSelectedProblem({ ...selectedProblem, completion_date: e.target.value })}
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleUpdateProblemOutcome}
+                        className="w-full h-11 bg-bca-blue text-white font-bold uppercase tracking-wider text-[12px]"
+                      >
+                        Update Outcome
+                      </Button>
                     </div>
                   </div>
                 </GlassCard>

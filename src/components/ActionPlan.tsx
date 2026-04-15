@@ -85,14 +85,20 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-          <Settings className="w-5 h-5 text-bca-blue" />
-          Action Plan
-        </h3>
-        <Button onClick={() => setIsAdding(true)} className="text-sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Action
+      <div className="flex items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-bca-blue" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900">Action Plan</h3>
+        </div>
+        <Button 
+          onClick={() => setIsAdding(true)} 
+          className="h-10 px-4 flex items-center gap-2 shadow-lg shadow-bca-blue/20 whitespace-nowrap"
+        >
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Add Action</span>
+          <span className="sm:hidden">Add</span>
         </Button>
       </div>
 
