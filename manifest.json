@@ -1,7 +1,7 @@
 {
-  "name": "Solver - Problem Solver Engineering",
+  "name": "Solver - Daily Solver Engineering",
   "short_name": "Solver",
-  "description": "Executive platform for engineering problem solving and habit tracking.",
+  "description": "App for Daily Solver Engineering",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
