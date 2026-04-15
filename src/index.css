@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-bca-blue: #003399;
+  --color-bca-light-blue: #005696;
+  --color-bg-page: #f4f7fa;
+  --color-text-main: #1a1a1a;
+  --color-text-secondary: #666;
+  --color-glass: rgba(255, 255, 255, 0.75);
+  --color-glass-border: rgba(255, 255, 255, 0.4);
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/75 backdrop-blur-xl border border-white/40 shadow-[0_4px_24px_rgba(0,0,0,0.04)];
+  }
+  
+  .panel {
+    @apply glass rounded-2xl p-5 flex flex-col;
+  }
+}
+
+body {
+  @apply bg-bg-page text-text-main min-h-screen font-sans antialiased;
+}
