@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ExternalLink, Sparkles, Loader2 } from 'lucide-react';
+import { ExternalLink, Sparkles, Pill, Loader2 } from 'lucide-react';
 import { GlassCard, Badge } from './UI';
 import { ASSETS } from '../assets';
 
@@ -67,7 +67,7 @@ export function Supplement() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
         <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center">
-          <Sparkles className="w-12 h-12 text-slate-200" />
+          <Pill className="w-12 h-12 text-slate-200" />
         </div>
         <div>
           <h3 className="text-2xl font-bold text-slate-900">Coming Soon</h3>
@@ -117,19 +117,11 @@ export function Supplement() {
                   <h4 className="font-bold text-slate-900 leading-tight group-hover:text-bca-blue transition-colors line-clamp-2">
                     {item.title}
                   </h4>
-                  <ExternalLink className="w-4 h-4 text-slate-300 group-hover:text-bca-blue shrink-0 transition-colors" />
                 </div>
                 
                 <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 flex-grow">
                   {item.description}
                 </p>
-
-                <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resource</span>
-                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-bca-blue group-hover:text-white transition-all">
-                    <ExternalLink className="w-4 h-4" />
-                  </div>
-                </div>
               </div>
             </GlassCard>
           </motion.div>

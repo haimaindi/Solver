@@ -19,10 +19,13 @@ import {
   TrendingUp,
   ListTodo, 
   Sparkles,
+  Pill, 
   ChevronDown,
   Waypoints, 
   BookOpen,
-  Loader2
+  Loader2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
@@ -69,6 +72,15 @@ const MOCK_PROBLEMS: Problem[] = [
 function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boolean, onLogin: (code: string, pass: string) => void, children: React.ReactNode }) {
   const [code, setCode] = useState('');
   const [pass, setPass] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Clear credentials on logout
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCode('');
+      setPass('');
+    }
+  }, [isAuthenticated]);
 
   if (isAuthenticated) return <>{children}</>;
 
@@ -110,13 +122,22 @@ function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boo
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
-                <Input 
-                  type="password"
-                  placeholder="Enter password" 
-                  value={pass}
-                  onChange={e => setPass(e.target.value)}
-                  className="h-12 bg-white/50"
-                />
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password" 
+                    value={pass}
+                    onChange={e => setPass(e.target.value)}
+                    className="h-12 bg-white/50 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-bca-blue transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -599,7 +620,7 @@ export default function App() {
             }}
           >
             <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-all group-active:scale-90">
-              <Target className="text-bca-blue w-7 h-7" />
+              <Waypoints className="text-bca-blue w-7 h-7" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
@@ -652,7 +673,7 @@ export default function App() {
                 view === 'supplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
-              <Sparkles className="w-4 h-4" />
+              <Pill className="w-4 h-4" />
               Supplement
             </button>
           </div>
@@ -692,7 +713,7 @@ export default function App() {
             >
               <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                  <Target className="text-bca-blue w-7 h-7" />
+                  <Waypoints className="text-bca-blue w-7 h-7" />
                 </div>
                 <h1 className="text-xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
               </div>
@@ -745,7 +766,7 @@ export default function App() {
                     view === 'supplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
                   )}
                 >
-                  <Sparkles className="w-5 h-5" />
+                  <Pill className="w-5 h-5" />
                   Supplement
                 </button>
               </div>
