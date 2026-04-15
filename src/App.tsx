@@ -19,12 +19,14 @@ import {
   TrendingUp,
   ListTodo,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
-import { Problem, Status, RootCause, ActionPlan, supabase } from '@/src/lib/supabase';
+import { Problem, Status, RootCause, ActionPlan, Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
+import { ReflectionManager } from './components/Reflection';
 import { cn } from '@/src/lib/utils';
 import { format, isAfter, addDays } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -61,7 +63,7 @@ const MOCK_PROBLEMS: Problem[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement' | 'reflection'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -472,8 +474,8 @@ export default function App() {
               else setView('dashboard');
             }}
           >
-            <div className="w-8 h-8 border-2 border-bca-blue rounded-lg flex items-center justify-center transition-all group-active:scale-90">
-              <Target className="text-bca-blue w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-all group-active:scale-90">
+              <Target className="text-bca-blue w-7 h-7" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
@@ -509,6 +511,16 @@ export default function App() {
               <Sparkles className="w-4 h-4" />
               Suplement
             </button>
+            <button 
+              onClick={() => setView('reflection')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <BookOpen className="w-4 h-4" />
+              Reflection
+            </button>
           </div>
         </div>
         
@@ -538,8 +550,8 @@ export default function App() {
               className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] md:hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-                <div className="w-8 h-8 border-2 border-bca-blue rounded-lg flex items-center justify-center">
-                  <Target className="text-bca-blue w-5 h-5" />
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center">
+                  <Target className="text-bca-blue w-7 h-7" />
                 </div>
                 <h1 className="text-xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
               </div>
@@ -574,6 +586,16 @@ export default function App() {
                 >
                   <Sparkles className="w-5 h-5" />
                   Suplement
+                </button>
+                <button 
+                  onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <BookOpen className="w-5 h-5" />
+                  Reflection
                 </button>
               </div>
 
@@ -913,6 +935,17 @@ export default function App() {
               <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Suplement Coming Soon</h2>
               <p className="text-slate-500 max-w-md">We are building advanced engineering tools and methodologies to help you solve problems even faster. Stay tuned!</p>
               <Button onClick={() => setView('dashboard')} variant="secondary" className="mt-8">Back to Dashboard</Button>
+            </motion.div>
+          )}
+
+          {view === 'reflection' && (
+            <motion.div 
+              key="reflection"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <ReflectionManager />
             </motion.div>
           )}
 

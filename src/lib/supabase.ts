@@ -49,3 +49,12 @@ export interface Problem {
   created_at: string;
   user_id: string;
 }
+
+export interface Reflection {
+  id: string;
+  mode: 'GIBBS' | 'ROLFE' | '4L';
+  title: string;
+  content: Record<string, any>;
+  created_at: string;
+  user_id: string | null;
+}

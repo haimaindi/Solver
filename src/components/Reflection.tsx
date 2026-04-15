@@ -1,0 +1,317 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Plus, 
+  History, 
+  ChevronRight, 
+  Save, 
+  Trash2, 
+  Calendar,
+  Clock as ClockIcon,
+  BookOpen,
+  ArrowLeft
+} from 'lucide-react';
+import { Reflection, supabase } from '@/src/lib/supabase';
+import { GlassCard, Button, Input, TextArea, Badge } from './UI';
+import { format } from 'date-fns';
+import Swal from 'sweetalert2';
+import { cn } from '@/src/lib/utils';
+
+type Mode = 'GIBBS' | 'ROLFE' | '4L';
+
+const MODES: { id: Mode; name: string; description: string }[] = [
+  { id: 'GIBBS', name: 'GIBBS', description: '6-step reflective cycle' },
+  { id: 'ROLFE', name: 'ROLFE', description: 'What, So What, Now What?' },
+  { id: '4L', name: 'Modified 4L', description: 'Experience, Liked, Learned, Lacked, Longed, Action' }
+];
+
+const MODE_FIELDS: Record<Mode, { id: string; label: string; placeholder: string }[]> = {
+  GIBBS: [
+    { id: 'description', label: '1. Description', placeholder: 'What happened?' },
+    { id: 'feelings', label: '2. Feelings', placeholder: 'What were you thinking and feeling?' },
+    { id: 'evaluation', label: '3. Evaluation', placeholder: 'What was good and bad about the experience?' },
+    { id: 'analysis', label: '4. Analysis', placeholder: 'What sense can you make of the situation?' },
+    { id: 'conclusion', label: '5. Conclusion', placeholder: 'What else could you have done?' },
+    { id: 'action', label: '6. Action Plan', placeholder: 'If it arose again, what would you do?' }
+  ],
+  ROLFE: [
+    { id: 'what', label: 'What?', placeholder: 'Describe the situation, your role, and what you were trying to achieve.' },
+    { id: 'soWhat', label: 'So What?', placeholder: 'What is the importance of the event? What does it mean for your practice?' },
+    { id: 'nowWhat', label: 'Now What?', placeholder: 'What are you going to do next? How will you improve?' }
+  ],
+  '4L': [
+    { id: 'experience', label: 'Description/Experience', placeholder: 'Describe the event or experience.' },
+    { id: 'liked', label: 'Liked', placeholder: 'What did you like about the experience?' },
+    { id: 'learned', label: 'Learned', placeholder: 'What did you learn from this?' },
+    { id: 'lacked', label: 'Lacked', placeholder: 'What was missing or what hindered you?' },
+    { id: 'longed', label: 'Longed for', placeholder: 'What did you wish for or hope to happen?' },
+    { id: 'action', label: 'Action Plan', placeholder: 'What are your next steps?' }
+  ]
+};
+
+export function ReflectionManager() {
+  const [reflections, setReflections] = useState<Reflection[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [selectedReflection, setSelectedReflection] = useState<Reflection | null>(null);
+  const [currentMode, setCurrentMode] = useState<Mode>('GIBBS');
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [title, setTitle] = useState('');
+
+  useEffect(() => {
+    fetchReflections();
+  }, []);
+
+  const fetchReflections = async () => {
+    const { data, error } = await supabase
+      .from('reflections')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) setReflections(data);
+    if (error) console.error('Error fetching reflections:', error);
+  };
+
+  const handleSave = async () => {
+    if (!title) {
+      Swal.fire('Error', 'Please enter a title', 'error');
+      return;
+    }
+
+    const reflectionData = {
+      mode: currentMode,
+      title,
+      content: formData,
+      created_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('reflections')
+      .insert([reflectionData])
+      .select()
+      .single();
+
+    if (data) {
+      setReflections([data, ...reflections]);
+      setIsAdding(false);
+      setTitle('');
+      setFormData({});
+      Swal.fire('Success', 'Reflection saved successfully', 'success');
+    }
+    if (error) {
+      console.error('Error saving reflection:', error);
+      Swal.fire('Error', 'Failed to save reflection', 'error');
+    }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#003399',
+      cancelButtonColor: '#ef4444',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (result.isConfirmed) {
+      const { error } = await supabase.from('reflections').delete().eq('id', id);
+      if (!error) {
+        setReflections(reflections.filter(r => r.id !== id));
+        if (selectedReflection?.id === id) setSelectedReflection(null);
+        Swal.fire('Deleted!', 'Your reflection has been deleted.', 'success');
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Reflection Journal</h2>
+          <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
+        </div>
+        {!isAdding && !selectedReflection && (
+          <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
+            <Plus className="w-4 h-4" />
+            <span>New Reflection</span>
+          </Button>
+        )}
+      </div>
+
+      <AnimatePresence mode="wait">
+        {isAdding ? (
+          <motion.div
+            key="add"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <GlassCard className="p-8 space-y-8">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" onClick={() => setIsAdding(false)} className="p-2">
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <h3 className="text-xl font-bold text-slate-900">Create New Reflection</h3>
+                </div>
+                <div className="flex gap-2">
+                  {MODES.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => {
+                        setCurrentMode(m.id);
+                        setFormData({});
+                      }}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                        currentMode === m.id 
+                          ? "bg-bca-blue text-white shadow-lg shadow-bca-blue/20" 
+                          : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reflection Title</label>
+                  <Input 
+                    placeholder="e.g., Weekly Sprint Review - Week 14" 
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    className="text-lg font-semibold"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-6">
+                  {MODE_FIELDS[currentMode].map(field => (
+                    <div key={field.id} className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</label>
+                      <TextArea 
+                        placeholder={field.placeholder}
+                        value={formData[field.id] || ''}
+                        onChange={e => setFormData({ ...formData, [field.id]: e.target.value })}
+                        className="min-h-[120px] bg-slate-50/50"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                  <Button variant="ghost" onClick={() => setIsAdding(false)}>Cancel</Button>
+                  <Button onClick={handleSave} className="px-8 flex items-center gap-2">
+                    <Save className="w-4 h-4" />
+                    <span>Save Reflection</span>
+                  </Button>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        ) : selectedReflection ? (
+          <motion.div
+            key="detail"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
+            <GlassCard className="p-8 space-y-8">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" onClick={() => setSelectedReflection(null)} className="p-2">
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-2xl font-bold text-slate-900">{selectedReflection.title}</h3>
+                      <Badge variant="Success" className="bg-bca-blue/10 text-bca-blue">{selectedReflection.mode}</Badge>
+                    </div>
+                    <div className="flex items-center gap-4 mt-1 text-slate-400 text-xs font-medium">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {format(new Date(selectedReflection.created_at), 'MMMM d, yyyy')}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ClockIcon className="w-3 h-3" />
+                        {format(new Date(selectedReflection.created_at), 'HH:mm')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="danger" onClick={(e) => handleDelete(selectedReflection.id, e)} className="p-2">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-8">
+                {MODE_FIELDS[selectedReflection.mode].map(field => (
+                  <div key={field.id} className="space-y-3">
+                    <div className="text-[10px] font-bold text-bca-blue uppercase tracking-widest">{field.label}</div>
+                    <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed whitespace-pre-wrap">
+                      {selectedReflection.content[field.id] || <span className="text-slate-300 italic">No content provided.</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="list"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {reflections.length > 0 ? (
+              reflections.map((r, idx) => (
+                <GlassCard 
+                  key={r.id} 
+                  delay={idx * 0.05}
+                  onClick={() => setSelectedReflection(r)}
+                  className="p-6 cursor-pointer group hover:border-bca-blue/30 transition-all"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 bg-bca-blue/5 rounded-lg text-bca-blue group-hover:bg-bca-blue group-hover:text-white transition-colors">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <Badge variant="Success" className="bg-slate-100 text-slate-500 group-hover:bg-bca-blue/10 group-hover:text-bca-blue transition-colors">
+                      {r.mode}
+                    </Badge>
+                  </div>
+                  <h4 className="font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-bca-blue transition-colors">{r.title}</h4>
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {format(new Date(r.created_at), 'MMM d, yyyy')}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ClockIcon className="w-3 h-3" />
+                      {format(new Date(r.created_at), 'HH:mm')}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-bca-blue group-hover:bg-bca-blue/5 transition-all">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </div>
+                </GlassCard>
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <History className="w-10 h-10 text-slate-200" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">No reflections yet</h3>
+                <p className="text-slate-500">Start documenting your growth today.</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

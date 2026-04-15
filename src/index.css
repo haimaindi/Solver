@@ -45,6 +45,27 @@
   background: #005696;
 }
 
+/* Force horizontal scrollbar visibility on mobile */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #003399 transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 6px;
+  display: block !important;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #003399;
+  border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(0, 51, 153, 0.05);
+  border-radius: 10px;
+}
+
 body {
   @apply bg-bg-page text-text-main min-h-screen font-sans antialiased;
   overscroll-behavior-y: contain;
