@@ -13,9 +13,24 @@ interface FishboneProps {
   onUpdateStatus: (id: string, status: Status) => void;
 }
 
-export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateStatus }: FishboneProps) {
+export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateStatus, onUpdateCause }: FishboneProps & { onUpdateCause: (id: string, cause: string) => void }) {
   const [newCause, setNewCause] = useState('');
   const [activeParent, setActiveParent] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const handleStartEdit = (cause: RootCause) => {
+    setEditingId(cause.id);
+    setEditValue(cause.cause);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingId && editValue) {
+      onUpdateCause(editingId, editValue);
+      setEditingId(null);
+      setEditValue('');
+    }
+  };
 
   const rootLevel = causes.filter(c => !c.parent_id);
 
@@ -31,9 +46,27 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-[13px] font-semibold text-slate-900">{cause.cause}</span>
-                {cause.is_highlighted && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-bca-blue/10 text-bca-blue font-bold uppercase">Main Root</span>
+                {editingId === cause.id ? (
+                  <div className="flex gap-2 w-full">
+                    <Input 
+                      value={editValue}
+                      onChange={e => setEditValue(e.target.value)}
+                      className="py-1 text-xs"
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleSaveEdit();
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                    />
+                    <Button onClick={handleSaveEdit} className="py-1 px-2 text-[10px]">Save</Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-[13px] font-semibold text-slate-900">{cause.cause}</span>
+                    {cause.is_highlighted && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-bca-blue/10 text-bca-blue font-bold uppercase">Main Root</span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -67,6 +100,7 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
             <span className="text-slate-300">|</span>
             <div className="flex items-center gap-2">
               <button 
+                onClick={() => handleStartEdit(cause)}
                 className="text-bca-blue hover:text-bca-blue/80 p-1 bg-bca-blue/5 rounded"
               >
                 <Pencil className="w-3 h-3" />

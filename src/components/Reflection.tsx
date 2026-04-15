@@ -339,15 +339,17 @@ export function ReflectionManager() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+        <div className="text-center md:text-left">
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Reflection Journal</h2>
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
         {!isAdding && !selectedReflection && (
-          <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
-            <Plus className="w-4 h-4" />
-            <span>New Reflection</span>
-          </Button>
+          <div className="flex justify-center w-full md:w-auto">
+            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 w-full sm:w-auto justify-center">
+              <Plus className="w-4 h-4" />
+              <span>New Reflection</span>
+            </Button>
+          </div>
         )}
       </div>
 
@@ -360,14 +362,16 @@ export function ReflectionManager() {
             exit={{ opacity: 0, y: -20 }}
           >
             <GlassCard className="p-8 space-y-8">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                <div className="flex items-center gap-4">
-                  <Button variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); setTitle(''); setFormData({}); }} className="p-2">
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                  <h3 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Reflection' : 'Create New Reflection'}</h3>
+              <div className="flex flex-col gap-6 border-b border-slate-100 pb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Button variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); setTitle(''); setFormData({}); }} className="p-2">
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                    <h3 className="text-xl font-bold text-slate-900">{editingId ? 'Edit Reflection' : 'Create New Reflection'}</h3>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {MODES.map(m => (
                     <button
                       key={m.id}
@@ -376,7 +380,7 @@ export function ReflectionManager() {
                         setFormData({});
                       }}
                       className={cn(
-                        "px-4 py-2 rounded-xl text-xs font-bold transition-all",
+                        "px-4 py-2 rounded-xl text-xs font-bold transition-all flex-1 sm:flex-none",
                         currentMode === m.id 
                           ? "bg-bca-blue text-white shadow-lg shadow-bca-blue/20" 
                           : "bg-slate-50 text-slate-500 hover:bg-slate-100"
@@ -451,14 +455,14 @@ export function ReflectionManager() {
             exit={{ opacity: 0, x: -20 }}
           >
             <GlassCard className="p-8 space-y-8">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                <div className="flex items-center gap-4">
-                  <Button variant="ghost" onClick={() => setSelectedReflection(null)} className="p-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-6 gap-4">
+                <div className="flex items-start gap-4">
+                  <Button variant="ghost" onClick={() => setSelectedReflection(null)} className="p-2 mt-1">
                     <ArrowLeft className="w-5 h-5" />
                   </Button>
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-2xl font-bold text-slate-900">{selectedReflection.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h3 className="text-2xl font-bold text-slate-900 truncate max-w-[200px] sm:max-w-md">{selectedReflection.title}</h3>
                       <Badge variant="Success" className="bg-bca-blue/10 text-bca-blue">{selectedReflection.mode}</Badge>
                     </div>
                     <div className="flex items-center gap-4 mt-1 text-slate-400 text-xs font-medium">
@@ -473,7 +477,7 @@ export function ReflectionManager() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-end">
                   <Button variant="ghost" onClick={(e) => handleEdit(selectedReflection, e)} className="p-2 text-bca-blue hover:bg-bca-blue/5">
                     <Pencil className="w-4 h-4" />
                   </Button>

@@ -831,13 +831,13 @@ export default function App() {
               className="space-y-8"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
+                <div className="text-center md:text-left">
                   <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Executive Dashboard</h2>
                   <p className="text-slate-500 mt-1">Real-time overview of engineering problem solving metrics.</p>
                 </div>
-                <div className="flex flex-wrap md:flex-nowrap gap-3">
-                  <Button variant="secondary" onClick={() => setView('list')} className="h-11 px-6 flex-1 md:flex-none">View All Problems</Button>
-                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2 flex-1 md:flex-none">
+                <div className="flex flex-col sm:flex-row justify-center md:justify-end gap-3">
+                  <Button variant="secondary" onClick={() => setView('list')} className="h-11 px-6 w-full sm:w-auto">View All Problems</Button>
+                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2 w-full sm:w-auto">
                     <Plus className="w-4 h-4" />
                     <span>New Problem</span>
                   </Button>
@@ -1383,6 +1383,10 @@ export default function App() {
                           onDelete={handleDeleteCause}
                           onToggleHighlight={handleToggleCauseHighlight}
                           onUpdateStatus={handleUpdateCauseStatus}
+                          onUpdateCause={async (id, cause) => {
+                            const { error } = await supabase.from('root_causes').update({ cause }).eq('id', id);
+                            if (!error && selectedProblem) fetchDetails(selectedProblem.id);
+                          }}
                         />
                       </div>
                     </div>

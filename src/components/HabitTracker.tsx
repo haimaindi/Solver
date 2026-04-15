@@ -228,17 +228,19 @@ export function HabitTracker() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+        <div className="text-center md:text-left">
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center justify-center md:justify-start gap-3">
             <TrendingUp className="w-8 h-8 text-bca-blue" />
             Habit Tracker
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Consistency is the key to mastery. Track your progress daily.</p>
         </div>
-        <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 shadow-lg shadow-bca-blue/20">
-          <Plus className="w-4 h-4" />
-          <span>Add New Habit</span>
-        </Button>
+        <div className="flex justify-center w-full md:w-auto">
+          <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 shadow-lg shadow-bca-blue/20 w-full sm:w-auto justify-center">
+            <Plus className="w-4 h-4" />
+            <span>Add New Habit</span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -566,19 +568,24 @@ export function HabitTracker() {
                       className="h-12"
                     />
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pick a Color</label>
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-3 p-1">
                       {HABIT_COLORS.map(c => (
                         <button
                           key={c.value}
+                          type="button"
                           onClick={() => setNewHabit({ ...newHabit, color: c.value })}
                           className={cn(
-                            "w-8 h-8 rounded-full transition-all",
-                            newHabit.color === c.value ? "ring-4 ring-slate-100 scale-110 shadow-lg" : "hover:scale-105"
+                            "w-10 h-10 rounded-full transition-all flex items-center justify-center border-2",
+                            newHabit.color === c.value 
+                              ? "border-slate-900 scale-110 shadow-lg" 
+                              : "border-transparent hover:scale-105"
                           )}
                           style={{ backgroundColor: c.value }}
-                        />
+                        >
+                          {newHabit.color === c.value && <CheckCircle2 className="w-5 h-5 text-white" />}
+                        </button>
                       ))}
                     </div>
                   </div>

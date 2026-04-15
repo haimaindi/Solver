@@ -50,21 +50,24 @@
   scrollbar-width: thin;
   scrollbar-color: #003399 transparent;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px; /* Space for scrollbar */
+  padding-bottom: 12px; /* Space for scrollbar */
+  scrollbar-gutter: stable;
 }
 
 .overflow-x-auto::-webkit-scrollbar {
-  height: 6px;
+  height: 8px !important;
   display: block !important;
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb {
   background: #003399 !important;
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .overflow-x-auto::-webkit-scrollbar-track {
-  background: rgba(0, 51, 153, 0.05) !important;
+  background: rgba(0, 51, 153, 0.1) !important;
   border-radius: 10px;
 }
 

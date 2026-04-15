@@ -15,6 +15,7 @@ interface ActionPlanProps {
 
 export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPlanProps) {
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newPlan, setNewPlan] = useState<Partial<ActionPlan>>({
     description: '',
     is_controllable: true,
@@ -22,6 +23,19 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
     status: 'Pending',
     notes: ''
   });
+
+  const handleEdit = (plan: ActionPlan) => {
+    setNewPlan({
+      description: plan.description,
+      is_controllable: plan.is_controllable,
+      is_feasible: plan.is_feasible,
+      status: plan.status,
+      notes: plan.notes || '',
+      scheduled_date: plan.scheduled_date
+    });
+    setEditingId(plan.id);
+    setIsAdding(true);
+  };
 
   const controllable = plans.filter(p => p.is_controllable);
   const uncontrollable = plans.filter(p => !p.is_controllable);
@@ -81,6 +95,7 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
         </div>
         <div className="flex items-center gap-2">
           <button 
+            onClick={() => handleEdit(plan)}
             className="text-bca-blue hover:text-bca-blue/80 p-1 bg-bca-blue/5 rounded transition-all"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -98,21 +113,33 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-8 gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+        <div className="flex items-center gap-3 justify-center sm:justify-start">
           <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
             <Settings className="w-5 h-5 text-bca-blue" />
           </div>
           <h3 className="text-lg font-bold text-slate-900">Action Plan</h3>
         </div>
-        <Button 
-          onClick={() => setIsAdding(true)} 
-          className="h-10 px-4 flex items-center gap-2 shadow-lg shadow-bca-blue/20 whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Action</span>
-          <span className="sm:hidden">Add</span>
-        </Button>
+        <div className="flex justify-center">
+          <Button 
+            onClick={() => {
+              setEditingId(null);
+              setNewPlan({
+                description: '',
+                is_controllable: true,
+                is_feasible: true,
+                status: 'Pending',
+                notes: ''
+              });
+              setIsAdding(true);
+            }} 
+            className="h-10 px-4 flex items-center gap-2 shadow-lg shadow-bca-blue/20 whitespace-nowrap w-full sm:w-auto justify-center"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Action</span>
+            <span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
 
       {isAdding && (
@@ -121,6 +148,9 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
           animate={{ opacity: 1, y: 0 }}
           className="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4"
         >
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-bold text-slate-900">{editingId ? 'Edit Action Plan' : 'New Action Plan'}</h4>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase">Action Description</label>
@@ -193,11 +223,16 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setIsAdding(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setIsAdding(false); setEditingId(null); }}>Cancel</Button>
             <Button onClick={() => {
               if (newPlan.description) {
-                onAdd(newPlan);
+                if (editingId) {
+                  onUpdate(editingId, newPlan);
+                } else {
+                  onAdd(newPlan);
+                }
                 setIsAdding(false);
+                setEditingId(null);
                 setNewPlan({
                   description: '',
                   is_controllable: true,
@@ -206,7 +241,7 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
                   notes: ''
                 });
               }
-            }}>Save Action Plan</Button>
+            }}>{editingId ? 'Update Action' : 'Save Action Plan'}</Button>
           </div>
         </motion.div>
       )}
