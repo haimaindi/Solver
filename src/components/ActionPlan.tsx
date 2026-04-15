@@ -148,8 +148,8 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
                 value={newPlan.is_controllable ? 'true' : 'false'}
                 onChange={e => setNewPlan({ ...newPlan, is_controllable: e.target.value === 'true' })}
               >
-                <option value="true">Controllable (Internal)</option>
-                <option value="false">Uncontrollable (External)</option>
+                <option value="true">Controllable</option>
+                <option value="false">Uncontrollable</option>
               </Select>
             </div>
             <div className="space-y-2">
