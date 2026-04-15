@@ -129,8 +129,13 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase">Schedule Date</label>
               <Input 
-                type="date"
+                type={newPlan.scheduled_date ? "date" : "text"}
+                placeholder="dd/mm/yyyy"
                 value={newPlan.scheduled_date || ''}
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
                 onChange={e => setNewPlan({ ...newPlan, scheduled_date: e.target.value })}
               />
             </div>

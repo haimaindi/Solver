@@ -74,7 +74,42 @@ export default function App() {
 
   useEffect(() => {
     fetchProblems();
-  }, []);
+
+    // Mobile Gestures
+    let touchStart = 0;
+    let touchStartX = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStart = e.touches[0].clientY;
+      touchStartX = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEnd = e.changedTouches[0].clientY;
+      const touchEndX = e.changedTouches[0].clientX;
+      
+      // Pull to refresh
+      if (window.scrollY === 0 && touchEnd - touchStart > 150) {
+        window.location.reload();
+      }
+
+      // Swipe back (left to right)
+      if (touchEndX - touchStartX > 100 && Math.abs(touchEnd - touchStart) < 50) {
+        if (view !== 'dashboard') {
+          if (view === 'detail') setView('list');
+          else setView('dashboard');
+        }
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [view]);
 
   const fetchProblems = async () => {
     const { data, error } = await supabase
@@ -487,9 +522,9 @@ export default function App() {
                   <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Executive Dashboard</h2>
                   <p className="text-slate-500 mt-1">Real-time overview of engineering problem solving metrics.</p>
                 </div>
-                <div className="flex gap-3">
-                  <Button variant="secondary" onClick={() => setView('list')} className="h-11 px-6">View All Problems</Button>
-                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
+                <div className="flex flex-wrap md:flex-nowrap gap-3">
+                  <Button variant="secondary" onClick={() => setView('list')} className="h-11 px-6 flex-1 md:flex-none">View All Problems</Button>
+                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2 flex-1 md:flex-none">
                     <Plus className="w-4 h-4" />
                     <span>New Problem</span>
                   </Button>
@@ -624,8 +659,8 @@ export default function App() {
                   <h3 className="text-lg font-bold text-slate-900">Upcoming Action Plan Deadlines</h3>
                   <Badge variant="Pending">Critical Attention</Badge>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+                <div className="overflow-x-auto hide-scrollbar -mx-6 px-6">
+                  <table className="w-full text-left min-w-[600px]">
                     <thead>
                       <tr className="border-b border-slate-100">
                         <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Problem Title</th>
@@ -1003,14 +1038,18 @@ export default function App() {
 
                 {/* Section 2: Middle - 2 Columns (Analysis & Action Plan) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                  <GlassCard className="p-6 min-h-[500px]">
-                    <Fishbone 
-                      causes={causes}
-                      onAdd={handleAddCause}
-                      onDelete={handleDeleteCause}
-                      onToggleHighlight={handleToggleCauseHighlight}
-                      onUpdateStatus={handleUpdateCauseStatus}
-                    />
+                  <GlassCard className="p-6 min-h-[500px] overflow-hidden">
+                    <div className="overflow-x-auto hide-scrollbar -mx-6 px-6">
+                      <div className="min-w-[500px]">
+                        <Fishbone 
+                          causes={causes}
+                          onAdd={handleAddCause}
+                          onDelete={handleDeleteCause}
+                          onToggleHighlight={handleToggleCauseHighlight}
+                          onUpdateStatus={handleUpdateCauseStatus}
+                        />
+                      </div>
+                    </div>
                   </GlassCard>
 
                   <GlassCard className="p-6 min-h-[500px]">
@@ -1056,10 +1095,15 @@ export default function App() {
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completion Date</label>
                         <Input 
-                          type="date"
+                          type={selectedProblem.completion_date ? "date" : "text"}
+                          placeholder="dd/mm/yyyy"
                           className="bg-slate-50 border-slate-200 text-[13px]"
                           value={selectedProblem.completion_date ? format(new Date(selectedProblem.completion_date), 'yyyy-MM-dd') : ''}
-                          onChange={e => setSelectedProblem({ ...selectedProblem, completion_date: e.target.value })}
+                          onFocus={(e) => (e.target.type = "date")}
+                          onBlur={(e) => {
+                            if (!e.target.value) e.target.type = "text";
+                          }}
+                          onChange={e => setSelectedProblem({ ...selectedProblem, completion_date: e.target.value || null })}
                         />
                       </div>
                       <Button 
