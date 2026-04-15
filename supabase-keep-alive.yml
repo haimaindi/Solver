@@ -1,0 +1,17 @@
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    # Berjalan setiap hari pada jam 00:00 UTC (sekitar jam 07:00 WIB)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Memungkinkan menjalankan manual dari tab Actions di GitHub
+
+jobs:
+  ping_supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase API to prevent sleep
+        run: |
+          curl -i -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/problems?select=id&limit=1" \
+          -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
