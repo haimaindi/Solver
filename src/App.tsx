@@ -103,14 +103,11 @@ export default function App() {
     
     if (!categoryToUse) return;
 
-    const { data: userData } = await supabase.auth.getUser();
-    
     const { data, error } = await supabase
       .from('problems')
       .insert([{
         ...newProblem,
-        category: categoryToUse,
-        user_id: userData.user?.id || '00000000-0000-0000-0000-000000000000'
+        category: categoryToUse
       }])
       .select()
       .single();
@@ -445,46 +442,42 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_300px] gap-5 items-start">
-                {/* Left Column: Problem Info */}
-                <div className="space-y-5">
-                  <GlassCard className="p-5">
-                    <div className="text-[12px] font-bold text-bca-blue uppercase tracking-wider mb-4">Problem Context</div>
-                    <div className="space-y-4">
-                      <div className="meta-group">
-                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Kategori</div>
-                        <div className="text-[13px] font-semibold">{selectedProblem.category}</div>
-                      </div>
-                      <div className="meta-group">
-                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Konteks & Tujuan</div>
-                        <div className="text-[13px] font-medium leading-snug">{selectedProblem.context}</div>
-                      </div>
-                      <div className="meta-group">
-                        <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">Signifikansi (Skala 1-10)</div>
-                        <div className="h-[6px] bg-slate-100 rounded-full overflow-hidden my-2">
+              <div className="space-y-6">
+                {/* Section 1: Top - Full Width (Problem Info) */}
+                <GlassCard className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Kategori</div>
+                      <div className="text-[15px] font-bold text-bca-blue">{selectedProblem.category}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Signifikansi</div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-bca-blue" 
                             style={{ width: `${selectedProblem.significance * 10}%` }} 
                           />
                         </div>
-                        <div className="text-[11px] font-bold text-right text-slate-600">
-                          {selectedProblem.significance >= 8 ? 'Critical' : selectedProblem.significance >= 5 ? 'Moderate' : 'Low'} ({selectedProblem.significance})
-                        </div>
+                        <span className="text-[13px] font-bold text-slate-700">{selectedProblem.significance}/10</span>
                       </div>
                     </div>
-                  </GlassCard>
-
-                  <GlassCard className="p-5 bg-[#fff5f5] border-l-4 border-l-red-500">
-                    <div className="text-[10px] text-red-800 uppercase font-bold mb-2">Dampak Utama</div>
-                    <p className="text-[12px] text-red-900 leading-relaxed">
+                    <div className="space-y-1 lg:col-span-2">
+                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Konteks & Tujuan</div>
+                      <div className="text-[14px] font-medium text-slate-700 leading-snug">{selectedProblem.context}</div>
+                    </div>
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-slate-100">
+                    <div className="text-[10px] text-red-600 uppercase font-bold tracking-wider mb-2">Dampak Utama</div>
+                    <p className="text-[14px] text-slate-700 leading-relaxed bg-red-50/50 p-4 rounded-xl border border-red-100/50">
                       {selectedProblem.impact}
                     </p>
-                  </GlassCard>
-                </div>
+                  </div>
+                </GlassCard>
 
-                {/* Middle Column: Analysis */}
-                <div className="space-y-5">
-                  <GlassCard className="p-5 min-h-[500px]">
+                {/* Section 2: Middle - 2 Columns (Analysis & Action Plan) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  <GlassCard className="p-6 min-h-[500px]">
                     <Fishbone 
                       causes={causes}
                       onAdd={handleAddCause}
@@ -493,11 +486,8 @@ export default function App() {
                       onUpdateStatus={handleUpdateCauseStatus}
                     />
                   </GlassCard>
-                </div>
 
-                {/* Right Column: Action & Outcome */}
-                <div className="space-y-5 flex flex-col h-full">
-                  <GlassCard className="p-5 flex-1">
+                  <GlassCard className="p-6 min-h-[500px]">
                     <ActionPlanManager 
                       plans={plans}
                       onAdd={handleAddPlan}
@@ -505,25 +495,30 @@ export default function App() {
                       onUpdate={handleUpdatePlan}
                     />
                   </GlassCard>
+                </div>
 
-                  <GlassCard className="p-5 bg-bca-blue text-white border-none mt-auto">
-                    <div className="text-[10px] text-white/70 uppercase font-bold mb-3">Final Outcome</div>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium">Status:</span>
-                        <Badge variant={selectedProblem.status} className="bg-white/20 text-white border-none">
-                          {selectedProblem.status}
-                        </Badge>
-                      </div>
+                {/* Section 3: Bottom - Full Width (Outcome) */}
+                <GlassCard className="p-6 bg-bca-blue text-white border-none">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="flex-1 space-y-4">
+                      <div className="text-[10px] text-white/70 uppercase font-bold tracking-wider">Final Outcome</div>
                       <TextArea 
-                        className="bg-white/10 border-white/20 text-white text-[12px] placeholder:text-white/40 focus:ring-white/30 min-h-[60px]"
+                        className="bg-white/10 border-white/20 text-white text-[14px] placeholder:text-white/40 focus:ring-white/30 min-h-[100px]"
                         placeholder="What was the final result?"
                         value={selectedProblem.outcome}
                         onChange={e => setSelectedProblem({ ...selectedProblem, outcome: e.target.value })}
                       />
-                      <div className="flex items-center justify-between gap-2">
+                    </div>
+                    <div className="w-full md:w-72 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[13px] font-medium text-white/80">Status Penyelesaian:</span>
+                        <Badge variant={selectedProblem.status} className="bg-white/20 text-white border-none">
+                          {selectedProblem.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
                         <Select 
-                          className="flex-1 bg-white/10 border-white/20 text-white text-[11px]"
+                          className="flex-1 bg-white/10 border-white/20 text-white text-[13px]"
                           value={selectedProblem.status}
                           onChange={e => setSelectedProblem({ ...selectedProblem, status: e.target.value as Status })}
                         >
@@ -533,15 +528,15 @@ export default function App() {
                         </Select>
                         <Button 
                           variant="secondary" 
-                          className="bg-white text-bca-blue border-none text-[11px] px-3"
+                          className="bg-white text-bca-blue border-none text-[13px] px-6"
                           onClick={handleUpdateProblemOutcome}
                         >
                           Update
                         </Button>
                       </div>
                     </div>
-                  </GlassCard>
-                </div>
+                  </div>
+                </GlassCard>
               </div>
             </motion.div>
           )}
