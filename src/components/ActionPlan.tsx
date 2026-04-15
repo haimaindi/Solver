@@ -180,12 +180,12 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
                   <Input 
                     type={newPlan.scheduled_date ? "date" : "text"}
                     placeholder="dd/mm/yyyy"
-                    value={newPlan.scheduled_date || ''}
+                    value={newPlan.scheduled_date ? format(new Date(newPlan.scheduled_date), 'yyyy-MM-dd') : ''}
                     onFocus={(e) => (e.target.type = "date")}
                     onBlur={(e) => {
                       if (!e.target.value) e.target.type = "text";
                     }}
-                    onChange={e => setNewPlan({ ...newPlan, scheduled_date: e.target.value })}
+                    onChange={e => setNewPlan({ ...newPlan, scheduled_date: e.target.value || null })}
                   />
                 </div>
                 <div className="space-y-2">
