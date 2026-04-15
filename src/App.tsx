@@ -14,16 +14,34 @@ import {
   LogOut,
   User,
   Target,
-  Settings,
-  Trash2
+  Pencil,
+  Trash2,
+  TrendingUp,
+  ListTodo,
+  Sparkles,
+  ChevronDown
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
 import { cn } from '@/src/lib/utils';
-import { format } from 'date-fns';
+import { format, isAfter, addDays } from 'date-fns';
 import { PROFILE_NAME } from './profile';
+import Swal from 'sweetalert2';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  Legend
+} from 'recharts';
 
 // Mock Data for initial view if Supabase is not connected
 const MOCK_PROBLEMS: Problem[] = [
@@ -43,7 +61,7 @@ const MOCK_PROBLEMS: Problem[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'detail' | 'create' | 'edit'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'suplement'>('dashboard');
   const [problems, setProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
@@ -52,6 +70,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   useEffect(() => {
     fetchProblems();
@@ -101,6 +120,17 @@ export default function App() {
   const handleCreateProblem = async () => {
     if (!newProblem.category) return;
 
+    // Optimistic Update
+    const tempId = Math.random().toString();
+    const optimisticProblem: Problem = {
+      ...newProblem as Problem,
+      id: tempId,
+      created_at: new Date().toISOString(),
+      user_id: 'temp'
+    };
+    setProblems([optimisticProblem, ...problems]);
+    setView('list');
+
     const { data, error } = await supabase
       .from('problems')
       .insert([{
@@ -112,11 +142,13 @@ export default function App() {
 
     if (error) {
       console.error('Error creating problem:', error);
+      setProblems(problems.filter(p => p.id !== tempId));
+      Swal.fire('Error', 'Failed to create problem', 'error');
       return;
     }
 
     if (data) {
-      setProblems([data, ...problems]);
+      setProblems(prev => prev.map(p => p.id === tempId ? data : p));
       setCategories(prev => Array.from(new Set([...prev, data.category])));
       setNewProblem({
         title: '',
@@ -132,6 +164,11 @@ export default function App() {
 
   const handleUpdateProblem = async () => {
     if (!editingProblem) return;
+
+    // Optimistic Update
+    const originalProblems = [...problems];
+    setProblems(problems.map(p => p.id === editingProblem.id ? editingProblem : p));
+    setView('list');
 
     const { data, error } = await supabase
       .from('problems')
@@ -149,29 +186,47 @@ export default function App() {
 
     if (error) {
       console.error('Error updating problem:', error);
+      setProblems(originalProblems);
+      Swal.fire('Error', 'Failed to update problem', 'error');
       return;
     }
 
     if (data) {
-      setProblems(problems.map(p => p.id === data.id ? data : p));
+      setProblems(prev => prev.map(p => p.id === data.id ? data : p));
       setEditingProblem(null);
-      setView('dashboard');
     }
   };
 
   const handleDeleteProblem = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this problem? All related root causes and action plans will be removed.')) return;
+    
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "All related root causes and action plans will be removed!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#003399',
+      cancelButtonColor: '#ef4444',
+      confirmButtonText: 'Yes, delete it!'
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Optimistic Update
+    const originalProblems = [...problems];
+    setProblems(problems.filter(p => p.id !== id));
 
     const { error } = await supabase.from('problems').delete().eq('id', id);
-    if (!error) {
-      setProblems(problems.filter(p => p.id !== id));
+    if (error) {
+      console.error('Error deleting problem:', error);
+      setProblems(originalProblems);
+      Swal.fire('Error', 'Failed to delete problem', 'error');
+    } else {
       if (selectedProblem?.id === id) {
         setSelectedProblem(null);
-        setView('dashboard');
+        setView('list');
       }
-    } else {
-      console.error('Error deleting problem:', error);
+      Swal.fire('Deleted!', 'Problem has been deleted.', 'success');
     }
   };
 
@@ -182,6 +237,19 @@ export default function App() {
   };
 
   const handleAddCause = async (cause: string, parentId: string | null) => {
+    // Optimistic Update
+    const tempId = Math.random().toString();
+    const optimisticCause: RootCause = {
+      id: tempId,
+      problem_id: selectedProblem!.id,
+      cause,
+      parent_id: parentId,
+      is_highlighted: false,
+      status: 'Pending',
+      created_at: new Date().toISOString()
+    };
+    setCauses([...causes, optimisticCause]);
+
     const { data, error } = await supabase
       .from('root_causes')
       .insert([{
@@ -194,37 +262,84 @@ export default function App() {
       .select()
       .single();
 
-    if (data) setCauses([...causes, data]);
-    if (error) console.error('Error adding cause:', error);
+    if (data) {
+      setCauses(prev => prev.map(c => c.id === tempId ? data : c));
+    }
+    if (error) {
+      console.error('Error adding cause:', error);
+      setCauses(causes.filter(c => c.id !== tempId));
+      Swal.fire('Error', 'Failed to add cause', 'error');
+    }
   };
 
   const handleDeleteCause = async (id: string) => {
+    const result = await Swal.fire({
+      title: 'Delete Cause?',
+      text: "This will remove this cause and all its sub-causes.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#003399',
+      cancelButtonColor: '#ef4444',
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Optimistic Update
+    const originalCauses = [...causes];
+    setCauses(causes.filter(c => c.id !== id));
+
     const { error } = await supabase.from('root_causes').delete().eq('id', id);
-    if (!error) setCauses(causes.filter(c => c.id !== id));
+    if (error) {
+      console.error('Error deleting cause:', error);
+      setCauses(originalCauses);
+      Swal.fire('Error', 'Failed to delete cause', 'error');
+    }
   };
 
   const handleUpdateCauseStatus = async (id: string, status: Status) => {
+    // Optimistic Update
+    const originalCauses = [...causes];
+    setCauses(causes.map(c => c.id === id ? { ...c, status } : c));
+
     const { error } = await supabase.from('root_causes').update({ status }).eq('id', id);
-    if (!error) setCauses(causes.map(c => c.id === id ? { ...c, status } : c));
+    if (error) {
+      console.error('Error updating status:', error);
+      setCauses(originalCauses);
+    }
   };
 
   const handleToggleCauseHighlight = async (id: string) => {
     const cause = causes.find(c => c.id === id);
     if (!cause) return;
     
+    // Optimistic Update
+    const originalCauses = [...causes];
+    setCauses(causes.map(c => ({
+      ...c,
+      is_highlighted: c.id === id ? !c.is_highlighted : false
+    })));
+
     // First, unhighlight all for this problem
     await supabase.from('root_causes').update({ is_highlighted: false }).eq('problem_id', selectedProblem!.id);
     
     const { error } = await supabase.from('root_causes').update({ is_highlighted: !cause.is_highlighted }).eq('id', id);
-    if (!error) {
-      setCauses(causes.map(c => ({
-        ...c,
-        is_highlighted: c.id === id ? !c.is_highlighted : false
-      })));
+    if (error) {
+      console.error('Error toggling highlight:', error);
+      setCauses(originalCauses);
     }
   };
 
   const handleAddPlan = async (plan: Partial<ActionPlan>) => {
+    // Optimistic Update
+    const tempId = Math.random().toString();
+    const optimisticPlan: ActionPlan = {
+      ...plan as ActionPlan,
+      id: tempId,
+      problem_id: selectedProblem!.id,
+      created_at: new Date().toISOString()
+    };
+    setPlans([...plans, optimisticPlan]);
+
     const { data, error } = await supabase
       .from('action_plans')
       .insert([{
@@ -234,22 +349,58 @@ export default function App() {
       .select()
       .single();
 
-    if (data) setPlans([...plans, data]);
-    if (error) console.error('Error adding plan:', error);
+    if (data) {
+      setPlans(prev => prev.map(p => p.id === tempId ? data : p));
+    }
+    if (error) {
+      console.error('Error adding plan:', error);
+      setPlans(plans.filter(p => p.id !== tempId));
+      Swal.fire('Error', 'Failed to add action plan', 'error');
+    }
   };
 
   const handleDeletePlan = async (id: string) => {
+    const result = await Swal.fire({
+      title: 'Delete Action Plan?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#003399',
+      cancelButtonColor: '#ef4444',
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Optimistic Update
+    const originalPlans = [...plans];
+    setPlans(plans.filter(p => p.id !== id));
+
     const { error } = await supabase.from('action_plans').delete().eq('id', id);
-    if (!error) setPlans(plans.filter(p => p.id !== id));
+    if (error) {
+      console.error('Error deleting plan:', error);
+      setPlans(originalPlans);
+      Swal.fire('Error', 'Failed to delete action plan', 'error');
+    }
   };
 
   const handleUpdatePlan = async (id: string, updates: Partial<ActionPlan>) => {
+    // Optimistic Update
+    const originalPlans = [...plans];
+    setPlans(plans.map(p => p.id === id ? { ...p, ...updates } : p));
+
     const { error } = await supabase.from('action_plans').update(updates).eq('id', id);
-    if (!error) setPlans(plans.map(p => p.id === id ? { ...p, ...updates } : p));
+    if (error) {
+      console.error('Error updating plan:', error);
+      setPlans(originalPlans);
+    }
   };
 
   const handleUpdateProblemOutcome = async () => {
     if (!selectedProblem) return;
+
+    // Optimistic Update
+    const originalProblems = [...problems];
+    setProblems(problems.map(p => p.id === selectedProblem.id ? selectedProblem : p));
+
     const { error } = await supabase
       .from('problems')
       .update({ 
@@ -259,8 +410,12 @@ export default function App() {
       })
       .eq('id', selectedProblem.id);
     
-    if (!error) {
-      setProblems(problems.map(p => p.id === selectedProblem.id ? selectedProblem : p));
+    if (error) {
+      console.error('Error updating outcome:', error);
+      setProblems(originalProblems);
+      Swal.fire('Error', 'Failed to update outcome', 'error');
+    } else {
+      Swal.fire('Success', 'Outcome updated successfully', 'success');
     }
   };
 
@@ -268,11 +423,46 @@ export default function App() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-bca-blue/10 selection:text-bca-blue">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 h-[64px] bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
-          <div className="w-8 h-8 bg-bca-blue rounded-lg flex items-center justify-center shadow-lg shadow-bca-blue/20">
-            <Target className="text-white w-5 h-5" />
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('dashboard')}>
+            <div className="w-8 h-8 bg-bca-blue rounded-lg flex items-center justify-center shadow-lg shadow-bca-blue/20">
+              <Target className="text-white w-5 h-5" />
+            </div>
+            <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
+
+          <div className="hidden md:flex items-center gap-1">
+            <button 
+              onClick={() => setView('dashboard')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'dashboard' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </button>
+            <button 
+              onClick={() => setView('list')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'list' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <ListTodo className="w-4 h-4" />
+              Problem List
+            </button>
+            <button 
+              onClick={() => setView('suplement')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'suplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Sparkles className="w-4 h-4" />
+              Suplement
+            </button>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">
@@ -294,8 +484,206 @@ export default function App() {
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Problem Dashboard</h2>
-                  <p className="text-slate-500 mt-1">Track and solve engineering challenges systematically.</p>
+                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Executive Dashboard</h2>
+                  <p className="text-slate-500 mt-1">Real-time overview of engineering problem solving metrics.</p>
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="secondary" onClick={() => setView('list')} className="h-11 px-6">View All Problems</Button>
+                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    <span>New Problem</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <GlassCard className="p-6 border-l-4 border-l-bca-blue">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Problems</p>
+                      <h3 className="text-3xl font-bold text-slate-900">{problems.length}</h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-bca-blue" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 text-[11px] font-medium text-emerald-600">
+                    <TrendingUp className="w-3 h-3" />
+                    <span>Active tracking enabled</span>
+                  </div>
+                </GlassCard>
+
+                <GlassCard className="p-6 border-l-4 border-l-emerald-500">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Solved</p>
+                      <h3 className="text-3xl font-bold text-slate-900">
+                        {problems.filter(p => p.status === 'Success').length}
+                      </h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    </div>
+                  </div>
+                  <p className="mt-4 text-[11px] text-slate-400">
+                    {Math.round((problems.filter(p => p.status === 'Success').length / (problems.length || 1)) * 100)}% resolution rate
+                  </p>
+                </GlassCard>
+
+                <GlassCard className="p-6 border-l-4 border-l-amber-500">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pending</p>
+                      <h3 className="text-3xl font-bold text-slate-900">
+                        {problems.filter(p => p.status === 'Pending').length}
+                      </h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-amber-500" />
+                    </div>
+                  </div>
+                  <p className="mt-4 text-[11px] text-slate-400">Requires immediate attention</p>
+                </GlassCard>
+
+                <GlassCard className="p-6 border-l-4 border-l-rose-500">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cancelled</p>
+                      <h3 className="text-3xl font-bold text-slate-900">
+                        {problems.filter(p => p.status === 'Cancel').length}
+                      </h3>
+                    </div>
+                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
+                      <XCircle className="w-5 h-5 text-rose-500" />
+                    </div>
+                  </div>
+                  <p className="mt-4 text-[11px] text-slate-400">Archived/Not feasible</p>
+                </GlassCard>
+              </div>
+
+              {/* Charts Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-6">Problem Distribution by Category</h3>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={categories.map(cat => ({
+                        name: cat,
+                        count: problems.filter(p => p.category === cat).length
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                        <Tooltip 
+                          contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                        />
+                        <Bar dataKey="count" fill="#003399" radius={[4, 4, 0, 0]} barSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </GlassCard>
+
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-6">Status Breakdown</h3>
+                  <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Success', value: problems.filter(p => p.status === 'Success').length, color: '#10b981' },
+                            { name: 'Pending', value: problems.filter(p => p.status === 'Pending').length, color: '#f59e0b' },
+                            { name: 'Cancel', value: problems.filter(p => p.status === 'Cancel').length, color: '#ef4444' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {[
+                            { color: '#10b981' },
+                            { color: '#f59e0b' },
+                            { color: '#ef4444' }
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend verticalAlign="bottom" height={36} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </GlassCard>
+              </div>
+
+              {/* Deadline Tracker */}
+              <GlassCard className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-slate-900">Upcoming Action Plan Deadlines</h3>
+                  <Badge variant="Pending">Critical Attention</Badge>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Problem Title</th>
+                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Category</th>
+                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deadline</th>
+                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                        <th className="pb-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {problems
+                        .filter(p => p.status === 'Pending')
+                        .slice(0, 5)
+                        .map(problem => (
+                        <tr key={problem.id} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4">
+                            <span className="text-[13px] font-bold text-slate-900">{problem.title}</span>
+                          </td>
+                          <td className="py-4">
+                            <span className="text-[11px] font-medium text-slate-500">{problem.category}</span>
+                          </td>
+                          <td className="py-4">
+                            <span className="text-[11px] font-bold text-amber-600">
+                              {format(addDays(new Date(problem.created_at), 7), 'MMM d, yyyy')}
+                            </span>
+                          </td>
+                          <td className="py-4">
+                            <Badge variant={problem.status}>{problem.status}</Badge>
+                          </td>
+                          <td className="py-4">
+                            <button 
+                              onClick={() => handleSelectProblem(problem)}
+                              className="text-bca-blue hover:underline text-[11px] font-bold"
+                            >
+                              Analyze Now
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </GlassCard>
+            </motion.div>
+          )}
+
+          {view === 'list' && (
+            <motion.div 
+              key="list"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Problem List</h2>
+                  <p className="text-slate-500 mt-1">Detailed view of all documented engineering challenges.</p>
                 </div>
                 <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" />
@@ -344,13 +732,13 @@ export default function App() {
                             setEditingProblem(problem);
                             setView('edit');
                           }}
-                          className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-md transition-all"
+                          className="p-1.5 text-bca-blue bg-bca-blue/5 hover:bg-bca-blue/10 rounded-md transition-all"
                         >
-                          <Settings className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={(e) => handleDeleteProblem(problem.id, e)}
-                          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                          className="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -385,6 +773,23 @@ export default function App() {
             </motion.div>
           )}
 
+          {view === 'suplement' && (
+            <motion.div 
+              key="suplement"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="flex flex-col items-center justify-center py-40 text-center"
+            >
+              <div className="w-24 h-24 bg-bca-blue/5 rounded-3xl flex items-center justify-center mb-6">
+                <Sparkles className="w-12 h-12 text-bca-blue" />
+              </div>
+              <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Suplement Coming Soon</h2>
+              <p className="text-slate-500 max-w-md">We are building advanced engineering tools and methodologies to help you solve problems even faster. Stay tuned!</p>
+              <Button onClick={() => setView('dashboard')} variant="secondary" className="mt-8">Back to Dashboard</Button>
+            </motion.div>
+          )}
+
           {(view === 'create' || view === 'edit') && (
             <motion.div 
               key={view}
@@ -412,22 +817,58 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
-                      <Input 
-                        list="category-suggestions"
-                        placeholder="Type or select category..."
-                        value={view === 'create' ? newProblem.category : editingProblem?.category}
-                        onChange={e => view === 'create'
-                          ? setNewProblem({ ...newProblem, category: e.target.value })
-                          : setEditingProblem({ ...editingProblem!, category: e.target.value })
-                        }
-                      />
-                      <datalist id="category-suggestions">
-                        {categories.map(cat => (
-                          <option key={cat} value={cat} />
-                        ))}
-                      </datalist>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all text-sm flex items-center justify-between cursor-pointer"
+                        >
+                          <span className={cn((view === 'create' ? !newProblem.category : !editingProblem?.category) && "text-slate-400")}>
+                            {(view === 'create' ? newProblem.category : editingProblem?.category) || "Select category..."}
+                          </span>
+                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                        </div>
+
+                        <AnimatePresence>
+                          {showCategoryDropdown && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                              className="absolute z-50 top-full left-0 right-0 mt-2 bg-white rounded-xl border border-slate-200 shadow-xl overflow-hidden"
+                            >
+                              <div className="p-2 border-b border-slate-100">
+                                <Input 
+                                  placeholder="Search or type new..." 
+                                  className="h-9 text-xs"
+                                  autoFocus
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    if (view === 'create') setNewProblem({ ...newProblem, category: val });
+                                    else setEditingProblem({ ...editingProblem!, category: val });
+                                  }}
+                                />
+                              </div>
+                              <div className="max-h-[200px] overflow-y-auto">
+                                {categories.map(cat => (
+                                  <div 
+                                    key={cat}
+                                    onClick={() => {
+                                      if (view === 'create') setNewProblem({ ...newProblem, category: cat });
+                                      else setEditingProblem({ ...editingProblem!, category: cat });
+                                      setShowCategoryDropdown(false);
+                                    }}
+                                    className="px-4 py-2 text-sm text-slate-700 hover:bg-bca-blue/5 hover:text-bca-blue cursor-pointer transition-colors"
+                                  >
+                                    {cat}
+                                  </div>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -479,7 +920,7 @@ export default function App() {
 
                   <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
                     <Button variant="ghost" onClick={() => {
-                      setView('dashboard');
+                      setView('list');
                       setEditingProblem(null);
                     }}>Cancel</Button>
                     <Button 
@@ -503,7 +944,7 @@ export default function App() {
               className="space-y-6"
             >
               <div className="flex items-center gap-4">
-                <Button variant="ghost" onClick={() => setView('dashboard')} className="p-2">
+                <Button variant="ghost" onClick={() => setView('list')} className="p-2">
                   <ArrowRight className="w-5 h-5 rotate-180" />
                 </Button>
                 <div>

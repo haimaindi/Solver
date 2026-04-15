@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Trash2, ChevronRight, Target, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Target, CheckCircle2, Clock, XCircle, Pencil } from 'lucide-react';
 import { RootCause, Status } from '@/src/lib/supabase';
 import { Button, Input, Badge } from './UI';
 import { cn } from '@/src/lib/utils';
@@ -40,7 +40,7 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
             <Badge variant={cause.status} className="text-[9px] px-1.5 py-0.5">{cause.status}</Badge>
           </div>
 
-          <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-2 mt-2 transition-opacity">
             <button 
               onClick={() => onToggleHighlight(cause.id)}
               className={cn("text-[10px] font-bold uppercase tracking-wider", cause.is_highlighted ? "text-bca-blue" : "text-slate-400 hover:text-bca-blue")}
@@ -55,7 +55,9 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
                   onClick={() => onUpdateStatus(cause.id, s)}
                   className={cn(
                     "text-[9px] px-1.5 py-0.5 rounded transition-all font-bold uppercase",
-                    cause.status === s ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:bg-slate-50"
+                    cause.status === s 
+                      ? (s === 'Success' ? "bg-emerald-50 text-emerald-600" : s === 'Pending' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600")
+                      : "text-slate-400 hover:bg-slate-50"
                   )}
                 >
                   {s}
@@ -63,12 +65,19 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
               ))}
             </div>
             <span className="text-slate-300">|</span>
-            <button 
-              onClick={() => onDelete(cause.id)}
-              className="text-rose-400 hover:text-rose-600"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                className="text-bca-blue hover:text-bca-blue/80 p-1 bg-bca-blue/5 rounded"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button 
+                onClick={() => onDelete(cause.id)}
+                className="text-rose-500 hover:text-rose-600 p-1 bg-rose-50 rounded"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
           </div>
           
           <button 
@@ -133,7 +142,7 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
           <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
             <Target className="w-5 h-5 text-bca-blue" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis (Fishbone)</h3>
+          <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis</h3>
         </div>
         <Button 
           onClick={() => setActiveParent(activeParent === 'root' ? null : 'root')} 

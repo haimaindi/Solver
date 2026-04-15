@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Trash2, Calendar, CheckCircle2, XCircle, Clock, Settings, Zap } from 'lucide-react';
+import { Plus, Trash2, Calendar, CheckCircle2, XCircle, Clock, Settings, Zap, Pencil } from 'lucide-react';
 import { ActionPlan, Status } from '@/src/lib/supabase';
 import { Button, Input, Badge, Select, TextArea } from './UI';
 import { cn } from '@/src/lib/utils';
@@ -58,7 +58,7 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
         </p>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-slate-50 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-50 transition-opacity">
         <div className="flex gap-1">
           {(['Success', 'Pending', 'Cancel'] as Status[]).map(s => (
             <button
@@ -66,19 +66,28 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
               onClick={() => onUpdate(plan.id, { status: s })}
               className={cn(
                 "text-[9px] px-1.5 py-0.5 rounded transition-all font-bold uppercase",
-                plan.status === s ? "bg-slate-100 text-slate-900" : "text-slate-400 hover:bg-slate-50"
+                plan.status === s 
+                  ? (s === 'Success' ? "bg-emerald-50 text-emerald-600" : s === 'Pending' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600")
+                  : "text-slate-400 hover:bg-slate-50"
               )}
             >
               {s}
             </button>
           ))}
         </div>
-        <button 
-          onClick={() => onDelete(plan.id)}
-          className="text-rose-400 hover:text-rose-600 p-1"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            className="text-bca-blue hover:text-bca-blue/80 p-1 bg-bca-blue/5 rounded transition-all"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button 
+            onClick={() => onDelete(plan.id)}
+            className="text-rose-500 hover:text-rose-600 p-1 bg-rose-50 rounded transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </motion.div>
   );
