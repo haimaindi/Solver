@@ -22,7 +22,7 @@
   }
   
   .panel {
-    @apply glass rounded-2xl p-5 flex flex-col;
+    @apply bg-white/75 backdrop-blur-xl border border-white/40 shadow-[0_4px_24px_rgba(0,0,0,0.04)] rounded-2xl p-5 flex flex-col;
   }
 }
 
