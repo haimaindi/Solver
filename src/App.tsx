@@ -1440,6 +1440,12 @@ export default function App() {
                           className="bg-slate-50 border-slate-200 text-[13px]"
                           value={selectedProblem.completion_date ? format(new Date(selectedProblem.completion_date), 'yyyy-MM-dd') : ''}
                           onFocus={(e) => (e.target.type = "date")}
+                          onClick={(e) => {
+                            e.currentTarget.type = "date";
+                            if (e.currentTarget.showPicker) {
+                              try { e.currentTarget.showPicker(); } catch (err) {}
+                            }
+                          }}
                           onBlur={(e) => {
                             if (!e.target.value) e.target.type = "text";
                           }}
