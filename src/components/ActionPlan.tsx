@@ -253,9 +253,9 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 overflow-x-auto pb-4 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-bca-blue [&::-webkit-scrollbar-track]:bg-slate-100 min-w-0">
         {/* Controllable Column */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-[300px]">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
             <div className="w-2 h-2 rounded-full bg-bca-blue" />
             <h4 className="font-bold text-slate-700 uppercase text-xs tracking-wider">Controllable (Internal)</h4>
@@ -271,7 +271,7 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
         </div>
 
         {/* Uncontrollable Column */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-[300px]">
           <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
             <div className="w-2 h-2 rounded-full bg-amber-500" />
             <h4 className="font-bold text-slate-700 uppercase text-xs tracking-wider">Uncontrollable (External)</h4>

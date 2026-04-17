@@ -229,9 +229,12 @@ export function ReflectionManager() {
   }, []);
 
   const fetchReflections = async () => {
+    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    
     const { data, error } = await supabase
       .from('reflections')
       .select('*')
+      .eq('user_id', currentUser)
       .order('created_at', { ascending: false });
     
     if (data) setReflections(data);
@@ -243,6 +246,7 @@ export function ReflectionManager() {
       Swal.fire('Error', 'Please enter a title', 'error');
       return;
     }
+    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
 
     const reflectionData = {
       mode: currentMode,
@@ -250,6 +254,7 @@ export function ReflectionManager() {
       content: formData,
       satisfaction_label: satisfaction.label as any,
       satisfaction_color: satisfaction.color,
+      user_id: currentUser, // Added user ID
       created_at: editingId ? reflections.find(r => r.id === editingId)?.created_at : new Date().toISOString()
     };
 

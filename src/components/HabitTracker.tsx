@@ -16,7 +16,8 @@ import {
   TrendingUp,
   AlertCircle,
   MessageSquare,
-  X
+  X,
+  Archive
 } from 'lucide-react';
 import { Habit, HabitLog, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, TextArea } from './UI';
@@ -52,17 +53,34 @@ export function HabitTracker() {
   }, []);
 
   const fetchData = async () => {
+    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    
     const [habitsRes, logsRes] = await Promise.all([
-      supabase.from('habits').select('*').order('created_at', { ascending: false }),
-      supabase.from('habit_logs').select('*')
+      supabase.from('habits').select('*').eq('user_id', currentUser).eq('is_archived', false).order('created_at', { ascending: false }),
+      supabase.from('habit_logs').select('*, habits!inner(user_id)').eq('habits.user_id', currentUser)
     ]);
 
     if (habitsRes.data) setHabits(habitsRes.data);
     if (logsRes.data) setLogs(logsRes.data);
   };
 
+  const handleToggleArchiveHabit = async (habitId: string, isCurrentlyArchived: boolean) => {
+    const { error } = await supabase
+      .from('habits')
+      .update({ is_archived: !isCurrentlyArchived })
+      .eq('id', habitId);
+
+    if (!error) {
+      fetchData();
+      Swal.fire('Success', `Habit ${!isCurrentlyArchived ? 'archived' : 'unarchived'}`, 'success');
+    } else {
+      Swal.fire('Error', 'Failed to update habit status', 'error');
+    }
+  };
+
   const handleCreateHabit = async () => {
     if (!newHabit.name) return;
+    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
 
     // Optimistic Update
     const tempId = Math.random().toString();
@@ -70,14 +88,14 @@ export function HabitTracker() {
       ...newHabit as Habit,
       id: tempId,
       created_at: new Date().toISOString(),
-      user_id: null
+      user_id: currentUser
     };
     setHabits([optimisticHabit, ...habits]);
     setIsAdding(false);
 
     const { data, error } = await supabase
       .from('habits')
-      .insert([newHabit])
+      .insert([{ ...newHabit, user_id: currentUser }])
       .select()
       .single();
 
@@ -343,6 +361,12 @@ export function HabitTracker() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => handleToggleArchiveHabit(selectedHabit.id, selectedHabit.is_archived)}
+                    className="p-2 text-slate-400 hover:text-amber-500 transition-colors"
+                  >
+                    <Archive className="w-5 h-5" />
+                  </button>
                   <button 
                     onClick={(e) => deleteHabit(selectedHabit.id, e)}
                     className="p-2 text-slate-400 hover:text-rose-500 transition-colors"

@@ -16,6 +16,7 @@ import {
   Target,
   Pencil,
   Trash2,
+  Archive,
   TrendingUp,
   ListTodo, 
   Sparkles,
@@ -64,6 +65,7 @@ const MOCK_PROBLEMS: Problem[] = [
     status: 'Pending',
     completion_date: null,
     outcome: '',
+    is_archived: false,
     created_at: new Date().toISOString(),
     user_id: 'user1'
   }
@@ -257,10 +259,28 @@ export default function App() {
     setIsAuthenticated(false);
   };
 
+  const handleToggleArchiveProblem = async (problemId: string, isCurrentlyArchived: boolean) => {
+    const { error } = await supabase
+      .from('problems')
+      .update({ is_archived: !isCurrentlyArchived })
+      .eq('id', problemId);
+      
+    if (!error) {
+      fetchProblems();
+      Swal.fire('Success', `Problem ${!isCurrentlyArchived ? 'archived' : 'unarchived'}`, 'success');
+    } else {
+      Swal.fire('Error', 'Failed to update problem status', 'error');
+    }
+  };
+
   const fetchProblems = async () => {
+    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+
     const { data, error } = await supabase
       .from('problems')
       .select('*')
+      .eq('user_id', currentUser)
+      .eq('is_archived', false)
       .order('created_at', { ascending: false });
     
     if (data) {
@@ -284,6 +304,7 @@ export default function App() {
       `)
       .eq('is_controllable', true)
       .eq('status', 'Pending')
+      .eq('is_archived', false)
       .lte('scheduled_date', addDays(new Date(), 3).toISOString().split('T')[0])
       .order('scheduled_date', { ascending: true });
 
@@ -300,7 +321,7 @@ export default function App() {
   const fetchDetails = async (problemId: string) => {
     const [causesRes, plansRes] = await Promise.all([
       supabase.from('root_causes').select('*').eq('problem_id', problemId).order('created_at', { ascending: true }),
-      supabase.from('action_plans').select('*').eq('problem_id', problemId).order('created_at', { ascending: true })
+      supabase.from('action_plans').select('*').eq('problem_id', problemId).eq('is_archived', false).order('created_at', { ascending: true })
     ]);
 
     if (causesRes.data) setCauses(causesRes.data);
@@ -333,6 +354,7 @@ export default function App() {
       ...newProblem as Problem,
       id: tempId,
       created_at: new Date().toISOString(),
+      is_archived: false,
       user_id: 'temp'
     };
     setProblems([optimisticProblem, ...problems]);
@@ -342,7 +364,8 @@ export default function App() {
       .from('problems')
       .insert([{
         ...newProblem,
-        category: newProblem.category
+        category: newProblem.category,
+        is_archived: false
       }])
       .select()
       .single();
@@ -543,6 +566,8 @@ export default function App() {
       ...plan as ActionPlan,
       id: tempId,
       problem_id: selectedProblem!.id,
+      user_id: 'temp', // This will be replaced by actual logic after authentication/supabase setup
+      is_archived: false,
       created_at: new Date().toISOString()
     };
     setPlans([...plans, optimisticPlan]);
@@ -551,7 +576,8 @@ export default function App() {
       .from('action_plans')
       .insert([{
         ...plan,
-        problem_id: selectedProblem!.id
+        problem_id: selectedProblem!.id,
+        is_archived: false
       }])
       .select()
       .single();
@@ -1081,6 +1107,15 @@ export default function App() {
                     <div className="flex justify-between items-start mb-4">
                       <Badge variant={problem.status}>{problem.status}</Badge>
                       <div className="flex items-center gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleArchiveProblem(problem.id, problem.is_archived);
+                          }}
+                          className="p-1.5 text-amber-500 bg-amber-50 hover:bg-amber-100 rounded-md transition-all"
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();

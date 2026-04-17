@@ -27,11 +27,13 @@ export interface RootCause {
 export interface ActionPlan {
   id: string;
   problem_id: string;
+  user_id: string;
   description: string;
   is_controllable: boolean;
   is_feasible: boolean;
   scheduled_date: string | null;
   status: Status;
+  is_archived: boolean;
   notes: string;
   created_at: string;
 }
@@ -44,6 +46,7 @@ export interface Problem {
   significance: number; // 1-10
   impact: string;
   status: Status;
+  is_archived: boolean;
   completion_date: string | null;
   outcome: string;
   created_at: string;
@@ -67,6 +70,7 @@ export interface Habit {
   description: string;
   type: 'build' | 'break';
   color: string;
+  is_archived: boolean;
   created_at: string;
   user_id: string | null;
 }
