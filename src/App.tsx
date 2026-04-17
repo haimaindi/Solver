@@ -37,6 +37,7 @@ import { ReflectionManager } from './components/Reflection';
 import { HabitTracker } from './components/HabitTracker';
 import { TodoList } from './components/TodoList';
 import { Supplement } from './components/Supplement';
+import { AdminManager } from './components/AdminManager';
 import { cn } from '@/src/lib/utils';
 import { format, isAfter, addDays } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -161,7 +162,7 @@ function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boo
 }
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits' | 'todos'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits' | 'todos' | 'admin'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -244,6 +245,7 @@ export default function App() {
     if (data) {
       localStorage.setItem('solver_auth', 'true');
       localStorage.setItem('user_id', data.id);
+      localStorage.setItem('user_name', data.username || data.code);
       setIsAuthenticated(true);
       Swal.fire({
         title: 'Access Granted',
@@ -261,6 +263,8 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('solver_auth');
+    localStorage.removeItem('user_id');
+    localStorage.removeItem('user_name');
     setIsAuthenticated(false);
   };
 
@@ -746,12 +750,22 @@ export default function App() {
               <Pill className="w-4 h-4" />
               Supplement
             </button>
+            <button 
+              onClick={() => setView('admin')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Shield className="w-4 h-4" />
+              Admin
+            </button>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-[13px] font-medium text-slate-900">{PROFILE_NAME}</span>
+            <span className="text-[13px] font-bold text-slate-900">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
             <button 
               onClick={handleLogout}
               className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
@@ -849,15 +863,36 @@ export default function App() {
                   <Pill className="w-5 h-5" />
                   Supplement
                 </button>
+                <button 
+                  onClick={() => { setView('admin'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <Shield className="w-5 h-5" />
+                  Admin
+                </button>
               </div>
 
-              <div className="p-6 border-t border-slate-100">
-                <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                  <div className="w-8 h-8 bg-bca-blue/10 rounded-lg flex items-center justify-center">
-                    <User className="w-4 h-4 text-bca-blue" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-700">{PROFILE_NAME}</span>
-                </div>
+              <div className="p-6 border-t border-slate-100 mt-auto">
+                 <div className="flex items-center gap-3 mb-4 px-2">
+                    <div className="w-10 h-10 rounded-full bg-bca-blue/5 flex items-center justify-center text-bca-blue border border-bca-blue/10">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-900 leading-none">{localStorage.getItem('user_name') || PROFILE_NAME}</div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Authorized User</div>
+                    </div>
+                 </div>
+                 <Button 
+                   onClick={handleLogout}
+                   variant="ghost" 
+                   className="w-full h-12 flex items-center justify-center gap-3 hover:bg-rose-50 hover:text-rose-600 transition-all text-slate-500 font-bold uppercase tracking-widest text-[11px]"
+                 >
+                   <LogOut className="w-4 h-4" />
+                   Sign Out Platform
+                 </Button>
               </div>
             </motion.div>
           </>
@@ -1227,6 +1262,17 @@ export default function App() {
             </motion.div>
           )}
 
+          {view === 'admin' && (
+            <motion.div
+              key="admin"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <AdminManager />
+            </motion.div>
+          )}
+
           {view === 'todos' && (
             <motion.div 
               key="todos"
@@ -1410,9 +1456,32 @@ export default function App() {
                   <Button variant="ghost" onClick={() => setView('list')} className="p-2">
                     <ArrowRight className="w-5 h-5 rotate-180" />
                   </Button>
-                  <div>
-                    <h2 className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-0.5">Logged on {format(new Date(selectedProblem.created_at), 'MMMM d, yyyy')}</h2>
-                    <Badge variant={selectedProblem.status}>{selectedProblem.status}</Badge>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <h2 className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-0.5">Logged on {format(new Date(selectedProblem.created_at), 'MMMM d, yyyy')}</h2>
+                      <div className="flex items-center gap-3">
+                         <Badge variant={selectedProblem.status}>{selectedProblem.status}</Badge>
+                         <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => {
+                                setEditingProblem(selectedProblem);
+                                setView('edit');
+                              }}
+                              className="p-1.5 text-bca-blue hover:bg-bca-blue/5 rounded-md transition-all"
+                              title="Edit Problem"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              onClick={(e) => handleDeleteProblem(selectedProblem.id, e)}
+                              className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-md transition-all"
+                              title="Delete Problem"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                         </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
