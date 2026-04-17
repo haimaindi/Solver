@@ -105,5 +105,7 @@ export interface Todo {
   completed: boolean;
   date: string; // YYYY-MM-DD
   is_archived: boolean;
+  impact_level: 'High' | 'Low';
+  effort_level: 'High' | 'Low';
   created_at: string;
 }

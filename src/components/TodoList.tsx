@@ -16,7 +16,11 @@ import {
   AlignLeft,
   AlertCircle,
   Copy,
-  PlusCircle
+  PlusCircle,
+  Eye,
+  Zap,
+  ChevronDown,
+  Pencil
 } from 'lucide-react';
 import { Todo, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Badge } from './UI';
@@ -40,6 +44,10 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   const [newTask, setNewTask] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [targetTime, setTargetTime] = useState('09:00');
+  const [impactLevel, setImpactLevel] = useState<'High' | 'Low'>('High');
+  const [effortLevel, setEffortLevel] = useState<'High' | 'Low'>('Low');
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [viewingTodo, setViewingTodo] = useState<Todo | null>(null);
 
   useEffect(() => {
     fetchTodos();
@@ -50,6 +58,8 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
       setNewTask(prefillData.task);
       setNewDescription(prefillData.description);
       setSelectedDateStr(prefillData.date);
+      setImpactLevel('High');
+      setEffortLevel('Low');
       setViewMode('detail');
       onPrefillHandled?.();
     }
@@ -108,23 +118,52 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
       target_time: targetTime,
       completed: false,
       date: selectedDateStr,
-      is_archived: false
+      is_archived: false,
+      impact_level: impactLevel,
+      effort_level: effortLevel
     };
 
-    const { data, error } = await supabase.from('todos').insert([newTodo]).select().single();
-    if (data) {
-      setTodos([...todos, data]);
-      setNewTask('');
-      setNewDescription('');
-      Swal.fire({
-        title: 'Task Added',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500
-      });
+    if (editingTodoId) {
+      const { data, error } = await supabase
+        .from('todos')
+        .update(newTodo)
+        .eq('id', editingTodoId)
+        .select()
+        .single();
+      
+      if (data) {
+        setTodos(prev => prev.map(t => t.id === editingTodoId ? data : t));
+        setEditingTodoId(null);
+        resetForm();
+        Swal.fire({ title: 'Task Updated', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+      }
+    } else {
+      const { data, error } = await supabase.from('todos').insert([newTodo]).select().single();
+      if (data) {
+        setTodos([...todos, data]);
+        resetForm();
+        Swal.fire({ title: 'Task Added', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+      }
     }
+  };
+
+  const resetForm = () => {
+    setNewTask('');
+    setNewDescription('');
+    setTargetTime('09:00');
+    setImpactLevel('High');
+    setEffortLevel('Low');
+    setEditingTodoId(null);
+  };
+
+  const handleEditTodo = (todo: Todo) => {
+    setNewTask(todo.task);
+    setNewDescription(todo.description);
+    setTargetTime(todo.target_time);
+    setImpactLevel(todo.impact_level || 'High');
+    setEffortLevel(todo.effort_level || 'Low');
+    setEditingTodoId(todo.id);
+    document.querySelector('.todo-form-top')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const toggleTodo = async (todo: Todo) => {
@@ -210,7 +249,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
       customClass: {
         popup: 'rounded-3xl border-none shadow-2xl',
         title: 'text-xl font-black text-slate-800 pt-6',
-        input: 'max-w-[240px] mx-auto rounded-xl border-slate-200 focus:ring-bca-blue text-center font-bold h-12',
+        input: 'max-w-[240px] mx-auto rounded-xl border-slate-200 focus:ring-bca-blue text-center font-bold h-12 flex justify-center',
         confirmButton: 'rounded-xl px-6 py-2.5 font-bold uppercase tracking-wider text-xs',
         cancelButton: 'rounded-xl px-6 py-2.5 font-bold uppercase tracking-wider text-xs'
       }
@@ -227,7 +266,9 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
         target_time: todo.target_time,
         completed: false,
         date: date,
-        is_archived: false
+        is_archived: false,
+        impact_level: todo.impact_level || 'High',
+        effort_level: todo.effort_level || 'Low'
       }]).select().single();
 
       if (data) {
@@ -313,18 +354,20 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
           </div>
         </div>
 
-        <GlassCard className="p-4 md:p-6 space-y-4">
+        <GlassCard className="p-4 md:p-6 space-y-4 todo-form-top">
           <div className="space-y-4">
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
                 <div className="flex-1">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Task Title</div>
                     <Input 
                         value={newTask} 
                         onChange={e => setNewTask(e.target.value)} 
-                        placeholder="Task Title" 
+                        placeholder={editingTodoId ? "Update task..." : "What needs to be done?"} 
                         className="h-12"
                     />
                 </div>
-                <div className="w-24 flex-shrink-0">
+                <div className="sm:w-24 w-full flex-shrink-0">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Time</div>
                     <Input 
                         type="time" 
                         value={targetTime} 
@@ -333,116 +376,310 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                     />
                 </div>
             </div>
-            <div className="flex gap-2">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Impact Level</div>
+                  <div className="flex bg-slate-100 p-1 rounded-xl h-12">
+                     <button 
+                        onClick={() => setImpactLevel('High')}
+                        className={cn(
+                          "flex-1 rounded-lg text-xs font-bold transition-all",
+                          impactLevel === 'High' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
+                        )}
+                     >
+                        High Impact
+                     </button>
+                     <button 
+                        onClick={() => setImpactLevel('Low')}
+                        className={cn(
+                          "flex-1 rounded-lg text-xs font-bold transition-all",
+                          impactLevel === 'Low' ? "bg-white text-slate-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                        )}
+                     >
+                        Low Impact
+                     </button>
+                  </div>
+               </div>
+               <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Effort / Urgency</div>
+                  <div className="flex bg-slate-100 p-1 rounded-xl h-12">
+                     <button 
+                        onClick={() => setEffortLevel('High')}
+                        className={cn(
+                          "flex-1 rounded-lg text-xs font-bold transition-all",
+                          effortLevel === 'High' ? "bg-white text-rose-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                        )}
+                     >
+                        High Effort
+                     </button>
+                     <button 
+                        onClick={() => setEffortLevel('Low')}
+                        className={cn(
+                          "flex-1 rounded-lg text-xs font-bold transition-all",
+                          effortLevel === 'Low' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                        )}
+                     >
+                        Low Effort
+                     </button>
+                  </div>
+               </div>
+            </div>
+
+            <div className="space-y-2">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</div>
                 <TextArea
                     value={newDescription}
                     onChange={e => setNewDescription(e.target.value)}
                     placeholder="Brief description of the task..."
-                    className="min-h-[100px]"
+                    className="min-h-[80px]"
                 />
             </div>
-            <div className="flex items-center justify-end pt-2">
+            <div className="flex items-center justify-end pt-2 gap-3">
+                {editingTodoId && (
+                  <Button variant="ghost" onClick={resetForm} className="h-11 px-6">Cancel</Button>
+                )}
                 <Button 
                     onClick={handleCreateTodo} 
                     className="h-11 px-8 w-full md:w-auto flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                     <Plus className="w-5 h-5 flex-shrink-0" />
-                    <span>Add Task</span>
+                    <span>{editingTodoId ? 'Update Task' : 'Add Task'}</span>
                 </Button>
             </div>
           </div>
         </GlassCard>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {selectedDateTodos.length === 0 ? (
-            <div className="col-span-full py-20 text-center">
-              <h3 className="text-xl font-bold text-slate-400">No tasks for this day</h3>
-            </div>
-          ) : (
-            selectedDateTodos.map(todo => {
-              const overdue = isOverdue(todo);
-              return (
-                <motion.div
-                  key={todo.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  <GlassCard className={cn(
-                    "p-5 h-full flex flex-col justify-between border-2 transition-all relative group",
-                    todo.completed ? "border-green-100 bg-green-50/20" : 
-                    overdue ? "border-rose-100 bg-rose-50/40" : "border-transparent bg-white"
-                  )}>
-                    {overdue && !todo.completed && (
-                        <div className="absolute -top-3 -right-3">
-                            <Badge variant="Cancel" className="shadow-sm">Overdue</Badge>
-                        </div>
-                    )}
-                    
-                    <div className="space-y-4">
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex items-start gap-4 flex-1 min-w-0">
-                                <button 
-                                    onClick={() => toggleTodo(todo)}
-                                    className={cn(
-                                        "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-all mt-1",
-                                        todo.completed 
-                                        ? "bg-green-500 border-green-500 text-white" 
-                                        : overdue ? "border-rose-400 text-rose-400" : "border-slate-200 hover:border-bca-blue"
-                                    )}
-                                >
-                                    {todo.completed && <Check className="w-5 h-5" />}
-                                </button>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className={cn(
-                                        "font-black text-lg tracking-tight break-words",
-                                        todo.completed ? "text-slate-400 line-through" : overdue ? "text-rose-900" : "text-slate-900"
-                                    )}>
-                                        {todo.task}
-                                    </h4>
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-1.5 pt-2 whitespace-nowrap">
-                                <Clock className={cn("w-3.5 h-3.5", overdue && !todo.completed ? "text-rose-500" : "text-slate-400")} />
-                                <span className={cn("text-xs font-bold", overdue && !todo.completed ? "text-rose-600" : "text-slate-400")}>
-                                    {todo.target_time}
-                                </span>
-                            </div>
-                        </div>
-
-                        {todo.description && (
-                            <div className={cn(
-                                "text-sm font-medium p-3 rounded-lg bg-slate-50/50 ml-12",
-                                todo.completed ? "text-slate-400" : overdue ? "text-rose-700/70" : "text-slate-600"
-                            )}>
-                                {todo.description}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center justify-end mt-4 pt-4 border-t border-slate-100 gap-2">
-                        <button 
-                            onClick={() => copyTodo(todo)}
-                            className="p-2 text-slate-300 hover:text-bca-blue transition-colors"
-                            title="Duplicate/Copy Task"
-                        >
-                            <Copy className="w-4 h-4" />
-                        </button>
-                        <button 
-                            onClick={() => deleteTodo(todo.id)}
-                            className="p-2 text-slate-300 hover:text-red-500 transition-colors"
-                            title="Delete Task"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
-                  </GlassCard>
-                </motion.div>
-              );
-            })
-          )}
+        {/* Matrix Header Labels */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/5 p-4 rounded-2xl border border-slate-200/50">
+           <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-bca-blue/10 flex items-center justify-center text-bca-blue">
+                 <Zap className="w-4 h-4" />
+              </div>
+              <div>
+                 <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">Impact Focus</div>
+                 <div className="text-sm font-bold text-slate-700">Strategic Value Matrix</div>
+              </div>
+           </div>
+           <div className="hidden md:flex items-center justify-end gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-slate-300" /> Low Effort
+              </div>
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-slate-500" /> High Effort
+              </div>
+           </div>
         </div>
+
+        {/* 2x2 Matrix */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           {/* TOP LEFT: Top Priorities (High Impact, Low Effort) */}
+           {renderMatrixCell(
+             "Top Priorities", 
+             "Immediate actions for maximum gain with minimal cost.",
+             "bg-blue-50/50 hover:bg-blue-50 border-blue-200/50",
+             "text-blue-700",
+             "bg-blue-600",
+             selectedDateTodos.filter(t => t.impact_level === 'High' && t.effort_level === 'Low')
+           )}
+
+           {/* TOP RIGHT: Second Priorities (High Impact, High Effort) */}
+           {renderMatrixCell(
+             "Second Priorities", 
+             "Strategic projects requiring significant resource commitment.",
+             "bg-emerald-50/50 hover:bg-emerald-50 border-emerald-200/50",
+             "text-emerald-700",
+             "bg-emerald-600",
+             selectedDateTodos.filter(t => t.impact_level === 'High' && t.effort_level === 'High')
+           )}
+
+           {/* BOTTOM LEFT: Delegates (Low Impact, Low Effort) */}
+           {renderMatrixCell(
+             "Delegates", 
+             "Quick tasks that provide some value but can be offloaded.",
+             "bg-amber-50/50 hover:bg-amber-50 border-amber-200/50",
+             "text-amber-700",
+             "bg-amber-600",
+             selectedDateTodos.filter(t => t.impact_level === 'Low' && t.effort_level === 'Low')
+           )}
+
+           {/* BOTTOM RIGHT: Ignore", Low Impact, High Effort) */}
+           {renderMatrixCell(
+             "Ignore / Postpone", 
+             "Low value tasks with high costs. Likely distractions.",
+             "bg-rose-50/50 hover:bg-rose-50 border-rose-200/50",
+             "text-rose-700",
+             "bg-rose-600",
+             selectedDateTodos.filter(t => (t.impact_level === 'Low' && t.effort_level === 'High') || (!t.impact_level && t.effort_level === 'High'))
+           )}
+        </div>
+
+        {/* Read Only Modal */}
+        <AnimatePresence>
+           {viewingTodo && (
+             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                <motion.div 
+                   initial={{ opacity: 0, scale: 0.95 }}
+                   animate={{ opacity: 1, scale: 1 }}
+                   exit={{ opacity: 0, scale: 0.95 }}
+                   className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
+                >
+                   <div className="p-8 space-y-6">
+                      <div className="flex items-start justify-between">
+                         <div className="space-y-1">
+                            <Badge variant={viewingTodo.impact_level === 'High' ? 'Success' : 'Pending'}>
+                               {viewingTodo.impact_level || 'Low'} Impact
+                            </Badge>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight pt-2">
+                               {viewingTodo.task}
+                            </h3>
+                         </div>
+                         <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <span className="text-sm font-bold font-mono">{viewingTodo.target_time}</span>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Effort / Urgency</div>
+                            <div className="text-sm font-bold text-slate-700">{viewingTodo.effort_level || 'Low'}</div>
+                         </div>
+                         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</div>
+                            <div className="text-sm font-bold text-slate-700">{viewingTodo.completed ? 'Completed' : 'Not Started'}</div>
+                         </div>
+                      </div>
+
+                      <div className="space-y-2">
+                         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Task Details</div>
+                         <div className="text-slate-600 leading-relaxed bg-slate-50/50 p-4 rounded-2xl border border-slate-100 min-h-[100px] whitespace-pre-wrap">
+                            {viewingTodo.description || 'No description provided.'}
+                         </div>
+                      </div>
+
+                      <div className="flex gap-3 pt-4 border-t border-slate-100">
+                         <Button 
+                            className="flex-1 h-12 rounded-2xl gap-2"
+                            onClick={() => {
+                               toggleTodo(viewingTodo);
+                               setViewingTodo(null);
+                            }}
+                         >
+                            <CheckCircle2 className="w-5 h-5" />
+                            {viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}
+                         </Button>
+                         <Button 
+                            variant="ghost" 
+                            className="h-12 rounded-2xl px-6"
+                            onClick={() => setViewingTodo(null)}
+                         >
+                            Close
+                         </Button>
+                      </div>
+                   </div>
+                </motion.div>
+             </div>
+           )}
+        </AnimatePresence>
       </div>
+    );
+  }
+
+  function renderMatrixCell(title: string, desc: string, styles: string, textStyle: string, dotStyle: string, items: Todo[]) {
+    return (
+      <GlassCard className={cn(
+        "flex flex-col h-full min-h-[350px] transition-all border-2 overflow-hidden",
+        styles
+      )}>
+        <div className="p-5 border-b border-slate-100 flex-shrink-0">
+          <div className="flex items-center justify-between mb-2">
+             <div className="flex items-center gap-2">
+                <div className={cn("w-2 h-2 rounded-full", dotStyle)} />
+                <h4 className={cn("font-black tracking-tight text-lg uppercase", textStyle)}>{title}</h4>
+             </div>
+             <Badge variant="Pending" className="bg-white/80 border-none font-black">{items.length}</Badge>
+          </div>
+          <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{desc}</p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+           {items.length === 0 ? (
+             <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-12">
+                <LayoutGrid className="w-8 h-8 mb-2" />
+                <span className="text-xs font-bold">No tasks found</span>
+             </div>
+           ) : (
+             items.map(todo => {
+               const overdue = isOverdue(todo);
+               return (
+                 <div 
+                   key={todo.id}
+                   className="group relative"
+                 >
+                    <div 
+                       onClick={() => setViewingTodo(todo)}
+                       className={cn(
+                          "w-full bg-white p-3 rounded-2xl border shadow-sm transition-all cursor-pointer hover:shadow-md flex items-center gap-3",
+                          todo.completed ? "opacity-60 grayscale border-slate-100 bg-slate-50/50" : 
+                          overdue ? "border-rose-100 ring-1 ring-rose-100" : "border-slate-100"
+                       )}
+                    >
+                       <button 
+                          onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
+                          className={cn(
+                             "w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-all",
+                             todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200"
+                          )}
+                       >
+                          {todo.completed && <Check className="w-3.5 h-3.5" />}
+                       </button>
+
+                       <div className="flex-1 min-w-0 pr-12">
+                          <h5 className={cn(
+                             "text-[13px] font-bold truncate tracking-tight",
+                             todo.completed ? "text-slate-400 line-through" : "text-slate-900"
+                          )}>
+                             {todo.task}
+                          </h5>
+                          <div className="flex items-center gap-2 mt-0.5">
+                             <span className="text-[10px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
+                             {overdue && !todo.completed && (
+                                <span className="text-[9px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
+                             )}
+                          </div>
+                       </div>
+                    </div>
+
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-gradient-to-l from-white via-white to-transparent pl-4 py-1 pr-1">
+                       <button 
+                          onClick={(e) => { e.stopPropagation(); copyTodo(todo); }}
+                          className="p-1.5 text-slate-400 hover:text-bca-blue transition-all"
+                          title="Copy"
+                       >
+                          <Copy className="w-3.5 h-3.5" />
+                       </button>
+                       <button 
+                          onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
+                          className="p-1.5 text-slate-400 hover:text-bca-blue transition-all"
+                          title="Edit"
+                       >
+                          <Pencil className="w-3.5 h-3.5" />
+                       </button>
+                       <button 
+                          onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 transition-all"
+                          title="Delete"
+                       >
+                          <Trash2 className="w-3.5 h-3.5" />
+                       </button>
+                    </div>
+                 </div>
+               );
+             })
+           )}
+        </div>
+      </GlassCard>
     );
   }
 
