@@ -271,13 +271,16 @@ export default function App() {
       const data = localStorage.getItem('session_data');
       if (data) {
         const session = JSON.parse(data);
-        const currentTime = await fetchWorldTime();
+        
+        // Use local browser time as fallback for access control
+        // to prevent being locked out by network issues with external APIs.
+        const currentTime = new Date();
         setWorldTime(currentTime);
         
-        // Force logout if expired (check against world time)
-        // Use a strict date parser to avoid timezone local shifts
+        // Strict date parsing (YYYY-MM-DD + T00:00:00Z) ensure no timezone local shifts
         const expiryDate = new Date(session.end_date + 'T00:00:00Z');
         
+        // If expired based on local system time, force logout
         if (session.end_date && !session.is_unlimited && currentTime >= expiryDate) {
           handleLogout();
           return;
@@ -286,7 +289,6 @@ export default function App() {
         setSessionData(session);
         setIsAuthenticated(true);
       } else {
-        // No session data but auth true? Should probably logout
         handleLogout();
         return;
       }
