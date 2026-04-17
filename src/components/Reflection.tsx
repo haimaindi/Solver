@@ -84,6 +84,7 @@ const COLORS = [
 ];
 
 const MenuBar = ({ editor }: { editor: any }) => {
+  const [showColorPicker, setShowColorPicker] = useState(false);
   if (!editor) return null;
 
   return (
@@ -157,22 +158,40 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <div className="w-px h-4 bg-slate-200 mx-1" />
 
-      <div className="relative group">
-        <button className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 transition-all flex items-center gap-1">
+      <div className="relative">
+        <button 
+          onClick={() => setShowColorPicker(!showColorPicker)}
+          className="p-2 rounded-lg text-slate-500 hover:bg-slate-200 transition-all flex items-center gap-1"
+        >
           <Palette className="w-4 h-4" />
           <div className="w-3 h-3 rounded-full border border-slate-200" style={{ backgroundColor: editor.getAttributes('textStyle').color || 'transparent' }} />
         </button>
-        <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-2 hidden group-hover:grid grid-cols-3 gap-1 z-50">
-          {COLORS.map(c => (
-            <button
-              key={c.name}
-              onClick={() => editor.chain().focus().setColor(c.color).run()}
-              className="w-6 h-6 rounded-md border border-slate-100 transition-transform hover:scale-110"
-              style={{ backgroundColor: c.color === 'inherit' ? '#fff' : c.color }}
-              title={c.name}
-            />
-          ))}
-        </div>
+        <AnimatePresence>
+          {showColorPicker && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowColorPicker(false)} />
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl p-2 grid grid-cols-3 gap-1 z-50"
+              >
+                {COLORS.map(c => (
+                  <button
+                    key={c.name}
+                    onClick={() => {
+                      editor.chain().focus().setColor(c.color).run();
+                      setShowColorPicker(false);
+                    }}
+                    className="w-8 h-8 rounded-md border border-slate-100 transition-transform hover:scale-110"
+                    style={{ backgroundColor: c.color === 'inherit' ? '#fff' : c.color }}
+                    title={c.name}
+                  />
+                ))}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -225,6 +244,7 @@ export function ReflectionManager() {
   const [satisfaction, setSatisfaction] = useState(SATISFACTION_LEVELS[2]); // Default Neutral
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [showSatisfactionModal, setShowSatisfactionModal] = useState(false);
 
   useEffect(() => {
     fetchReflections();
@@ -369,7 +389,7 @@ export function ReflectionManager() {
           </h2>
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex justify-end items-center gap-2">
             <button
               onClick={() => setShowArchived(!showArchived)}
               className={cn(
@@ -442,23 +462,60 @@ export function ReflectionManager() {
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Overall Satisfaction</label>
-                    <div className="flex flex-wrap gap-2">
-                      {SATISFACTION_LEVELS.map(level => (
-                        <button
-                          key={level.label}
-                          onClick={() => setSatisfaction(level)}
-                          className={cn(
-                            "px-4 py-2 rounded-xl text-xs font-bold transition-all border-2",
-                            satisfaction.label === level.label 
-                              ? `border-transparent text-white` 
-                              : "border-slate-100 text-slate-400 hover:border-slate-200"
-                          )}
-                          style={{ backgroundColor: satisfaction.label === level.label ? level.color : undefined }}
-                        >
-                          {level.label}
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => setShowSatisfactionModal(true)}
+                      className={cn(
+                        "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all border-2 flex items-center justify-between",
+                        satisfaction.bg,
+                        satisfaction.border,
+                        satisfaction.text
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: satisfaction.color }} />
+                        <span>{satisfaction.label}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 opacity-50" />
+                    </button>
+
+                    <AnimatePresence>
+                      {showSatisfactionModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm space-y-4"
+                          >
+                            <h4 className="text-xl font-bold text-slate-900 text-center">Satisfaction Level</h4>
+                            <div className="grid grid-cols-1 gap-2">
+                              {SATISFACTION_LEVELS.map(level => (
+                                <button
+                                  key={level.label}
+                                  onClick={() => {
+                                    setSatisfaction(level);
+                                    setShowSatisfactionModal(false);
+                                  }}
+                                  className={cn(
+                                    "w-full p-4 rounded-2xl text-left font-bold transition-all border-2 flex items-center justify-between",
+                                    satisfaction.label === level.label 
+                                      ? "border-bca-blue bg-bca-blue/5" 
+                                      : "border-slate-50 hover:border-slate-100"
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: level.color }} />
+                                    <span className={level.text}>{level.label}</span>
+                                  </div>
+                                  {satisfaction.label === level.label && <div className="w-2 h-2 rounded-full bg-bca-blue" />}
+                                </button>
+                              ))}
+                            </div>
+                            <Button variant="ghost" className="w-full h-12" onClick={() => setShowSatisfactionModal(false)}>Close</Button>
+                          </motion.div>
+                        </div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {MODE_FIELDS[currentMode].map(field => (

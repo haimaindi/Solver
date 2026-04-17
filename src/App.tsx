@@ -1094,7 +1094,7 @@ export default function App() {
                   </h2>
                   <p className="text-slate-500 mt-1">Detailed view of all documented engineering challenges.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex justify-end items-center gap-2">
                   <button
                     onClick={() => setShowArchivedProblems(!showArchivedProblems)}
                     className={cn(

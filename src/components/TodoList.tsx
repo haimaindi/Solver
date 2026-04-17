@@ -371,7 +371,7 @@ export function TodoList() {
           </h2>
           <p className="text-slate-500 mt-1">Strategic timeline management for your daily tasks.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex justify-end items-center gap-2">
           <button 
             onClick={() => setShowArchived(!showArchived)} 
             className={cn(

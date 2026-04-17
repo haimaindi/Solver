@@ -254,7 +254,7 @@ export function HabitTracker() {
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Consistency is the key to mastery. Track your progress daily.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex justify-end items-center gap-2">
           <button
             onClick={() => setShowArchived(!showArchived)}
             className={cn(

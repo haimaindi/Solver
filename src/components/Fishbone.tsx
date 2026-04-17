@@ -62,7 +62,7 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
                   </div>
                 ) : (
                   <>
-                    <span className="text-[13px] font-semibold text-slate-900 break-words">{cause.cause}</span>
+                    <span className="text-[12px] sm:text-[13px] font-semibold text-slate-900 [overflow-wrap:anywhere] break-all leading-tight">{cause.cause}</span>
                     {cause.is_highlighted && (
                       <span className="text-[9px] px-1.5 py-0.5 rounded bg-bca-blue/10 text-bca-blue font-bold uppercase whitespace-nowrap">Main Root</span>
                     )}
@@ -180,7 +180,7 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
           </div>
           <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis</h3>
         </div>
-        <div className="flex justify-center sm:justify-end">
+        <div className="flex justify-end items-center gap-2">
           <Button 
             onClick={() => setActiveParent(activeParent === 'root' ? null : 'root')} 
             variant="secondary" 
