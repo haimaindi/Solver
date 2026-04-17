@@ -116,11 +116,18 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
           <button 
             onClick={() => setActiveParent(activeParent === cause.id ? null : cause.id)}
             className={cn(
-              "absolute -right-2 top-10 sm:top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-md z-10",
-              activeParent === cause.id ? "bg-bca-blue text-white" : "bg-white border border-slate-200 text-slate-400 hover:bg-slate-50"
+               "absolute -right-2 top-10 sm:top-1/2 -translate-y-1/2 min-w-[24px] h-6 rounded-full flex items-center justify-center transition-all shadow-md z-10 px-1 border group",
+               activeParent === cause.id ? "bg-bca-blue text-white border-bca-blue" : "bg-white border-slate-200 text-slate-400 hover:bg-slate-50"
             )}
+            title="Add deeper cause"
           >
             <Plus className="w-3.5 h-3.5" />
+            <span className={cn(
+              "text-[9px] font-bold uppercase tracking-tight ml-1 overflow-hidden transition-all duration-300",
+              activeParent === cause.id ? "max-w-[100px] opacity-100" : "max-w-0 opacity-0 group-hover:max-w-[100px] group-hover:opacity-100"
+            )}>
+              {activeParent === cause.id ? "Close" : "Dig Deeper"}
+            </span>
           </button>
         </div>
 
@@ -130,34 +137,40 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="ml-2 sm:ml-6 mt-2 overflow-hidden"
+              className="ml-2 sm:ml-6 mt-2 overflow-hidden border-l-2 border-dashed border-bca-blue/20 pl-4 py-2"
             >
-              <div className="flex gap-2 p-1">
-                <Input 
-                  placeholder="Why?" 
-                  value={newCause}
-                  onChange={e => setNewCause(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && newCause) {
-                      onAdd(newCause, cause.id);
-                      setNewCause('');
-                      setActiveParent(null);
-                    }
-                  }}
-                  className="py-1.5 text-sm"
-                />
-                <Button 
-                  onClick={() => {
-                    if (newCause) {
-                      onAdd(newCause, cause.id);
-                      setNewCause('');
-                      setActiveParent(null);
-                    }
-                  }}
-                  className="py-1.5 text-sm whitespace-nowrap"
-                >
-                  Add
-                </Button>
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-bca-blue uppercase tracking-widest pl-1">
+                  What is the cause that makes this happen?
+                </p>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder={`Why did "${cause.cause}" happen?`}
+                    value={newCause}
+                    onChange={e => setNewCause(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newCause) {
+                        onAdd(newCause, cause.id);
+                        setNewCause('');
+                        setActiveParent(null);
+                      }
+                    }}
+                    className="py-1.5 text-sm"
+                    autoFocus
+                  />
+                  <Button 
+                    onClick={() => {
+                      if (newCause) {
+                        onAdd(newCause, cause.id);
+                        setNewCause('');
+                        setActiveParent(null);
+                      }
+                    }}
+                    className="py-1.5 text-sm whitespace-nowrap"
+                  >
+                    Add
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -175,7 +188,10 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
           <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center mx-auto sm:mx-0">
             <Target className="w-5 h-5 text-bca-blue" />
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis</h3>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Identify the factors behind each cause to reach the real root.</p>
+          </div>
         </div>
         <div className="flex justify-end items-center gap-2">
           <Button 

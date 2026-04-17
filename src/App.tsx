@@ -352,8 +352,15 @@ export default function App() {
     
     if (data) {
       setProblems(data);
-      const existingCategories = Array.from(new Set(data.map(p => p.category)));
-      setCategories(prev => Array.from(new Set([...prev, ...existingCategories])));
+      // Get unique categories from user's problems
+      const dbCategories = Array.from(new Set(data.map(p => p.category))).filter(Boolean);
+      const defaultCategories = ['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial'];
+      
+      // Merge defaults with DB categories, uniquely
+      setCategories(prev => {
+        const combined = Array.from(new Set([...defaultCategories, ...dbCategories])).sort();
+        return combined;
+      });
     }
     if (error) console.error('Error fetching problems:', error);
   };
