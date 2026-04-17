@@ -25,6 +25,7 @@ async function startServer() {
 
   // AI Problem Consultant Endpoint
   app.post("/api/consult-problem", async (req, res) => {
+    console.log(`[SERVER] API Processing: /api/consult-problem (Method: ${req.method})`);
     const { userId, problemId, context, question } = req.body;
 
     if (!userId || !problemId || !question) {

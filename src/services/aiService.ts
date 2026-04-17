@@ -50,11 +50,20 @@ export async function consultProblem(
       })
     });
 
-    const data = await response.json();
+    // Handle non-OK responses (404, 500 etc)
     if (!response.ok) {
-      throw new Error(data.error || "Failed to get consultation");
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+            return {
+                answer: "",
+                error: `API returned ${response.status} (HTML). Endpoint might be wrong or server is down.`
+            };
+        }
+        const errorData = await response.json().catch(() => ({ error: `Server error ${response.status}` }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
+    const data = await response.json();
     return data;
   } catch (error: any) {
     return {

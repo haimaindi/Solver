@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Pencil, Trash2, X, Shield, Calendar, Clock, User, LogIn, Save } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Shield, Calendar, Clock, User, LogIn, Save, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea } from './UI';
 import { format, addDays, parseISO } from 'date-fns';
@@ -24,6 +24,7 @@ export function AdminManager() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   
   const [formData, setFormData] = useState({
@@ -373,13 +374,48 @@ export function AdminManager() {
                   )}
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gemini API Keys (Comma Separated)</label>
-                    <TextArea 
-                      value={formData.gemini_api_keys} 
-                      onChange={e => setFormData({ ...formData, gemini_api_keys: e.target.value })} 
-                      placeholder="key-1, key-2, key-3..."
-                      className="min-h-[100px] text-xs font-mono"
-                    />
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gemini API Keys (Comma Separated)</label>
+                      <button 
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="text-[10px] font-bold text-bca-blue hover:text-bca-light-blue flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-bca-blue/5 transition-all outline-none"
+                      >
+                        {showApiKey ? (
+                          <>
+                            <EyeOff className="w-3.5 h-3.5" />
+                            <span>Hide Keys</span>
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Show Keys</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    <div className="relative group">
+                      <TextArea 
+                        value={formData.gemini_api_keys} 
+                        onChange={e => setFormData({ ...formData, gemini_api_keys: e.target.value })} 
+                        placeholder="key-1, key-2, key-3..."
+                        className={cn(
+                          "min-h-[100px] text-xs font-mono transition-all duration-300",
+                          !showApiKey && "blur-[8px] select-none pointer-events-none opacity-40 grayscale"
+                        )}
+                      />
+                      {!showApiKey && (
+                        <div 
+                          onClick={() => setShowApiKey(true)}
+                          className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg bg-black/5 hover:bg-black/10 transition-all z-10"
+                        >
+                          <div className="bg-white/95 px-4 py-2 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-2.5 text-slate-600 text-[11px] font-bold uppercase tracking-wider transform hover:scale-105 transition-transform">
+                            <Shield className="w-4 h-4 text-bca-blue" />
+                            Click to Reveal Keys
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-[9px] text-slate-400 italic">User can have multiple keys for rolling access.</p>
                   </div>
 

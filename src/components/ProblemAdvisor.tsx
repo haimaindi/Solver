@@ -131,7 +131,7 @@ export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) 
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 w-14 h-14 bg-bca-blue text-white rounded-full shadow-2xl flex items-center justify-center z-[50] group"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-bca-blue text-white rounded-full shadow-2xl flex items-center justify-center z-[50] group"
         title="Expert Analysis"
       >
         <Sparkles className="w-6 h-6 group-hover:animate-pulse" />

@@ -717,9 +717,6 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                               style={{
                                 ...dragProvided.draggableProps.style,
                                 transition: dragSnapshot.isDragging ? 'none' : dragProvided.draggableProps.style?.transition,
-                                // Fix for coordinate recalculation during portal drop
-                                left: dragSnapshot.isDragging ? (dragProvided.draggableProps.style as any)?.left : 0,
-                                top: dragSnapshot.isDragging ? (dragProvided.draggableProps.style as any)?.top : 0,
                               }}
                               className={cn(
                                  "relative mb-2",
