@@ -1402,16 +1402,15 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" onClick={() => setView('list')} className="p-2">
-                  <ArrowRight className="w-5 h-5 rotate-180" />
-                </Button>
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{selectedProblem.title}</h2>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <Button variant="ghost" onClick={() => setView('list')} className="p-2">
+                    <ArrowRight className="w-5 h-5 rotate-180" />
+                  </Button>
+                  <div>
+                    <h2 className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-0.5">Logged on {format(new Date(selectedProblem.created_at), 'MMMM d, yyyy')}</h2>
                     <Badge variant={selectedProblem.status}>{selectedProblem.status}</Badge>
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">Logged on {format(new Date(selectedProblem.created_at), 'MMMM d, yyyy')}</p>
                 </div>
               </div>
 
@@ -1420,7 +1419,14 @@ export default function App() {
                 <GlassCard className="p-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Left Grid: Context & Goal (rata kiri) */}
-                    <div className="flex flex-col justify-between">
+                    <div className="flex flex-col justify-between space-y-8">
+                      <div className="space-y-3">
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">MASALAH UTAMA</div>
+                        <div className="text-[18px] font-bold text-slate-900 leading-tight">
+                          {selectedProblem.title}
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">KONTEKS & TUJUAN</div>
                         <div className="text-[15px] font-medium text-slate-700 leading-relaxed text-left">

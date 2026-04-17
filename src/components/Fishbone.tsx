@@ -38,12 +38,12 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
     const children = causes.filter(c => c.parent_id === cause.id);
     
     return (
-      <div key={cause.id} className="ml-4 mt-3 border-l border-slate-200 pl-4 relative">
+      <div key={cause.id} className="ml-2 sm:ml-4 mt-3 border-l border-slate-200 pl-3 sm:pl-4 relative">
         <div className={cn(
           "group relative p-3 rounded-lg transition-all bg-white border border-slate-200 shadow-sm",
           cause.is_highlighted && "border-2 border-bca-blue shadow-[0_0_10px_rgba(0,51,153,0.1)]"
         )}>
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 {editingId === cause.id ? (
@@ -62,18 +62,20 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
                   </div>
                 ) : (
                   <>
-                    <span className="text-[13px] font-semibold text-slate-900">{cause.cause}</span>
+                    <span className="text-[13px] font-semibold text-slate-900 break-words">{cause.cause}</span>
                     {cause.is_highlighted && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-bca-blue/10 text-bca-blue font-bold uppercase">Main Root</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-bca-blue/10 text-bca-blue font-bold uppercase whitespace-nowrap">Main Root</span>
                     )}
                   </>
                 )}
               </div>
             </div>
-            <Badge variant={cause.status} className="text-[9px] px-1.5 py-0.5">{cause.status}</Badge>
+            <div className="self-start sm:self-auto">
+              <Badge variant={cause.status} className="text-[9px] px-1.5 py-0.5">{cause.status}</Badge>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 mt-2 transition-opacity">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-3 mt-3 transition-opacity">
             <button 
               onClick={() => onToggleHighlight(cause.id)}
               className={cn("text-[10px] font-bold uppercase tracking-wider", cause.is_highlighted ? "text-bca-blue" : "text-slate-400 hover:text-bca-blue")}
@@ -81,16 +83,16 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
               {cause.is_highlighted ? 'Highlighted' : 'Highlight'}
             </button>
             <span className="text-slate-300">|</span>
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {(['Success', 'Pending', 'Cancel'] as Status[]).map(s => (
                 <button
                   key={s}
                   onClick={() => onUpdateStatus(cause.id, s)}
                   className={cn(
-                    "text-[9px] px-1.5 py-0.5 rounded transition-all font-bold uppercase",
+                    "text-[9px] px-2 py-1 rounded transition-all font-bold uppercase",
                     cause.status === s 
-                      ? (s === 'Success' ? "bg-emerald-50 text-emerald-600" : s === 'Pending' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600")
-                      : "text-slate-400 hover:bg-slate-50"
+                      ? (s === 'Success' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : s === 'Pending' ? "bg-amber-50 text-amber-600 border border-amber-100" : "bg-rose-50 text-rose-600 border border-rose-100")
+                      : "text-slate-400 hover:bg-slate-50 border border-transparent"
                   )}
                 >
                   {s}
@@ -98,18 +100,18 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
               ))}
             </div>
             <span className="text-slate-300">|</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button 
                 onClick={() => handleStartEdit(cause)}
-                className="text-bca-blue hover:text-bca-blue/80 p-1 bg-bca-blue/5 rounded"
+                className="text-bca-blue hover:text-bca-blue/80 p-1.5 bg-bca-blue/5 rounded"
               >
-                <Pencil className="w-3 h-3" />
+                <Pencil className="w-3.5 h-3.5" />
               </button>
               <button 
                 onClick={() => onDelete(cause.id)}
-                className="text-rose-500 hover:text-rose-600 p-1 bg-rose-50 rounded"
+                className="text-rose-500 hover:text-rose-600 p-1.5 bg-rose-50 rounded"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -117,11 +119,11 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
           <button 
             onClick={() => setActiveParent(activeParent === cause.id ? null : cause.id)}
             className={cn(
-              "absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center transition-all z-10",
+              "absolute -right-2 top-10 sm:top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-md z-10",
               activeParent === cause.id ? "bg-bca-blue text-white" : "bg-white border border-slate-200 text-slate-400 hover:bg-slate-50"
             )}
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -131,11 +133,11 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="ml-6 mt-2 overflow-hidden"
+              className="ml-2 sm:ml-6 mt-2 overflow-hidden"
             >
-              <div className="flex gap-2">
+              <div className="flex gap-2 p-1">
                 <Input 
-                  placeholder="Why? (Root of root...)" 
+                  placeholder="Why?" 
                   value={newCause}
                   onChange={e => setNewCause(e.target.value)}
                   onKeyDown={e => {
@@ -155,7 +157,7 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
                       setActiveParent(null);
                     }
                   }}
-                  className="py-1.5 text-sm"
+                  className="py-1.5 text-sm whitespace-nowrap"
                 >
                   Add
                 </Button>
@@ -217,8 +219,8 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
         )}
       </AnimatePresence>
 
-      <div className="overflow-x-auto pb-4 -mx-2 px-2">
-        <div className="min-w-[600px] space-y-2">
+      <div className="pb-4">
+        <div className="space-y-4">
           {rootLevel.length === 0 ? (
             <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
               <p className="text-slate-400">No root causes documented yet.</p>
