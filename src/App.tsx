@@ -169,6 +169,7 @@ export default function App() {
   const [dashboardPlans, setDashboardPlans] = useState<(ActionPlan & { problem_title?: string })[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
+  const [showArchivedProblems, setShowArchivedProblems] = useState(false);
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   
@@ -219,7 +220,7 @@ export default function App() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [view]);
+  }, [view, showArchivedProblems]);
 
   const checkAuth = () => {
     const auth = localStorage.getItem('solver_auth');
@@ -281,7 +282,7 @@ export default function App() {
       .from('problems')
       .select('*')
       .eq('user_id', currentUser)
-      .eq('is_archived', false)
+      .eq('is_archived', showArchivedProblems)
       .order('created_at', { ascending: false });
     
     if (data) {
@@ -1068,10 +1069,22 @@ export default function App() {
                   <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Problem List</h2>
                   <p className="text-slate-500 mt-1">Detailed view of all documented engineering challenges.</p>
                 </div>
-                <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
-                  <Plus className="w-4 h-4" />
-                  <span>New Problem</span>
-                </Button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowArchivedProblems(!showArchivedProblems)}
+                    className={cn(
+                      "p-3 rounded-xl transition-colors shadow-sm",
+                      showArchivedProblems ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    )}
+                    title={showArchivedProblems ? "Show Active Problems" : "Show Archived Problems"}
+                  >
+                    <Archive className="w-5 h-5" />
+                  </button>
+                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    <span>New Problem</span>
+                  </Button>
+                </div>
               </div>
 
               <div className="flex flex-col md:flex-row gap-4">

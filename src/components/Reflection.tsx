@@ -18,7 +18,8 @@ import {
   ListOrdered,
   CheckSquare,
   Palette,
-  Pencil
+  Pencil,
+  Archive
 } from 'lucide-react';
 import { Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge } from './UI';
@@ -223,10 +224,11 @@ export function ReflectionManager() {
   const [title, setTitle] = useState('');
   const [satisfaction, setSatisfaction] = useState(SATISFACTION_LEVELS[2]); // Default Neutral
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     fetchReflections();
-  }, []);
+  }, [showArchived]);
 
   const fetchReflections = async () => {
     const currentUser = localStorage.getItem('user_id') || 'unknown';
@@ -235,6 +237,7 @@ export function ReflectionManager() {
       .from('reflections')
       .select('*')
       .eq('user_id', currentUser)
+      .eq('is_archived', showArchived)
       .order('created_at', { ascending: false });
     
     if (data) setReflections(data);
@@ -304,6 +307,21 @@ export function ReflectionManager() {
     }
   };
 
+  const handleToggleArchiveReflection = async (id: string, isCurrentlyArchived: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { error } = await supabase
+      .from('reflections')
+      .update({ is_archived: !isCurrentlyArchived })
+      .eq('id', id);
+
+    if (!error) {
+      fetchReflections();
+      Swal.fire('Success', `Reflection ${!isCurrentlyArchived ? 'archived' : 'unarchived'}`, 'success');
+    } else {
+      Swal.fire('Error', 'Failed to update reflection status', 'error');
+    }
+  };
+
   const handleEdit = (reflection: Reflection, e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentMode(reflection.mode);
@@ -349,8 +367,18 @@ export function ReflectionManager() {
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
         {!isAdding && !selectedReflection && (
-          <div className="flex justify-center w-full md:w-auto">
-            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 w-full sm:w-auto justify-center">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className={cn(
+                "p-3 rounded-xl transition-colors shadow-sm",
+                showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+              title={showArchived ? "Show Active Reflections" : "Show Archived Reflections"}
+            >
+              <Archive className="w-5 h-5" />
+            </button>
+            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
               <Plus className="w-4 h-4" />
               <span>New Reflection</span>
             </Button>
@@ -551,12 +579,28 @@ export function ReflectionManager() {
                       </span>
                     </div>
                     <div className="mt-4 flex justify-between items-center">
-                      <button 
-                        onClick={(e) => handleEdit(r, e)}
-                        className="p-2 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => handleEdit(r, e)}
+                          className="p-2 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleToggleArchiveReflection(r.id, r.is_archived || false, e)}
+                          className={cn("p-2 rounded-lg transition-all", r.is_archived ? "text-green-600 hover:bg-green-50" : "text-amber-600 hover:bg-amber-50")}
+                          title={r.is_archived ? "Unarchive" : "Archive"}
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(r.id, e)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-bca-blue group-hover:bg-bca-blue/5 transition-all">
                         <ChevronRight className="w-5 h-5" />
                       </div>

@@ -46,17 +46,18 @@ export function HabitTracker() {
     type: 'build',
     color: '#003399'
   });
+  const [showArchived, setShowArchived] = useState(false);
   const [commentingLog, setCommentingLog] = useState<{ date: string, habitId: string, comment: string } | null>(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [showArchived]);
 
   const fetchData = async () => {
     const currentUser = localStorage.getItem('user_id') || 'unknown';
     
     const [habitsRes, logsRes] = await Promise.all([
-      supabase.from('habits').select('*').eq('user_id', currentUser).eq('is_archived', false).order('created_at', { ascending: false }),
+      supabase.from('habits').select('*').eq('user_id', currentUser).eq('is_archived', showArchived).order('created_at', { ascending: false }),
       supabase.from('habit_logs').select('*, habits!inner(user_id)').eq('habits.user_id', currentUser)
     ]);
 
@@ -253,11 +254,23 @@ export function HabitTracker() {
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Consistency is the key to mastery. Track your progress daily.</p>
         </div>
-        <div className="flex justify-center w-full md:w-auto">
-          <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 shadow-lg shadow-bca-blue/20 w-full sm:w-auto justify-center">
-            <Plus className="w-4 h-4" />
-            <span>Add New Habit</span>
-          </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={cn(
+              "p-3 rounded-xl transition-colors shadow-sm",
+              showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+            title={showArchived ? "Show Active Habits" : "Show Archived Habits"}
+          >
+            <Archive className="w-5 h-5" />
+          </button>
+          {!showArchived && (
+            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 shadow-lg shadow-bca-blue/20">
+              <Plus className="w-4 h-4" />
+              <span>Add New Habit</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -282,16 +295,34 @@ export function HabitTracker() {
                   <h4 className="font-bold text-slate-900 group-hover:text-bca-blue transition-colors">{habit.name}</h4>
                   <p className="text-xs text-slate-500 line-clamp-1">{habit.description}</p>
                 </div>
-                <button 
-                  onClick={(e) => toggleHabit(habit.id, e)}
-                  className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
-                    isDoneToday ? "text-white animate-check" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
+                <div className="flex gap-2">
+                  {showArchived && (
+                    <button 
+                      onClick={(e) => handleToggleArchiveHabit(habit.id, habit.is_archived || false)}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-green-100 text-green-600 hover:bg-green-200"
+                    >
+                      <Archive className="w-5 h-5" />
+                    </button>
                   )}
-                  style={{ backgroundColor: isDoneToday ? habit.color : undefined }}
-                >
-                  {isDoneToday ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                </button>
+                  <button 
+                    onClick={(e) => toggleHabit(habit.id, e)}
+                    className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                      isDoneToday ? "text-white animate-check" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
+                    )}
+                    style={{ backgroundColor: isDoneToday ? habit.color : undefined }}
+                  >
+                    {isDoneToday ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                  </button>
+                  {showArchived && (
+                    <button 
+                      onClick={(e) => deleteHabit(habit.id, e)}
+                      className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-red-100 text-red-600 hover:bg-red-200"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-4">
