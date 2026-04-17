@@ -351,6 +351,12 @@ export default function App() {
       .eq('password', pass)
       .single();
 
+    if (error) {
+      console.error('Supabase Login Error:', error);
+      Swal.fire('Login Failed', 'Invalid access code or password.', 'error');
+      return;
+    }
+
     if (data) {
       const worldNow = await fetchWorldTime();
       
