@@ -274,23 +274,34 @@ export default function App() {
     setIsAuthChecking(false);
   };
 
-  // Get authoritative time using HTTP Date header
-  const getServerTime = async (): Promise<Date> => {
-    try {
-      // Fetching from a reliable global endpoint just for the Date header
-      const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
-      const dateHeader = res.headers.get('Date');
-      
-      if (dateHeader) {
-        return new Date(dateHeader);
+  const fetchWorldTime = async (): Promise<Date> => {
+    // List of reliable time APIs for fallback
+    const timeApis = [
+      'https://worldtimeapi.org/api/timezone/Etc/UTC',
+      'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
+      'https://showcase.api.linx.twenty57.net:8080/UnixTime/unixtimestamp?format=json'
+    ];
+
+    for (const url of timeApis) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        
+        // Handle different API response structures
+        if (data.datetime) return parseISO(data.datetime); // worldtimeapi
+        if (data.dateTime) return parseISO(data.dateTime); // timeapi
+        if (data.UnixTimeStamp) return new Date(data.UnixTimeStamp * 1000); // linx
+      } catch (err) {
+        console.warn(`Time API ${url} failed, trying next...`);
       }
-      throw new Error('Date header not found');
-    } catch (err) {
-      console.error('Failed to fetch server time:', err);
-      // Absolute fallback to logout for security if server time is unreachable
-      handleLogout();
-      throw new Error('Server time unavailable');
     }
+
+    // CRITICAL: If all external time APIs fail, we absolutely cannot trust 
+    // local time. Forced logout is the required secure behavior.
+    console.error('All secure time APIs failed.');
+    handleLogout();
+    throw new Error('Time verification failed');
   };
 
   const handleLogin = async (code: string, pass: string) => {
@@ -302,7 +313,7 @@ export default function App() {
       .single();
 
     if (data) {
-      const worldNow = await getServerTime();
+      const worldNow = await fetchWorldTime();
       
       if (!data.is_unlimited) {
         const start = data.start_date ? parseISO(data.start_date) : worldNow;
