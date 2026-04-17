@@ -132,11 +132,27 @@ export function HabitTracker() {
     // Optimistic Update
     const originalLogs = [...logs];
     if (existingLog) {
-      setLogs(logs.filter(l => l.id !== existingLog.id));
-      const { error } = await supabase.from('habit_logs').delete().eq('id', existingLog.id);
-      if (error) {
-        setLogs(originalLogs);
-        Swal.fire('Error', 'Failed to update habit', 'error');
+      const willBeCompleted = !existingLog.is_completed;
+      
+      // If unchecking AND no comment, delete for clean DB
+      if (!willBeCompleted && !existingLog.comment) {
+        setLogs(logs.filter(l => l.id !== existingLog.id));
+        const { error } = await supabase.from('habit_logs').delete().eq('id', existingLog.id);
+        if (error) {
+          setLogs(originalLogs);
+          Swal.fire('Error', 'Failed to update habit', 'error');
+        }
+      } else {
+        setLogs(logs.map(l => l.id === existingLog.id ? { ...l, is_completed: willBeCompleted } : l));
+        const { error } = await supabase
+          .from('habit_logs')
+          .update({ is_completed: willBeCompleted })
+          .eq('id', existingLog.id);
+        
+        if (error) {
+          setLogs(originalLogs);
+          Swal.fire('Error', 'Failed to update habit', 'error');
+        }
       }
     } else {
       const tempId = Math.random().toString();
@@ -144,10 +160,11 @@ export function HabitTracker() {
         id: tempId,
         habit_id: habitId,
         completed_at: targetDate,
+        is_completed: true,
         created_at: new Date().toISOString()
       };
       setLogs([...logs, newLog]);
-      const { data, error } = await supabase.from('habit_logs').insert([{ habit_id: habitId, completed_at: targetDate }]).select().single();
+      const { data, error } = await supabase.from('habit_logs').insert([{ habit_id: habitId, completed_at: targetDate, is_completed: true }]).select().single();
       if (data) {
         setLogs(prev => prev.map(l => l.id === tempId ? data : l));
       } else if (error) {
@@ -178,20 +195,21 @@ export function HabitTracker() {
         Swal.fire('Error', 'Failed to save comment', 'error');
       }
     } else {
-      // Create new log with comment
+      // Create new log with comment but not necessarily completed
       const tempId = Math.random().toString();
       const newLog: HabitLog = {
         id: tempId,
         habit_id: habitId,
         completed_at: date,
         comment,
+        is_completed: false, // Saving a comment doesn't force "Checked" status
         created_at: new Date().toISOString()
       };
       setLogs([...logs, newLog]);
       
       const { data, error } = await supabase
         .from('habit_logs')
-        .insert([{ habit_id: habitId, completed_at: date, comment }])
+        .insert([{ habit_id: habitId, completed_at: date, comment, is_completed: false }])
         .select()
         .single();
         
@@ -234,7 +252,11 @@ export function HabitTracker() {
     let streak = 0;
     let checkDate = startOfToday();
     
-    const completedDates = new Set(logs.filter(l => l.habit_id === habitId).map(l => l.completed_at));
+    const completedDates = new Set(
+      logs
+        .filter(l => l.habit_id === habitId && l.is_completed)
+        .map(l => l.completed_at)
+    );
 
     while (completedDates.has(format(checkDate, 'yyyy-MM-dd'))) {
       streak++;
@@ -245,7 +267,7 @@ export function HabitTracker() {
   };
 
   const getCompletionStats = (habit: Habit) => {
-    const habitLogs = logs.filter(l => l.habit_id === habit.id);
+    const habitLogs = logs.filter(l => l.habit_id === habit.id && l.is_completed);
     const checkedCount = habitLogs.length;
     const totalDays = differenceInDays(startOfToday(), parseISO(habit.created_at)) + 1;
     return { checkedCount, totalDays };
@@ -492,7 +514,7 @@ export function HabitTracker() {
                       {getMonthlyStats(selectedHabit.id).days.map(day => {
                         const dateStr = format(day, 'yyyy-MM-dd');
                         const log = logs.find(l => l.habit_id === selectedHabit.id && l.completed_at === dateStr);
-                        const isDone = !!log;
+                        const isDone = log?.is_completed ?? false;
                         const hasComment = log?.comment;
                         
                         return (
@@ -578,12 +600,12 @@ export function HabitTracker() {
                        variant="ghost"
                        className={cn(
                          "h-12 rounded-xl text-sm font-bold border-2",
-                         logs.some(l => l.habit_id === commentingLog.habitId && l.completed_at === commentingLog.date)
+                         logs.some(l => l.habit_id === commentingLog.habitId && l.completed_at === commentingLog.date && l.is_completed)
                            ? "bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100"
                            : "bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100"
                        )}
                      >
-                       {logs.some(l => l.habit_id === commentingLog.habitId && l.completed_at === commentingLog.date) ? 'Uncheck' : 'Check'}
+                       {logs.some(l => l.habit_id === commentingLog.habitId && l.completed_at === commentingLog.date && l.is_completed) ? 'Uncheck' : 'Check'}
                      </Button>
                    )}
                    <div className="grid grid-cols-2 gap-3">

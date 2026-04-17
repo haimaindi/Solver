@@ -81,6 +81,7 @@ export interface HabitLog {
   habit_id: string;
   completed_at: string; // YYYY-MM-DD
   comment?: string;
+  is_completed: boolean;
   created_at: string;
 }
 
