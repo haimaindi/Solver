@@ -250,6 +250,18 @@ export default function App() {
     };
   }, [view, showArchivedProblems]);
 
+  // Sidebar Body Scroll Lock
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isSidebarOpen]);
+
   const checkAuth = () => {
     const auth = localStorage.getItem('solver_auth');
     if (auth === 'true') {
@@ -986,7 +998,7 @@ export default function App() {
                 <h1 className="text-xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
               </div>
               
-              <div className="flex-1 p-4 space-y-2">
+              <div className="flex-1 p-4 space-y-2 overflow-y-auto">
                 <button 
                   onClick={() => { setView('dashboard'); setIsSidebarOpen(false); }}
                   className={cn(
