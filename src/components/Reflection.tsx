@@ -75,7 +75,7 @@ const SATISFACTION_LEVELS = [
 ];
 
 const COLORS = [
-  { name: 'Default', color: 'inherit' },
+  { name: 'Black', color: '#000000' },
   { name: 'Primary', color: '#003399' },
   { name: 'Red', color: '#ef4444' },
   { name: 'Green', color: '#10b981' },
@@ -388,24 +388,26 @@ export function ReflectionManager() {
           </h2>
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
-        <div className="flex justify-end items-center gap-2">
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              className={cn(
-                "p-3 rounded-xl transition-colors shadow-sm",
-                showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        {!isAdding && !selectedReflection && (
+          <div className="flex justify-end items-center gap-2">
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className={cn(
+                  "p-3 rounded-xl transition-colors shadow-sm",
+                  showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+                title={showArchived ? "Show Active Reflections" : "Show Archived Reflections"}
+              >
+                <Archive className="w-5 h-5" />
+              </button>
+              {!showArchived && (
+                <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
+                  <Plus className="w-4 h-4" />
+                  <span>New Reflection</span>
+                </Button>
               )}
-              title={showArchived ? "Show Active Reflections" : "Show Archived Reflections"}
-            >
-              <Archive className="w-5 h-5" />
-            </button>
-            {!showArchived && (
-              <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
-                <Plus className="w-4 h-4" />
-                <span>New Reflection</span>
-              </Button>
-            )}
-        </div>
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">

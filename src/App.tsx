@@ -1182,7 +1182,7 @@ export default function App() {
                       
                       <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                          <div className="w-8 h-8 rounded-full bg-bca-blue flex items-center justify-center text-[10px] font-bold text-white shadow-sm shadow-bca-blue/20">
                             {problem.significance}
                           </div>
                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Significance</span>
@@ -1341,7 +1341,10 @@ export default function App() {
                         min="1" 
                         max="10" 
                         step="1"
-                        className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-bca-blue"
+                        className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-bca-blue"
+                        style={{
+                          background: `linear-gradient(to right, #003399 0%, #003399 ${(( (view === 'create' ? newProblem.significance : editingProblem?.significance || 1) - 1) / 9) * 100}%, #f1f5f9 ${(( (view === 'create' ? newProblem.significance : editingProblem?.significance || 1) - 1) / 9) * 100}%, #f1f5f9 100%)`
+                        }}
                         value={view === 'create' ? newProblem.significance : editingProblem?.significance}
                         onChange={e => {
                           const val = parseInt(e.target.value);
