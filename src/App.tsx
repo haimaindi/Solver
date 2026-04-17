@@ -1538,6 +1538,7 @@ export default function App() {
           )}
         </AnimatePresence>
       </motion.main>
+      
 
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-slate-200 mt-20">
