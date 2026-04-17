@@ -267,10 +267,49 @@ export default function App() {
   }, [isSidebarOpen]);
 
   const checkAuth = async () => {
-    // 1. Force logout on load to ensure clean state
-    handleLogout();
+    const userId = localStorage.getItem('user_id');
     
-    // 2. Set checking to false so AuthGate knows to show login interface
+    if (userId) {
+      // 1. Fetch fresh status from DB
+      const { data, error } = await supabase
+        .from('app_access')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error || !data) {
+        handleLogout();
+        return;
+      }
+
+      // 2. Validate expiration (Strict UTC check against verified server time)
+      const currentTime = await fetchWorldTime();
+      setWorldTime(currentTime);
+      const expiryDate = new Date(data.end_date + 'T00:00:00Z');
+      
+      if (!data.is_unlimited && currentTime >= expiryDate) {
+        handleLogout();
+        Swal.fire({
+          title: 'Access Expired',
+          text: 'Your subscription has ended.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        }).then(() => {
+          // Explicit redirect to login is handled by the AuthGate component 
+          // because handleLogout() updates the state that triggers the AuthGate.
+          window.location.reload(); 
+        });
+        return;
+      }
+
+      // 3. Update local session state
+      localStorage.setItem('session_data', JSON.stringify(data));
+      setSessionData(data);
+      setIsAuthenticated(true);
+    } else {
+      // No userId, ensure logout
+      handleLogout();
+    }
     setIsAuthChecking(false);
   };
 
