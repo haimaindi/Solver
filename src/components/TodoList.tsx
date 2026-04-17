@@ -20,7 +20,8 @@ import {
   Eye,
   Zap,
   ChevronDown,
-  Pencil
+  Pencil,
+  XCircle
 } from 'lucide-react';
 import { Todo, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Badge } from './UI';
@@ -48,6 +49,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   const [effortLevel, setEffortLevel] = useState<'High' | 'Low'>('Low');
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
   const [viewingTodo, setViewingTodo] = useState<Todo | null>(null);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   useEffect(() => {
     fetchTodos();
@@ -135,6 +137,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
         setTodos(prev => prev.map(t => t.id === editingTodoId ? data : t));
         setEditingTodoId(null);
         resetForm();
+        setIsFormModalOpen(false);
         Swal.fire({ title: 'Task Updated', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
       }
     } else {
@@ -142,6 +145,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
       if (data) {
         setTodos([...todos, data]);
         resetForm();
+        setIsFormModalOpen(false);
         Swal.fire({ title: 'Task Added', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
       }
     }
@@ -163,7 +167,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
     setImpactLevel(todo.impact_level || 'High');
     setEffortLevel(todo.effort_level || 'Low');
     setEditingTodoId(todo.id);
-    document.querySelector('.todo-form-top')?.scrollIntoView({ behavior: 'smooth' });
+    setIsFormModalOpen(true);
   };
 
   const toggleTodo = async (todo: Todo) => {
@@ -349,126 +353,21 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => goToDate(-1)} variant="ghost" className="p-2 aspect-square"><ChevronLeft className="w-5 h-5" /></Button>
-            <Button onClick={() => goToDate(1)} variant="ghost" className="p-2 aspect-square"><ChevronRight className="w-5 h-5" /></Button>
+            <div className="flex items-center gap-1">
+              <Button onClick={() => goToDate(-1)} variant="ghost" className="p-2 aspect-square"><ChevronLeft className="w-5 h-5" /></Button>
+              <Button onClick={() => goToDate(1)} variant="ghost" className="p-2 aspect-square"><ChevronRight className="w-5 h-5" /></Button>
+            </div>
+            <Button 
+              onClick={() => {
+                resetForm();
+                setIsFormModalOpen(true);
+              }}
+              className="h-10 px-4 flex items-center gap-2 ml-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Task</span>
+            </Button>
           </div>
-        </div>
-
-        <GlassCard className="p-4 md:p-6 space-y-4 todo-form-top">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
-                <div className="flex-1">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Task Title</div>
-                    <Input 
-                        value={newTask} 
-                        onChange={e => setNewTask(e.target.value)} 
-                        placeholder={editingTodoId ? "Update task..." : "What needs to be done?"} 
-                        className="h-12"
-                    />
-                </div>
-                <div className="sm:w-24 w-full flex-shrink-0">
-                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Time</div>
-                    <Input 
-                        type="time" 
-                        value={targetTime} 
-                        onChange={e => setTargetTime(e.target.value)} 
-                        className="h-12 text-center font-mono font-bold"
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Impact Level</div>
-                  <div className="flex bg-slate-100 p-1 rounded-xl h-12">
-                     <button 
-                        onClick={() => setImpactLevel('High')}
-                        className={cn(
-                          "flex-1 rounded-lg text-xs font-bold transition-all",
-                          impactLevel === 'High' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
-                        )}
-                     >
-                        High Impact
-                     </button>
-                     <button 
-                        onClick={() => setImpactLevel('Low')}
-                        className={cn(
-                          "flex-1 rounded-lg text-xs font-bold transition-all",
-                          impactLevel === 'Low' ? "bg-white text-slate-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                        )}
-                     >
-                        Low Impact
-                     </button>
-                  </div>
-               </div>
-               <div>
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Effort / Urgency</div>
-                  <div className="flex bg-slate-100 p-1 rounded-xl h-12">
-                     <button 
-                        onClick={() => setEffortLevel('High')}
-                        className={cn(
-                          "flex-1 rounded-lg text-xs font-bold transition-all",
-                          effortLevel === 'High' ? "bg-white text-rose-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                        )}
-                     >
-                        High Effort
-                     </button>
-                     <button 
-                        onClick={() => setEffortLevel('Low')}
-                        className={cn(
-                          "flex-1 rounded-lg text-xs font-bold transition-all",
-                          effortLevel === 'Low' ? "bg-white text-emerald-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-                        )}
-                     >
-                        Low Effort
-                     </button>
-                  </div>
-               </div>
-            </div>
-
-            <div className="space-y-2">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Description</div>
-                <TextArea
-                    value={newDescription}
-                    onChange={e => setNewDescription(e.target.value)}
-                    placeholder="Brief description of the task..."
-                    className="min-h-[80px]"
-                />
-            </div>
-            <div className="flex items-center justify-end pt-2 gap-3">
-                {editingTodoId && (
-                  <Button variant="ghost" onClick={resetForm} className="h-11 px-6">Cancel</Button>
-                )}
-                <Button 
-                    onClick={handleCreateTodo} 
-                    className="h-11 px-8 w-full md:w-auto flex items-center justify-center gap-2 whitespace-nowrap"
-                >
-                    <Plus className="w-5 h-5 flex-shrink-0" />
-                    <span>{editingTodoId ? 'Update Task' : 'Add Task'}</span>
-                </Button>
-            </div>
-          </div>
-        </GlassCard>
-
-        {/* Matrix Header Labels */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-900/5 p-4 rounded-2xl border border-slate-200/50">
-           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-bca-blue/10 flex items-center justify-center text-bca-blue">
-                 <Zap className="w-4 h-4" />
-              </div>
-              <div>
-                 <div className="text-[11px] font-black tracking-widest text-slate-400 uppercase">Impact Focus</div>
-                 <div className="text-sm font-bold text-slate-700">Strategic Value Matrix</div>
-              </div>
-           </div>
-           <div className="hidden md:flex items-center justify-end gap-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-slate-300" /> Low Effort
-              </div>
-              <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-slate-500" /> High Effort
-              </div>
-           </div>
         </div>
 
         {/* 2x2 Matrix */}
@@ -503,7 +402,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
              selectedDateTodos.filter(t => t.impact_level === 'Low' && t.effort_level === 'Low')
            )}
 
-           {/* BOTTOM RIGHT: Ignore", Low Impact, High Effort) */}
+           {/* BOTTOM RIGHT: Ignore (Low Impact, High Effort) */}
            {renderMatrixCell(
              "Ignore / Postpone", 
              "Low value tasks with high costs. Likely distractions.",
@@ -513,6 +412,139 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
              selectedDateTodos.filter(t => (t.impact_level === 'Low' && t.effort_level === 'High') || (!t.impact_level && t.effort_level === 'High'))
            )}
         </div>
+
+        {/* Add/Edit Form Modal */}
+        <AnimatePresence>
+           {isFormModalOpen && (
+             <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+                <motion.div 
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   exit={{ opacity: 0, y: 20 }}
+                   className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden"
+                >
+                   <div className="p-8 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                            {editingTodoId ? 'Edit Task' : 'New Task'}
+                         </h3>
+                         <button 
+                            onClick={() => {
+                               resetForm();
+                               setIsFormModalOpen(false);
+                            }}
+                            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                         >
+                            <XCircle className="w-6 h-6 text-slate-400" />
+                         </button>
+                      </div>
+
+                      <div className="space-y-5">
+                         <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-5">
+                             <div className="flex-1">
+                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Task Title</div>
+                                 <Input 
+                                     value={newTask} 
+                                     onChange={e => setNewTask(e.target.value)} 
+                                     placeholder="What needs to be done?" 
+                                     className="h-14 text-lg font-bold"
+                                 />
+                             </div>
+                             <div className="sm:w-32 w-full flex-shrink-0">
+                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Time</div>
+                                 <Input 
+                                     type="time" 
+                                     value={targetTime} 
+                                     onChange={e => setTargetTime(e.target.value)} 
+                                     className="h-14 text-center font-mono font-bold text-xl"
+                                 />
+                             </div>
+                         </div>
+
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Impact</div>
+                               <div className="flex bg-slate-100 p-1.5 rounded-2xl h-14">
+                                  <button 
+                                     onClick={() => setImpactLevel('High')}
+                                     className={cn(
+                                       "flex-1 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+                                       impactLevel === 'High' ? "bg-white text-bca-blue shadow-md" : "text-slate-500 hover:text-slate-700"
+                                     )}
+                                  >
+                                     High
+                                  </button>
+                                  <button 
+                                     onClick={() => setImpactLevel('Low')}
+                                     className={cn(
+                                       "flex-1 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+                                       impactLevel === 'Low' ? "bg-white text-slate-700 shadow-md" : "text-slate-500 hover:text-slate-700"
+                                     )}
+                                  >
+                                     Low
+                                  </button>
+                               </div>
+                            </div>
+                            <div>
+                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Effort / Urgency</div>
+                               <div className="flex bg-slate-100 p-1.5 rounded-2xl h-14">
+                                  <button 
+                                     onClick={() => setEffortLevel('High')}
+                                     className={cn(
+                                       "flex-1 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+                                       effortLevel === 'High' ? "bg-white text-rose-600 shadow-md" : "text-slate-500 hover:text-slate-700"
+                                     )}
+                                  >
+                                     High
+                                  </button>
+                                  <button 
+                                     onClick={() => setEffortLevel('Low')}
+                                     className={cn(
+                                       "flex-1 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+                                       effortLevel === 'Low' ? "bg-white text-emerald-600 shadow-md" : "text-slate-500 hover:text-slate-700"
+                                     )}
+                                  >
+                                     Low
+                                  </button>
+                               </div>
+                            </div>
+                         </div>
+
+                         <div className="space-y-2">
+                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Task Details</div>
+                             <TextArea
+                                 value={newDescription}
+                                 onChange={e => setNewDescription(e.target.value)}
+                                 placeholder="Add some context or specific steps..."
+                                 className="min-h-[120px] p-5 rounded-2xl text-base"
+                             />
+                         </div>
+                      </div>
+
+                      <div className="flex gap-4 pt-4 border-t border-slate-100">
+                         <Button 
+                             onClick={handleCreateTodo} 
+                             className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-lg font-bold"
+                         >
+                             <CheckCircle2 className="w-6 h-6" />
+                             <span>{editingTodoId ? 'Save Changes' : 'Create Task'}</span>
+                         </Button>
+                         <Button 
+                            variant="ghost" 
+                            className="h-14 rounded-2xl px-8"
+                            onClick={() => {
+                               resetForm();
+                               setIsFormModalOpen(false);
+                            }}
+                         >
+                            Discard
+                         </Button>
+                      </div>
+                   </div>
+                </motion.div>
+             </div>
+           )}
+        </AnimatePresence>
 
         {/* Read Only Modal */}
         <AnimatePresence>
@@ -558,20 +590,20 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                          </div>
                       </div>
 
-                      <div className="flex gap-3 pt-4 border-t border-slate-100">
+                      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
                          <Button 
-                            className="flex-1 h-12 rounded-2xl gap-2"
+                            className="flex-1 h-12 rounded-2xl gap-2 whitespace-nowrap px-4"
                             onClick={() => {
                                toggleTodo(viewingTodo);
                                setViewingTodo(null);
                             }}
                          >
-                            <CheckCircle2 className="w-5 h-5" />
-                            {viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}
+                            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                            <span className="truncate">{viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}</span>
                          </Button>
                          <Button 
                             variant="ghost" 
-                            className="h-12 rounded-2xl px-6"
+                            className="h-12 rounded-2xl px-8"
                             onClick={() => setViewingTodo(null)}
                          >
                             Close
