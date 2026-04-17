@@ -124,7 +124,7 @@ export function ReflectionAdvisor({ reflection }: ReflectionAdvisorProps) {
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
               className="relative w-full max-w-2xl max-h-[90vh] flex flex-col z-[100]"
             >
-              <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden shadow-2xl border-white/20">
+              <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden shadow-2xl border-white/0">
                 {/* Header */}
                 <div className="p-6 bg-slate-50/50 border-b border-slate-200 flex items-center justify-between">
                   <div className="flex items-center gap-4">
