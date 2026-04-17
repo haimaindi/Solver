@@ -274,34 +274,24 @@ export default function App() {
     setIsAuthChecking(false);
   };
 
-  const fetchWorldTime = async (): Promise<Date> => {
-    // List of reliable time APIs for fallback
-    const timeApis = [
-      'https://worldtimeapi.org/api/timezone/Etc/UTC',
-      'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
-      'https://showcase.api.linx.twenty57.net:8080/UnixTime/unixtimestamp?format=json'
-    ];
-
-    for (const url of timeApis) {
-      try {
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) continue;
-        const data = await res.json();
-        
-        // Handle different API response structures
-        if (data.datetime) return parseISO(data.datetime); // worldtimeapi
-        if (data.dateTime) return parseISO(data.dateTime); // timeapi
-        if (data.UnixTimeStamp) return new Date(data.UnixTimeStamp * 1000); // linx
-      } catch (err) {
-        console.warn(`Time API ${url} failed, trying next...`);
+  // Get authoritative time from Supabase
+  const getServerTime = async (): Promise<Date> => {
+    try {
+      // Supabase returns server time in the 'now()' function
+      const { data, error } = await supabase.rpc('get_server_time');
+      if (error || !data) {
+        // Fallback to minimal DB request as secondary
+        const { data: { server_time }, error: err } = await supabase.from('app_access').select('now() as server_time').single();
+        if (err) throw err;
+        return new Date(server_time);
       }
+      return new Date(data);
+    } catch (err) {
+      console.error('Failed to fetch server time from Supabase:', err);
+      // Absolute fallback to logout for security if DB time is unreachable
+      handleLogout();
+      throw new Error('Server time unavailable');
     }
-
-    // CRITICAL: If all external time APIs fail, we absolutely cannot trust 
-    // local time. Forced logout is the required secure behavior.
-    console.error('All secure time APIs failed.');
-    handleLogout();
-    throw new Error('Time verification failed');
   };
 
   const handleLogin = async (code: string, pass: string) => {
@@ -313,7 +303,7 @@ export default function App() {
       .single();
 
     if (data) {
-      const worldNow = await fetchWorldTime();
+      const worldNow = await getServerTime();
       
       if (!data.is_unlimited) {
         const start = data.start_date ? parseISO(data.start_date) : worldNow;
