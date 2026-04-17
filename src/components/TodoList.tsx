@@ -27,6 +27,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import { Todo, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Badge } from './UI';
 import { format, startOfToday, addDays, parseISO, isSameDay, isBefore } from 'date-fns';
+import { createPortal } from 'react-dom';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
 
@@ -707,76 +708,82 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                    const overdue = isOverdue(todo);
                    return (
                      <Draggable key={todo.id} draggableId={todo.id} index={index}>
-                        {(dragProvided, dragSnapshot) => (
-                           <div 
-                             ref={dragProvided.innerRef}
-                             {...dragProvided.draggableProps}
-                             {...dragProvided.dragHandleProps}
-                             style={{
-                               ...dragProvided.draggableProps.style,
-                               transition: dragSnapshot.isDragging ? 'none' : dragProvided.draggableProps.style?.transition
-                             }}
-                             className={cn(
-                                "relative mb-2",
-                                dragSnapshot.isDragging ? "z-50" : ""
-                             )}
-                           >
-                              <div 
-                                 onClick={() => setViewingTodo(todo)}
-                                 className={cn(
-                                    "w-full bg-white p-2.5 rounded-xl border shadow-sm transition-all cursor-pointer hover:shadow-md flex items-start gap-2",
-                                    todo.completed ? "opacity-60 grayscale border-slate-100 bg-slate-50/50" : 
-                                    overdue ? "border-rose-100 ring-1 ring-rose-50" : "border-slate-100",
-                                    dragSnapshot.isDragging ? "shadow-xl ring-2 ring-indigo-500/20" : ""
-                                 )}
-                              >
-                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
-                                    className={cn(
-                                       "w-5 h-5 rounded-full mt-0.5 flex-shrink-0 flex items-center justify-center border-2 transition-all",
-                                       todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200"
-                                    )}
-                                 >
-                                    {todo.completed && <Check className="w-3 h-3" />}
-                                 </button>
+                        {(dragProvided, dragSnapshot) => {
+                          const child = (
+                            <div 
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
+                              style={{
+                                ...dragProvided.draggableProps.style,
+                                transition: dragSnapshot.isDragging ? 'none' : dragProvided.draggableProps.style?.transition
+                              }}
+                              className={cn(
+                                 "relative mb-2",
+                                 dragSnapshot.isDragging ? "z-50" : ""
+                              )}
+                            >
+                               <div 
+                                  onClick={() => setViewingTodo(todo)}
+                                  className={cn(
+                                     "w-full bg-white p-2.5 rounded-xl border shadow-sm transition-all cursor-pointer hover:shadow-md flex items-start gap-2",
+                                     todo.completed ? "opacity-60 grayscale border-slate-100 bg-slate-50/50" : 
+                                     overdue ? "border-rose-100 ring-1 ring-rose-50" : "border-slate-100",
+                                     dragSnapshot.isDragging ? "shadow-xl ring-2 ring-indigo-500/20" : ""
+                                  )}
+                               >
+                                  <button 
+                                     onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
+                                     className={cn(
+                                        "w-5 h-5 rounded-full mt-0.5 flex-shrink-0 flex items-center justify-center border-2 transition-all",
+                                        todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200"
+                                     )}
+                                  >
+                                     {todo.completed && <Check className="w-3 h-3" />}
+                                  </button>
 
-                                 <div className="flex-1 min-w-0">
-                                    <h5 className={cn(
-                                       "text-sm font-bold tracking-tight break-words",
-                                       todo.completed ? "text-slate-400 line-through" : "text-slate-900"
-                                    )}>
-                                       {todo.task}
-                                    </h5>
-                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-50">
-                                       <div className="flex items-center gap-1">
-                                          <Clock className="w-3 h-3 text-slate-400" />
-                                          <span className="text-[9px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
-                                       </div>
-                                       {overdue && !todo.completed && (
-                                          <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
-                                       )}
-                                       <div className="ml-auto flex items-center gap-1.5">
-                                          <button 
-                                             onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
-                                             className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                             title="Edit"
-                                          >
-                                             <Pencil className="w-3.5 h-3.5" />
-                                          </button>
-                                          <button 
-                                             onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
-                                             className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                                             title="Delete"
-                                          >
-                                             <Trash2 className="w-3.5 h-3.5" />
-                                          </button>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </div>
+                                  <div className="flex-1 min-w-0">
+                                     <h5 className={cn(
+                                        "text-sm font-bold tracking-tight break-words",
+                                        todo.completed ? "text-slate-400 line-through" : "text-slate-900"
+                                     )}>
+                                        {todo.task}
+                                     </h5>
+                                     <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-50">
+                                        <div className="flex items-center gap-1">
+                                           <Clock className="w-3 h-3 text-slate-400" />
+                                           <span className="text-[9px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
+                                        </div>
+                                        {overdue && !todo.completed && (
+                                           <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
+                                        )}
+                                        <div className="ml-auto flex items-center gap-1.5">
+                                           <button 
+                                              onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
+                                              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                              title="Edit"
+                                           >
+                                              <Pencil className="w-3.5 h-3.5" />
+                                           </button>
+                                           <button 
+                                              onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
+                                              className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                              title="Delete"
+                                           >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                           </button>
+                                        </div>
+                                     </div>
+                                  </div>
+                               </div>
+                            </div>
+                          );
 
-                           </div>
-                        )}
+                          if (dragSnapshot.isDragging) {
+                            return createPortal(child, document.body);
+                          }
+                          return child;
+                        }}
                      </Draggable>
                    );
                  })
