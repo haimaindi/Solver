@@ -74,7 +74,16 @@ export function HabitTracker() {
 
     if (!error) {
       fetchData();
-      Swal.fire('Success', `Habit ${!isCurrentlyArchived ? 'archived' : 'unarchived'}`, 'success');
+      Swal.fire({
+        title: 'Success',
+        text: `Habit ${!isCurrentlyArchived ? 'archived' : 'unarchived'}`,
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500
+      });
+      if (selectedHabit) setSelectedHabit(null);
     } else {
       Swal.fire('Error', 'Failed to update habit status', 'error');
     }
@@ -114,11 +123,11 @@ export function HabitTracker() {
     }
   };
 
-  const toggleHabit = async (habitId: string, e?: React.MouseEvent) => {
+  const toggleHabit = async (habitId: string, e?: React.MouseEvent, targetDateStr?: string) => {
     if (e) e.stopPropagation();
     
-    const today = format(startOfToday(), 'yyyy-MM-dd');
-    const existingLog = logs.find(l => l.habit_id === habitId && l.completed_at === today);
+    const targetDate = targetDateStr || format(startOfToday(), 'yyyy-MM-dd');
+    const existingLog = logs.find(l => l.habit_id === habitId && l.completed_at === targetDate);
 
     // Optimistic Update
     const originalLogs = [...logs];
@@ -134,11 +143,11 @@ export function HabitTracker() {
       const newLog: HabitLog = {
         id: tempId,
         habit_id: habitId,
-        completed_at: today,
+        completed_at: targetDate,
         created_at: new Date().toISOString()
       };
       setLogs([...logs, newLog]);
-      const { data, error } = await supabase.from('habit_logs').insert([{ habit_id: habitId, completed_at: today }]).select().single();
+      const { data, error } = await supabase.from('habit_logs').insert([{ habit_id: habitId, completed_at: targetDate }]).select().single();
       if (data) {
         setLogs(prev => prev.map(l => l.id === tempId ? data : l));
       } else if (error) {
@@ -212,7 +221,9 @@ export function HabitTracker() {
       const originalHabits = [...habits];
       setHabits(habits.filter(h => h.id !== id));
       const { error } = await supabase.from('habits').delete().eq('id', id);
-      if (error) {
+      if (!error) {
+        if (selectedHabit) setSelectedHabit(null);
+      } else {
         setHabits(originalHabits);
         Swal.fire('Error', 'Failed to delete habit', 'error');
       }
@@ -487,7 +498,7 @@ export function HabitTracker() {
                         return (
                           <div 
                             key={dateStr}
-                            onClick={() => setCommentingLog({ date: dateStr, habitId: selectedHabit.id, comment: log?.comment || '' })}
+                            onClick={() => toggleHabit(selectedHabit.id, undefined, dateStr)}
                             className={cn(
                               "aspect-square rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center relative group",
                               isDone ? "text-white shadow-sm" : "bg-slate-50 text-slate-400 hover:bg-slate-100",
@@ -496,11 +507,20 @@ export function HabitTracker() {
                             style={{ backgroundColor: isDone ? selectedHabit.color : undefined }}
                           >
                             <span className="text-xs font-bold">{format(day, 'd')}</span>
-                            {hasComment && (
-                              <div className="absolute top-1 right-1">
-                                <AlertCircle className={cn("w-3 h-3", isDone ? "text-white/80" : "text-amber-500")} />
-                              </div>
-                            )}
+                            
+                            {/* Comment Button */}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCommentingLog({ date: dateStr, habitId: selectedHabit.id, comment: log?.comment || '' });
+                              }}
+                              className={cn(
+                                "absolute top-1 right-1 p-0.5 rounded-full transition-transform hover:scale-110",
+                                isDone ? "text-white/60 hover:text-white hover:bg-white/20" : "text-slate-200 hover:text-bca-blue hover:bg-bca-blue/5"
+                              )}
+                            >
+                              <MessageSquare className={cn("w-3 h-3", hasComment ? "fill-current" : "")} />
+                            </button>
                             
                             {/* Hover Preview */}
                             {hasComment && (
