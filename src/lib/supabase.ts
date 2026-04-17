@@ -62,6 +62,7 @@ export interface Reflection {
   satisfaction_color: string;
   created_at: string;
   user_id: string | null;
+  is_archived: boolean;
 }
 
 export interface Habit {
@@ -99,4 +100,7 @@ export interface Todo {
   date: string; // YYYY-MM-DD
   is_archived: boolean;
   created_at: string;
+  latitude: number | null;
+  longitude: number | null;
+  location_name: string | null;
 }

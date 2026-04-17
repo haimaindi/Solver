@@ -258,6 +258,7 @@ export function ReflectionManager() {
       satisfaction_label: satisfaction.label as any,
       satisfaction_color: satisfaction.color,
       user_id: currentUser, // Added user ID
+      is_archived: false,
       created_at: editingId ? reflections.find(r => r.id === editingId)?.created_at : new Date().toISOString()
     };
 
@@ -266,7 +267,7 @@ export function ReflectionManager() {
     const optimisticReflection: Reflection = {
       ...reflectionData,
       id: tempId,
-      user_id: null,
+      user_id: currentUser,
       created_at: reflectionData.created_at || new Date().toISOString()
     };
 
