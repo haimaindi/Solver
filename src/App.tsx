@@ -1022,7 +1022,9 @@ export default function App() {
               {sessionData && (
                 <span className={cn(
                   "text-[10px] leading-none mt-0.5",
-                  (sessionData.is_unlimited || (sessionData.end_date && new Date(sessionData.end_date + 'T00:00:00Z') >= worldTime)) ? "text-emerald-600" : "text-rose-600"
+                  (sessionData.is_unlimited || (sessionData.end_date && 
+                    new Date(sessionData.end_date + 'T00:00:00Z').getTime() - worldTime.getTime() > 7 * 24 * 60 * 60 * 1000
+                  )) ? "text-emerald-600" : "text-rose-600"
                 )}>
                   {sessionData.is_unlimited ? 'Unlimited Access' : 
                     (new Date(sessionData.end_date + 'T00:00:00Z') < worldTime ? 'Has expired' :
