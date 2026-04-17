@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, 
@@ -181,6 +181,18 @@ export default function App() {
   const [sessionData, setSessionData] = useState<any>(null);
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -1499,7 +1511,7 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2 relative">
+                    <div className="space-y-2 relative" ref={categoryRef}>
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Category</label>
                       <div className="relative">
                         <div 
@@ -1509,7 +1521,7 @@ export default function App() {
                           <span className={cn((view === 'create' ? !newProblem.category : !editingProblem?.category) && "text-slate-400")}>
                             {(view === 'create' ? newProblem.category : editingProblem?.category) || "Select category..."}
                           </span>
-                          <ChevronDown className="w-4 h-4 text-slate-400" />
+                          <ChevronDown className="w-4 h-4 text-slate-400 transition-transform duration-200" style={{ transform: showCategoryDropdown ? 'rotate(180deg)' : 'rotate(0deg)' }} />
                         </div>
 
                         <AnimatePresence>
@@ -1525,6 +1537,11 @@ export default function App() {
                                   placeholder="Search or type new..." 
                                   className="h-9 text-xs"
                                   autoFocus
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      setShowCategoryDropdown(false);
+                                    }
+                                  }}
                                   onChange={e => {
                                     const val = e.target.value;
                                     if (view === 'create') setNewProblem({ ...newProblem, category: val });
