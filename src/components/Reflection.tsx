@@ -382,7 +382,7 @@ export function ReflectionManager() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="text-center md:text-left">
+        <div className="text-left md:text-left">
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
             {showArchived ? 'Archived Reflection' : 'Reflection'}
           </h2>

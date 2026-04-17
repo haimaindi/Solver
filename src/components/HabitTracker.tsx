@@ -247,8 +247,8 @@ export function HabitTracker() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="text-center md:text-left">
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center justify-center md:justify-start gap-3">
+        <div className="text-left md:text-left">
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center justify-start md:justify-start gap-3">
             <TrendingUp className="w-8 h-8 text-bca-blue" />
             {showArchived ? 'Archived Habit' : 'Habit'}
           </h2>

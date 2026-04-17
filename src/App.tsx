@@ -27,7 +27,9 @@ import {
   BookOpen,
   Loader2,
   Eye,
-  EyeOff
+  EyeOff,
+  Shield,
+  Calendar
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
@@ -39,7 +41,7 @@ import { TodoList } from './components/TodoList';
 import { Supplement } from './components/Supplement';
 import { AdminManager } from './components/AdminManager';
 import { cn } from '@/src/lib/utils';
-import { format, isAfter, addDays } from 'date-fns';
+import { differenceInDays, parseISO, format, addDays, isWithinInterval } from 'date-fns';
 import { PROFILE_NAME } from './profile';
 import { ASSETS } from './assets';
 import Swal from 'sweetalert2';
@@ -174,6 +176,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [showArchivedProblems, setShowArchivedProblems] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [sessionData, setSessionData] = useState<any>(null);
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   
@@ -230,8 +234,21 @@ export default function App() {
     const auth = localStorage.getItem('solver_auth');
     if (auth === 'true') {
       setIsAuthenticated(true);
+      const data = localStorage.getItem('session_data');
+      if (data) setSessionData(JSON.parse(data));
     }
     setIsAuthChecking(false);
+  };
+
+  const fetchWorldTime = async (): Promise<Date> => {
+    try {
+      const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+      const data = await res.json();
+      return parseISO(data.datetime);
+    } catch (err) {
+      console.error('Failed to fetch world time, falling back to local:', err);
+      return new Date();
+    }
   };
 
   const handleLogin = async (code: string, pass: string) => {
@@ -243,9 +260,20 @@ export default function App() {
       .single();
 
     if (data) {
+      const worldNow = await fetchWorldTime();
+      const start = data.start_date ? parseISO(data.start_date) : worldNow;
+      const end = data.end_date ? parseISO(data.end_date) : worldNow;
+
+      if (!isWithinInterval(worldNow, { start, end })) {
+        Swal.fire('Access Expired', `Your access period was from ${format(start, 'MMM d, yyyy')} to ${format(end, 'MMM d, yyyy')}`, 'error');
+        return;
+      }
+
       localStorage.setItem('solver_auth', 'true');
       localStorage.setItem('user_id', data.id);
       localStorage.setItem('user_name', data.username || data.code);
+      localStorage.setItem('session_data', JSON.stringify(data));
+      setSessionData(data);
       setIsAuthenticated(true);
       Swal.fire({
         title: 'Access Granted',
@@ -265,6 +293,8 @@ export default function App() {
     localStorage.removeItem('solver_auth');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_name');
+    localStorage.removeItem('session_data');
+    setSessionData(null);
     setIsAuthenticated(false);
   };
 
@@ -672,6 +702,88 @@ export default function App() {
 
   return (
     <AuthGate isAuthenticated={isAuthenticated} onLogin={handleLogin}>
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowProfileModal(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-sm"
+            >
+              <GlassCard className="p-8 shadow-2xl border-white/20">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-bca-blue flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
+                      <User className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Platform Account</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" onClick={() => setShowProfileModal(false)} className="p-1 -mr-2">
+                    <LogOut className="w-5 h-5 text-slate-400 rotate-180" />
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2 text-slate-500">
+                         <Calendar className="w-4 h-4" />
+                         <span className="text-[11px] font-bold uppercase tracking-wider">Access Expired</span>
+                       </div>
+                       <span className="text-[13px] font-bold text-slate-700">
+                        {sessionData?.end_date ? format(parseISO(sessionData.end_date), 'MMM d, yyyy') : 'N/A'}
+                       </span>
+                    </div>
+                    
+                    {sessionData?.end_date && (
+                      <div className="pt-2">
+                        {(() => {
+                          const daysLeft = differenceInDays(parseISO(sessionData.end_date), new Date());
+                          if (daysLeft <= 7) {
+                            return (
+                              <div className="flex items-center gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span className="text-[11px] font-bold">Your access is about to expire in {daysLeft} days!</span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                              <span className="text-[11px] font-bold">Active subscription ({daysLeft} days left)</span>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleLogout}
+                  className="w-full h-12 mt-6 flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[11px]"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out Platform
+                </Button>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-bca-blue/10 selection:text-bca-blue">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 h-[64px] bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
@@ -751,7 +863,13 @@ export default function App() {
               Supplement
             </button>
             <button 
-              onClick={() => setView('admin')}
+              onClick={() => {
+                if (localStorage.getItem('user_name') === 'admin') {
+                  setView('admin');
+                } else {
+                  Swal.fire('Restricted', 'Only administrators can access this module.', 'warning');
+                }
+              }}
               className={cn(
                 "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
                 view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
@@ -764,16 +882,22 @@ export default function App() {
         </div>
         
         <div className="hidden md:flex items-center gap-4">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer p-1.5 rounded-xl hover:bg-slate-50 transition-all"
+            onClick={() => setShowProfileModal(true)}
+          >
             <span className="text-[13px] font-bold text-slate-900">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
-            <button 
-              onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="w-8 h-8 rounded-full bg-bca-blue/5 flex items-center justify-center text-bca-blue border border-bca-blue/10">
+              <User className="w-4 h-4" />
+            </div>
           </div>
+          <button 
+            onClick={handleLogout}
+            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </nav>
 
@@ -864,7 +988,14 @@ export default function App() {
                   Supplement
                 </button>
                 <button 
-                  onClick={() => { setView('admin'); setIsSidebarOpen(false); }}
+                  onClick={() => { 
+                    if (localStorage.getItem('user_name') === 'admin') {
+                      setView('admin'); 
+                      setIsSidebarOpen(false); 
+                    } else {
+                      Swal.fire('Restricted', 'Only administrators can access this module.', 'warning');
+                    }
+                  }}
                   className={cn(
                     "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
                     view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
@@ -876,7 +1007,10 @@ export default function App() {
               </div>
 
               <div className="p-6 border-t border-slate-100 mt-auto">
-                 <div className="flex items-center gap-3 mb-4 px-2">
+                 <div 
+                   className="flex items-center gap-3 mb-4 px-2 cursor-pointer hover:bg-slate-50 rounded-xl p-2 transition-all"
+                   onClick={() => { setShowProfileModal(true); setIsSidebarOpen(false); }}
+                 >
                     <div className="w-10 h-10 rounded-full bg-bca-blue/5 flex items-center justify-center text-bca-blue border border-bca-blue/10">
                       <User className="w-5 h-5" />
                     </div>
@@ -1091,10 +1225,10 @@ export default function App() {
                             }}
                           >
                             <td className="py-4">
-                              <span className="text-[13px] font-bold text-slate-900">{plan.description}</span>
+                              <span className="text-[13px] font-bold text-slate-900 line-clamp-2 max-w-[300px] break-words leading-tight block">{plan.description}</span>
                             </td>
                             <td className="py-4">
-                              <span className="text-[11px] font-medium text-slate-500">{plan.problem_title}</span>
+                              <span className="text-[11px] font-medium text-slate-500 line-clamp-1 max-w-[200px] break-words block">{plan.problem_title}</span>
                             </td>
                             <td className="py-4">
                               <span className="text-[11px] font-bold text-amber-600">

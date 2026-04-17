@@ -70,9 +70,6 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
                 )}
               </div>
             </div>
-            <div className="self-start sm:self-auto">
-              <Badge variant={cause.status} className="text-[9px] px-1.5 py-0.5">{cause.status}</Badge>
-            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-2 gap-y-3 mt-3 transition-opacity">

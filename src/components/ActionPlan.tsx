@@ -67,7 +67,6 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
             )}
           </div>
         </div>
-        <Badge variant={plan.status} className="text-[9px] px-1.5 py-0.5">{plan.status}</Badge>
       </div>
 
       {plan.notes && (
