@@ -249,12 +249,23 @@ export default function App() {
 
   const fetchWorldTime = async (): Promise<Date> => {
     try {
+      // Primary source: worldtimeapi.org
       const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+      if (!res.ok) throw new Error('Primary API failed');
       const data = await res.json();
       return parseISO(data.datetime);
     } catch (err) {
-      console.error('Failed to fetch world time, falling back to local:', err);
-      return new Date();
+      console.warn('Primary world time API failed, trying secondary:', err);
+      try {
+        // Secondary source: timeapi.io
+        const res = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC');
+        if (!res.ok) throw new Error('Secondary API failed');
+        const data = await res.json();
+        return parseISO(data.dateTime);
+      } catch (err2) {
+        console.error('All world time APIs failed, falling back to local time:', err2);
+        return new Date();
+      }
     }
   };
 
@@ -878,22 +889,18 @@ export default function App() {
               <Pill className="w-4 h-4" />
               Supplement
             </button>
-            <button 
-              onClick={() => {
-                if (localStorage.getItem('user_name') === 'admin') {
-                  setView('admin');
-                } else {
-                  Swal.fire('Restricted', 'Only administrators can access this module.', 'warning');
-                }
-              }}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <Shield className="w-4 h-4" />
-              Admin
-            </button>
+            {localStorage.getItem('user_name') === 'admin' && (
+              <button 
+                onClick={() => setView('admin')}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                  view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+                )}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </button>
+            )}
           </div>
         </div>
         
@@ -1003,23 +1010,18 @@ export default function App() {
                   <Pill className="w-5 h-5" />
                   Supplement
                 </button>
-                <button 
-                  onClick={() => { 
-                    if (localStorage.getItem('user_name') === 'admin') {
-                      setView('admin'); 
-                      setIsSidebarOpen(false); 
-                    } else {
-                      Swal.fire('Restricted', 'Only administrators can access this module.', 'warning');
-                    }
-                  }}
-                  className={cn(
-                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
-                    view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <Shield className="w-5 h-5" />
-                  Admin
-                </button>
+                {localStorage.getItem('user_name') === 'admin' && (
+                  <button 
+                    onClick={() => { setView('admin'); setIsSidebarOpen(false); }}
+                    className={cn(
+                      "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                      view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                    )}
+                  >
+                    <Shield className="w-5 h-5" />
+                    Admin
+                  </button>
+                )}
               </div>
 
               <div className="p-6 border-t border-slate-100 mt-auto">
@@ -1152,7 +1154,7 @@ export default function App() {
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6">Problem Distribution by Category</h3>
                   <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={300} debounce={50}>
                       <BarChart data={categories.map(cat => ({
                         name: cat,
                         count: problems.filter(p => p.category === cat).length
@@ -1172,7 +1174,7 @@ export default function App() {
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6">Status Breakdown</h3>
                   <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={300} debounce={50}>
                       <PieChart>
                         <Pie
                           data={[
