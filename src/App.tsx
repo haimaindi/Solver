@@ -775,7 +775,7 @@ export default function App() {
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
                     {sessionData?.is_unlimited ? (
                        <div className="flex items-center gap-2 text-emerald-600">
-                         <Sparkles className="w-5 h-5" />
+                         
                          <span className="text-[13px] font-bold uppercase tracking-wider">Unlimited Access Status</span>
                        </div>
                     ) : (

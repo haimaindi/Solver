@@ -249,8 +249,8 @@ export function TodoList() {
 
         <GlassCard className="p-4 md:p-6 space-y-4">
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
+            <div className="flex items-start gap-4">
+                <div className="flex-1">
                     <Input 
                         value={newTask} 
                         onChange={e => setNewTask(e.target.value)} 
@@ -258,12 +258,12 @@ export function TodoList() {
                         className="h-12"
                     />
                 </div>
-                <div>
+                <div className="w-24 flex-shrink-0">
                     <Input 
                         type="time" 
                         value={targetTime} 
                         onChange={e => setTargetTime(e.target.value)} 
-                        className="h-12 text-center"
+                        className="h-12 text-center font-mono font-bold"
                     />
                 </div>
             </div>
@@ -313,37 +313,40 @@ export function TodoList() {
                     )}
                     
                     <div className="space-y-4">
-                        <div className="flex items-start justify-between gap-2">
-                            <button 
-                                onClick={() => toggleTodo(todo)}
-                                className={cn(
-                                    "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-all",
-                                    todo.completed 
-                                    ? "bg-green-500 border-green-500 text-white" 
-                                    : overdue ? "border-rose-400 text-rose-400" : "border-slate-200 text-transparent hover:border-bca-blue"
-                                )}
-                            >
-                                <Check className="w-5 h-5" />
-                            </button>
-                            <div className="flex-1 min-w-0">
-                                <h4 className={cn(
-                                    "font-black text-lg tracking-tight truncate",
-                                    todo.completed ? "text-slate-400 line-through" : overdue ? "text-rose-900" : "text-slate-900"
-                                )}>
-                                    {todo.task}
-                                </h4>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                    <Clock className={cn("w-3.5 h-3.5", overdue && !todo.completed ? "text-rose-500" : "text-slate-400")} />
-                                    <span className={cn("text-xs font-bold", overdue && !todo.completed ? "text-rose-600" : "text-slate-400")}>
-                                        {todo.target_time}
-                                    </span>
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                                <button 
+                                    onClick={() => toggleTodo(todo)}
+                                    className={cn(
+                                        "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-all mt-1",
+                                        todo.completed 
+                                        ? "bg-green-500 border-green-500 text-white" 
+                                        : overdue ? "border-rose-400 text-rose-400" : "border-slate-200 hover:border-bca-blue"
+                                    )}
+                                >
+                                    {todo.completed && <Check className="w-5 h-5" />}
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className={cn(
+                                        "font-black text-lg tracking-tight break-words",
+                                        todo.completed ? "text-slate-400 line-through" : overdue ? "text-rose-900" : "text-slate-900"
+                                    )}>
+                                        {todo.task}
+                                    </h4>
                                 </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5 pt-2 whitespace-nowrap">
+                                <Clock className={cn("w-3.5 h-3.5", overdue && !todo.completed ? "text-rose-500" : "text-slate-400")} />
+                                <span className={cn("text-xs font-bold", overdue && !todo.completed ? "text-rose-600" : "text-slate-400")}>
+                                    {todo.target_time}
+                                </span>
                             </div>
                         </div>
 
                         {todo.description && (
                             <div className={cn(
-                                "text-sm font-medium line-clamp-3 p-3 rounded-lg bg-slate-50/50",
+                                "text-sm font-medium p-3 rounded-lg bg-slate-50/50 ml-12",
                                 todo.completed ? "text-slate-400" : overdue ? "text-rose-700/70" : "text-slate-600"
                             )}>
                                 {todo.description}
