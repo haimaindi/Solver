@@ -1077,7 +1077,9 @@ export default function App() {
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Problem List</h2>
+                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+                    {showArchivedProblems ? 'Archived Problems' : 'Problem List'}
+                  </h2>
                   <p className="text-slate-500 mt-1">Detailed view of all documented engineering challenges.</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1091,10 +1093,12 @@ export default function App() {
                   >
                     <Archive className="w-5 h-5" />
                   </button>
-                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
-                    <Plus className="w-4 h-4" />
-                    <span>New Problem</span>
-                  </Button>
+                  {!showArchivedProblems && (
+                    <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      <span>New Problem</span>
+                    </Button>
+                  )}
                 </div>
               </div>
 

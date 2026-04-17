@@ -363,10 +363,12 @@ export function ReflectionManager() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="text-center md:text-left">
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Reflection Journal</h2>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+            {showArchived ? 'Archived Reflections' : 'Reflection Journal'}
+          </h2>
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
-        {!isAdding && !selectedReflection && (
+        {!isAdding && !selectedReflection && !showArchived && (
           <div className="flex gap-2">
             <button
               onClick={() => setShowArchived(!showArchived)}
