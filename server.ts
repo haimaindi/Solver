@@ -17,6 +17,11 @@ async function startServer() {
 
   app.use(express.json());
 
+  // Server health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", environment: process.env.NODE_ENV || "development" });
+  });
+
   // Supabase for server-side checks
   const supabase = createClient(
     process.env.VITE_SUPABASE_URL || "",
@@ -25,7 +30,8 @@ async function startServer() {
 
   // AI Problem Consultant Endpoint
   app.post("/api/consult-problem", async (req, res) => {
-    console.log(`[SERVER] API Processing: /api/consult-problem (Method: ${req.method})`);
+    console.log(`[SERVER] ${new Date().toISOString()} - Hit: /api/consult-problem`);
+    console.log(`[SERVER] Request Body:`, JSON.stringify(req.body).slice(0, 100) + "...");
     const { userId, problemId, context, question } = req.body;
 
     if (!userId || !problemId || !question) {

@@ -673,8 +673,6 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
       <Droppable droppableId={id}>
         {(provided, snapshot) => (
           <GlassCard 
-            ref={provided.innerRef}
-            {...provided.droppableProps}
             className={cn(
               "flex flex-col h-[calc(100vh-280px)] min-h-[500px] transition-all border overflow-hidden",
               styles,

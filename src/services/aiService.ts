@@ -37,7 +37,9 @@ export async function consultProblem(
   };
 
   try {
-    const response = await fetch("/api/consult-problem", {
+    const apiUrl = "/api/consult-problem";
+    console.log(`[CLIENT] Fetching AI consultation from: ${apiUrl}`);
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
