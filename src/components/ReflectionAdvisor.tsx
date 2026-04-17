@@ -20,6 +20,12 @@ interface ReflectionAdvisorProps {
 export function ReflectionAdvisor({ reflection }: ReflectionAdvisorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  
+  // This hook ensures the button is only shown if it's the global one
+  // or handle triggered manually from inside reflection detail.
+  // Actually, for global, we need conditional rendering based on reflection object presence
+  
+  if (!reflection) return null;
 
   const generatePrompt = () => {
     let text = `[ RINGKASAN REFLEKSI ]\n`;
@@ -91,15 +97,16 @@ export function ReflectionAdvisor({ reflection }: ReflectionAdvisorProps) {
 
   return (
     <>
-      {/* Mini trigger button in detail view */}
-      <Button 
-        onClick={() => setIsOpen(true)} 
-        variant="ghost" 
-        className="h-10 px-4 bg-bca-blue/5 text-bca-blue font-bold text-xs flex items-center gap-2 hover:bg-bca-blue/10"
+      {/* Floating Button */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 h-14 px-6 bg-bca-blue text-white rounded-full shadow-2xl flex items-center gap-3 z-[50] group"
       >
-        <Sparkles className="w-4 h-4" />
-        <span>Prompt Maker</span>
-      </Button>
+        <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+        <span className="font-bold text-sm tracking-wide">Prompt Maker</span>
+      </motion.button>
 
       {/* Modal Overlay */}
       <AnimatePresence>
@@ -141,7 +148,7 @@ export function ReflectionAdvisor({ reflection }: ReflectionAdvisorProps) {
                   <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-4">
                     <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Salin rangkuman refleksi ini dan tempelkan ke **Gemini** atau AI favorit Anda untuk mendapatkan umpan balik objektif atau saran pengembangan diri berdasarkan apa yang Anda tulis.
+                      Use this feature to summarize your reflection into a structured description. You can copy and paste the text directly into Gemini, ChatGPT, or Claude to receive professional feedback.
                     </p>
                   </div>
 

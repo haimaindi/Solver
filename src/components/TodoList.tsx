@@ -342,20 +342,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
        fetchTodos(); // Rollback if error
        Swal.fire({ title: 'Update Failed', text: 'Error syncing drag action', icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
     } else {
-      // Show confirmation UI as requested by user to help "reset" interaction state
-      Swal.fire({
-        title: 'Task Moved',
-        text: `Matrix updated to ${targetConfig.title}`,
-        icon: 'success',
-        confirmButtonText: 'Great!',
-        confirmButtonColor: '#003399',
-        timer: 1500,
-        timerProgressBar: true,
-        customClass: {
-          popup: 'rounded-[32px] border-none shadow-2xl',
-          confirmButton: 'rounded-xl px-8 font-bold'
-        }
-      });
+      // Drag & Drop successful - no Swal as requested for robustness
     }
 
     // Force browser reflow/interaction reset to fix "stuck" click bug after drop

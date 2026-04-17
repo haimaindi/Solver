@@ -142,7 +142,7 @@ export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) 
                   <div className="p-4 bg-bca-blue/5 rounded-2xl border border-bca-blue/10 flex items-start gap-4">
                     <AlertCircle className="w-5 h-5 text-bca-blue shrink-0 mt-0.5" />
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Gunakan fitur ini untuk merangkum seluruh analisis masalah Anda menjadi deskripsi yang terstruktur. Teks yang disalin dapat langsung ditempelkan ke **Gemini**, **ChatGPT**, atau **Claude** untuk mendapatkan saran profesional.
+                      Use this feature to summarize your entire problem analysis into a structured description. You can copy and paste the text directly into Gemini, ChatGPT, or Claude to receive professional guidance.
                     </p>
                   </div>
 

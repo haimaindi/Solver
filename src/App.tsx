@@ -896,7 +896,7 @@ export default function App() {
             <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
 
-          <div className="hidden md:flex flex-1 justify-center items-center gap-2">
+          <div className="hidden md:flex flex-1 justify-between items-center gap-2">
             <button 
               onClick={() => setView('dashboard')}
               className={cn(
@@ -974,13 +974,14 @@ export default function App() {
         
         <div className="hidden md:flex items-center gap-4">
 
-          <button 
-            onClick={handleLogout}
-            className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-            title="Logout"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+            <span className="text-[13px] font-bold text-slate-900">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
+            <button 
+              onClick={handleLogout}
+              className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
         </div>
       </nav>
 

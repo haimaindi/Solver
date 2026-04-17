@@ -651,6 +651,8 @@ export function ReflectionManager() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Global Reflection Advisor Modal */}
+      <ReflectionAdvisor reflection={selectedReflection as Reflection} />
     </div>
   );
 }
