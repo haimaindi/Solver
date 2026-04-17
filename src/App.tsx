@@ -344,59 +344,53 @@ export default function App() {
   };
 
   const handleLogin = async (code: string, pass: string) => {
-    // Check if user exists
-    const { data, error: fetchError } = await supabase
+    const { data, error } = await supabase
       .from('app_access')
       .select('*')
       .eq('code', code)
       .eq('password', pass)
       .single();
 
-    if (fetchError || !data) {
-      Swal.fire({
-        title: 'Access Denied',
-        text: 'Invalid access code or password.',
-        icon: 'error'
-      });
-      return;
-    }
-
-    // Logic exists, now check expiry
-    const worldNow = await fetchWorldTime();
-    
-    if (!data.is_unlimited && data.end_date) {
-      const expiryDate = new Date(data.end_date + 'T00:00:00Z');
+    if (data) {
+      const worldNow = await fetchWorldTime();
       
-      if (worldNow >= expiryDate) {
-        Swal.fire({
-          title: 'Access Expired',
-          text: `Your access expired on ${format(expiryDate, 'MMMM d, yyyy')}. Please contact support.`,
-          icon: 'error'
-        });
-        return;
+      if (!data.is_unlimited) {
+        const end = new Date(data.end_date + 'T00:00:00Z');
+
+        if (worldNow >= end) {
+          Swal.fire({
+            title: 'Access Expired',
+            text: `Your access expired on ${format(end, 'dd/MM/yyyy')}. Please contact administrator.`,
+            icon: 'error',
+            confirmButtonText: 'OK'
+          });
+          return;
+        }
       }
+
+      localStorage.setItem('solver_auth', 'true');
+      localStorage.setItem('user_id', data.id);
+      localStorage.setItem('user_name', data.username || data.code);
+      localStorage.setItem('session_data', JSON.stringify(data));
+      setSessionData(data);
+      setIsAuthenticated(true);
+      
+      // Auto-open profile modal on login
+      setView('dashboard');
+      setShowProfileModal(true);
+
+      Swal.fire({
+        title: 'Access Granted',
+        text: 'Welcome back to Solver',
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    } else {
+      Swal.fire('Login Failed', 'Invalid access code or password.', 'error');
     }
-
-    localStorage.setItem('solver_auth', 'true');
-    localStorage.setItem('user_id', data.id);
-    localStorage.setItem('user_name', data.username || data.code);
-    localStorage.setItem('session_data', JSON.stringify(data));
-    setSessionData(data);
-    setIsAuthenticated(true);
-    
-    // Auto-open profile modal on login
-    setView('dashboard');
-    setShowProfileModal(true);
-
-    Swal.fire({
-      title: 'Access Granted',
-      text: 'Welcome back to Solver',
-      icon: 'success',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000
-    });
   };
 
   const handleLogout = () => {
@@ -874,7 +868,6 @@ export default function App() {
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
                     {sessionData?.is_unlimited ? (
                        <div className="flex items-center gap-2 text-emerald-600">
-                         
                          <span className="text-[13px] font-bold uppercase tracking-wider text-center block">Unlimited Access</span>
                        </div>
                     ) : (
@@ -882,32 +875,26 @@ export default function App() {
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2 text-slate-500">
                              <Calendar className="w-4 h-4" />
-                             <span className="text-[11px] font-bold uppercase tracking-wider ">Access Expired</span>
+                             <span className="text-[11px] font-bold uppercase tracking-wider ">Expiry Date</span>
                            </div>
                            <span className="text-[13px] font-bold text-slate-700">
-                            {sessionData?.end_date ? format(parseISO(sessionData.end_date), 'MMM d, yyyy') : 'N/A'}
+                            {sessionData?.end_date ? format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy') : 'N/A'}
                            </span>
                         </div>
                         
                         {sessionData?.end_date && (
                           <div className="pt-2">
-                            {(() => {
-                              const daysLeft = differenceInDays(parseISO(sessionData.end_date), new Date());
-                              if (daysLeft <= 7) {
-                                return (
-                                  <div className="flex items-center gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
-                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                    <span className="text-[11px] font-bold">Your access is about to expire in {daysLeft} days!</span>
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                                  <span className="text-[11px] font-bold">Active subscription ({daysLeft} days left)</span>
-                                </div>
-                              );
-                            })()}
+                            {new Date(sessionData.end_date + 'T00:00:00Z') < worldTime ? (
+                              <div className="flex items-center gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span className="text-[11px] font-bold">Your access has expired!</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                                <span className="text-[11px] font-bold">Active subscription</span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </>
@@ -1035,12 +1022,11 @@ export default function App() {
               {sessionData && (
                 <span className={cn(
                   "text-[10px] leading-none mt-0.5",
-                  (sessionData.is_unlimited || (sessionData.end_date && differenceInDays(new Date(sessionData.end_date + 'T00:00:00Z'), worldTime) > 7)) ? "text-emerald-600" : "text-rose-600"
+                  (sessionData.is_unlimited || (sessionData.end_date && new Date(sessionData.end_date + 'T00:00:00Z') >= worldTime)) ? "text-emerald-600" : "text-rose-600"
                 )}>
                   {sessionData.is_unlimited ? 'Unlimited Access' : 
-                    (differenceInDays(new Date(sessionData.end_date + 'T00:00:00Z'), worldTime) < 0 ? 'Has expired' :
-                    (differenceInDays(new Date(sessionData.end_date + 'T00:00:00Z'), worldTime) <= 7 ? `Expired at ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy')} (${differenceInDays(new Date(sessionData.end_date + 'T00:00:00Z'), worldTime)} days)` :
-                    `Expired at ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy')}`))}
+                    (new Date(sessionData.end_date + 'T00:00:00Z') < worldTime ? 'Has expired' :
+                    `Expired at ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy')}`)}
                 </span>
               )}
             </div>
