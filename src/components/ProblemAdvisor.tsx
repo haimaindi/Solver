@@ -111,14 +111,14 @@ export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99]"
             />
             
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col"
+              className="relative w-full max-w-2xl max-h-[90vh] flex flex-col z-[100]"
             >
               <GlassCard className="flex-1 flex flex-col p-0 overflow-hidden shadow-2xl border-white/20">
                 {/* Header */}
