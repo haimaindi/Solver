@@ -202,7 +202,8 @@ export default function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
-    checkAuth();
+    // FORCE LOGOUT ON RELOAD: Mitigation for expired users
+    handleLogout();
   }, []);
 
   useEffect(() => {
@@ -298,22 +299,30 @@ export default function App() {
 
   const fetchWorldTime = async (): Promise<Date> => {
     try {
-      // Primary source: worldtimeapi.org
-      const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
-      if (!res.ok) throw new Error('Primary API failed');
+      // 1. Try to get geolocation-based time
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+      });
+
+      const { latitude, longitude } = position.coords;
+      const res = await fetch(`https://timeapi.io/api/Time/current/coordinate?latitude=${latitude}&longitude=${longitude}`);
+      if (!res.ok) throw new Error('Coordinate API failed');
       const data = await res.json();
-      return parseISO(data.datetime);
+      return parseISO(data.dateTime);
     } catch (err) {
-      console.warn('Primary world time API failed, trying secondary:', err);
+      console.warn('Geolocation/Coordinate time API failed, falling back to general API:', err);
+      
       try {
-        // Secondary source: timeapi.io
+        // 2. Fallback to general API
         const res = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC');
-        if (!res.ok) throw new Error('Secondary API failed');
+        if (!res.ok) throw new Error('Fallback API failed');
         const data = await res.json();
         return parseISO(data.dateTime);
       } catch (err2) {
-        console.error('All world time APIs failed, falling back to local time:', err2);
-        return new Date();
+        // 3. SECURE FALLBACK: If cannot verify time, force logout
+        console.error('All time verification failed, forcing logout for security:', err2);
+        handleLogout();
+        throw new Error('Time verification failed');
       }
     }
   };
