@@ -255,7 +255,7 @@ export function TodoList() {
                         type="time" 
                         value={targetTime} 
                         onChange={e => setTargetTime(e.target.value)} 
-                        className="h-12"
+                        className="h-12 text-center"
                     />
                 </div>
             </div>

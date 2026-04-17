@@ -171,22 +171,23 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-8 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
+          <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center mx-auto sm:mx-0">
             <Target className="w-5 h-5 text-bca-blue" />
           </div>
           <h3 className="text-lg font-bold text-slate-900">Root Cause Analysis</h3>
         </div>
-        <Button 
-          onClick={() => setActiveParent(activeParent === 'root' ? null : 'root')} 
-          variant="secondary" 
-          className="h-10 px-4 flex items-center gap-2 border-bca-blue/20 text-bca-blue hover:bg-bca-blue/5 whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Primary Cause</span>
-          <span className="sm:hidden">Add</span>
-        </Button>
+        <div className="flex justify-center sm:justify-end">
+          <Button 
+            onClick={() => setActiveParent(activeParent === 'root' ? null : 'root')} 
+            variant="secondary" 
+            className="h-10 px-6 flex items-center gap-2 border-bca-blue/20 text-bca-blue hover:bg-bca-blue/5 whitespace-nowrap shadow-sm w-full sm:w-auto justify-center"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="inline">Add Primary Cause</span>
+          </Button>
+        </div>
       </div>
 
       <AnimatePresence>

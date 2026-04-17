@@ -1523,20 +1523,15 @@ export default function App() {
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Completion Date</label>
                         <Input 
-                          type={selectedProblem.completion_date ? "date" : "text"}
-                          placeholder="dd/mm/yyyy"
+                          type="date"
                           className="bg-slate-50 border-slate-200 text-[13px]"
                           value={selectedProblem.completion_date ? format(new Date(selectedProblem.completion_date), 'yyyy-MM-dd') : ''}
-                          onFocus={(e) => (e.target.type = "date")}
                           onClick={(e) => {
-                            e.currentTarget.type = "date";
                             if (e.currentTarget.showPicker) {
                               try { e.currentTarget.showPicker(); } catch (err) {}
                             }
                           }}
-                          onBlur={(e) => {
-                            if (!e.target.value) e.target.type = "text";
-                          }}
+                          onKeyDown={(e) => e.preventDefault()}
                           onChange={e => setSelectedProblem({ ...selectedProblem, completion_date: e.target.value || null })}
                         />
                       </div>
