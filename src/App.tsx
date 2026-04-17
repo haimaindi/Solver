@@ -20,6 +20,7 @@ import {
   TrendingUp,
   ListTodo, 
   Sparkles,
+  X,
   Pill, 
   ChevronDown,
   Waypoints, 
@@ -279,12 +280,15 @@ export default function App() {
 
     if (data) {
       const worldNow = await fetchWorldTime();
-      const start = data.start_date ? parseISO(data.start_date) : worldNow;
-      const end = data.end_date ? parseISO(data.end_date) : worldNow;
+      
+      if (!data.is_unlimited) {
+        const start = data.start_date ? parseISO(data.start_date) : worldNow;
+        const end = data.end_date ? parseISO(data.end_date) : worldNow;
 
-      if (!isWithinInterval(worldNow, { start, end })) {
-        Swal.fire('Access Expired', `Your access period was from ${format(start, 'MMM d, yyyy')} to ${format(end, 'MMM d, yyyy')}`, 'error');
-        return;
+        if (!isWithinInterval(worldNow, { start, end })) {
+          Swal.fire('Access Expired', `Your access period was from ${format(start, 'MMM d, yyyy')} to ${format(end, 'MMM d, yyyy')}`, 'error');
+          return;
+        }
       }
 
       localStorage.setItem('solver_auth', 'true');
@@ -293,6 +297,11 @@ export default function App() {
       localStorage.setItem('session_data', JSON.stringify(data));
       setSessionData(data);
       setIsAuthenticated(true);
+      
+      // Auto-open profile modal on login
+      setView('dashboard');
+      setShowProfileModal(true);
+
       Swal.fire({
         title: 'Access Granted',
         text: 'Welcome back to Solver',
@@ -757,43 +766,52 @@ export default function App() {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Platform Account</p>
                     </div>
                   </div>
-                  <Button variant="ghost" onClick={() => setShowProfileModal(false)} className="p-1 -mr-2">
-                    <LogOut className="w-5 h-5 text-slate-400 rotate-180" />
+                  <Button variant="ghost" onClick={() => setShowProfileModal(false)} className="p-1 -mr-2 hover:bg-slate-100 rounded-full">
+                    <X className="w-5 h-5 text-slate-400" />
                   </Button>
                 </div>
 
                 <div className="space-y-4">
                   <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-2 text-slate-500">
-                         <Calendar className="w-4 h-4" />
-                         <span className="text-[11px] font-bold uppercase tracking-wider">Access Expired</span>
+                    {sessionData?.is_unlimited ? (
+                       <div className="flex items-center gap-2 text-emerald-600">
+                         <Sparkles className="w-5 h-5" />
+                         <span className="text-[13px] font-bold uppercase tracking-wider">Unlimited Access Status</span>
                        </div>
-                       <span className="text-[13px] font-bold text-slate-700">
-                        {sessionData?.end_date ? format(parseISO(sessionData.end_date), 'MMM d, yyyy') : 'N/A'}
-                       </span>
-                    </div>
-                    
-                    {sessionData?.end_date && (
-                      <div className="pt-2">
-                        {(() => {
-                          const daysLeft = differenceInDays(parseISO(sessionData.end_date), new Date());
-                          if (daysLeft <= 7) {
-                            return (
-                              <div className="flex items-center gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
-                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                <span className="text-[11px] font-bold">Your access is about to expire in {daysLeft} days!</span>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                              <span className="text-[11px] font-bold">Active subscription ({daysLeft} days left)</span>
-                            </div>
-                          );
-                        })()}
-                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2 text-slate-500">
+                             <Calendar className="w-4 h-4" />
+                             <span className="text-[11px] font-bold uppercase tracking-wider">Access Expired</span>
+                           </div>
+                           <span className="text-[13px] font-bold text-slate-700">
+                            {sessionData?.end_date ? format(parseISO(sessionData.end_date), 'MMM d, yyyy') : 'N/A'}
+                           </span>
+                        </div>
+                        
+                        {sessionData?.end_date && (
+                          <div className="pt-2">
+                            {(() => {
+                              const daysLeft = differenceInDays(parseISO(sessionData.end_date), new Date());
+                              if (daysLeft <= 7) {
+                                return (
+                                  <div className="flex items-center gap-2 text-rose-600 bg-rose-50 p-3 rounded-xl border border-rose-100">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    <span className="text-[11px] font-bold">Your access is about to expire in {daysLeft} days!</span>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                                  <span className="text-[11px] font-bold">Active subscription ({daysLeft} days left)</span>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -1154,7 +1172,7 @@ export default function App() {
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6">Problem Distribution by Category</h3>
                   <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={300} debounce={50}>
+                    <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={0} debounce={50}>
                       <BarChart data={categories.map(cat => ({
                         name: cat,
                         count: problems.filter(p => p.category === cat).length
@@ -1174,7 +1192,7 @@ export default function App() {
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6">Status Breakdown</h3>
                   <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={300} debounce={50}>
+                    <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={0} debounce={50}>
                       <PieChart>
                         <Pie
                           data={[

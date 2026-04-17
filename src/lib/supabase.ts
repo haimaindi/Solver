@@ -88,6 +88,11 @@ export interface AppAccess {
   id: string;
   code: string;
   password: string;
+  username?: string;
+  start_date?: string;
+  duration?: number;
+  end_date?: string;
+  is_unlimited?: boolean;
   created_at: string;
 }
 

@@ -15,6 +15,7 @@ interface AppUser {
   start_date: string | null;
   duration: number | null;
   end_date: string | null;
+  is_unlimited: boolean | null;
   created_at: string;
 }
 
@@ -30,7 +31,8 @@ export function AdminManager() {
     username: '',
     start_date: format(new Date(), 'yyyy-MM-dd'),
     duration: 1,
-    end_date: ''
+    end_date: '',
+    is_unlimited: false
   });
 
   useEffect(() => {
@@ -67,7 +69,8 @@ export function AdminManager() {
         username: user.username || '',
         start_date: user.start_date ? format(parseISO(user.start_date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         duration: user.duration || 1,
-        end_date: user.end_date ? format(parseISO(user.end_date), 'yyyy-MM-dd') : ''
+        end_date: user.end_date ? format(parseISO(user.end_date), 'yyyy-MM-dd') : '',
+        is_unlimited: user.is_unlimited || false
       });
     } else {
       setEditingUser(null);
@@ -77,7 +80,8 @@ export function AdminManager() {
         username: '',
         start_date: format(new Date(), 'yyyy-MM-dd'),
         duration: 1,
-        end_date: ''
+        end_date: '',
+        is_unlimited: false
       });
     }
     setIsModalOpen(true);
@@ -89,9 +93,10 @@ export function AdminManager() {
       code: formData.code,
       password: formData.password,
       username: formData.username,
-      start_date: formData.start_date,
-      duration: formData.duration,
-      end_date: formData.end_date
+      start_date: formData.is_unlimited ? null : formData.start_date,
+      duration: formData.is_unlimited ? null : formData.duration,
+      end_date: formData.is_unlimited ? null : formData.end_date,
+      is_unlimited: formData.is_unlimited
     };
 
     if (editingUser) {
@@ -199,20 +204,29 @@ export function AdminManager() {
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className="px-2 py-1 rounded-md bg-slate-100 text-slate-600 font-bold text-xs">
-                      {user.duration || 1} Months
+                    <span className={cn(
+                      "px-2 py-1 rounded-md font-bold text-xs",
+                      user.is_unlimited ? "bg-bca-blue/10 text-bca-blue" : "bg-slate-100 text-slate-600"
+                    )}>
+                      {user.is_unlimited ? 'Unlimited' : `${user.duration || 1} Months`}
                     </span>
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                        <Calendar className="w-3 h-3 text-emerald-500" />
-                        <span>{user.start_date ? format(parseISO(user.start_date), 'MMM d, yyyy') : '-'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                        <Clock className="w-3 h-3 text-rose-500" />
-                        <span>{user.end_date ? format(parseISO(user.end_date), 'MMM d, yyyy') : '-'}</span>
-                      </div>
+                      {user.is_unlimited ? (
+                        <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Lifetime Access</div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                            <Calendar className="w-3 h-3 text-emerald-500" />
+                            <span>{user.start_date ? format(parseISO(user.start_date), 'MMM d, yyyy') : '-'}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+                            <Clock className="w-3 h-3 text-rose-500" />
+                            <span>{user.end_date ? format(parseISO(user.end_date), 'MMM d, yyyy') : '-'}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-5">
@@ -307,36 +321,51 @@ export function AdminManager() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
-                      <Input 
-                        type="date"
-                        required 
-                        value={formData.start_date} 
-                        onChange={e => setFormData({ ...formData, start_date: e.target.value })} 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Duration (Months)</label>
-                      <Input 
-                        type="number"
-                        min="1"
-                        required 
-                        value={formData.duration} 
-                        onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 1 })} 
-                      />
-                    </div>
+                  <div className="flex items-center gap-3 p-4 bg-bca-blue/5 rounded-2xl border border-bca-blue/10">
+                    <input 
+                      type="checkbox"
+                      id="unlimited"
+                      className="w-5 h-5 rounded border-slate-300 text-bca-blue focus:ring-bca-blue cursor-pointer"
+                      checked={formData.is_unlimited}
+                      onChange={e => setFormData({ ...formData, is_unlimited: e.target.checked })}
+                    />
+                    <label htmlFor="unlimited" className="text-sm font-bold text-slate-700 cursor-pointer">Unlimited Access?</label>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Auto-calculated End Date</label>
-                     <div className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                       <Calendar className="w-4 h-4 text-bca-blue" />
-                       {formData.end_date ? format(parseISO(formData.end_date), 'MMMM d, yyyy') : 'Calculating...'}
-                     </div>
-                     <p className="text-[9px] text-slate-400 italic font-medium pt-1">Period is calculated as {formData.duration} x 31 days from start date.</p>
-                  </div>
+                  {!formData.is_unlimited && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Start Date</label>
+                          <Input 
+                            type="date"
+                            required 
+                            value={formData.start_date} 
+                            onChange={e => setFormData({ ...formData, start_date: e.target.value })} 
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Duration (Months)</label>
+                          <Input 
+                            type="number"
+                            min="1"
+                            required 
+                            value={formData.duration} 
+                            onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 1 })} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Auto-calculated End Date</label>
+                        <div className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-bca-blue" />
+                          {formData.end_date ? format(parseISO(formData.end_date), 'MMMM d, yyyy') : 'Calculating...'}
+                        </div>
+                        <p className="text-[9px] text-slate-400 italic font-medium pt-1">Period is calculated as {formData.duration} x 31 days from start date.</p>
+                      </div>
+                    </>
+                  )}
 
                   <div className="flex gap-3 pt-4">
                     <Button type="button" variant="ghost" className="flex-1 h-12" onClick={() => setIsModalOpen(false)}>Cancel</Button>
