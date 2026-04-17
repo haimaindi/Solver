@@ -94,6 +94,16 @@ export interface AppAccess {
   duration?: number;
   end_date?: string;
   is_unlimited?: boolean;
+  gemini_api_keys?: string[];
+  created_at: string;
+}
+
+export interface ProblemConsultation {
+  id: string;
+  user_id: string;
+  problem_id: string;
+  question: string;
+  answer: string;
   created_at: string;
 }
 

@@ -532,6 +532,12 @@ export function HabitTracker() {
                           >
                             <span className="text-xs font-bold">{format(day, 'd')}</span>
                             
+                            {hasComment && (
+                              <div className="absolute top-1 right-1">
+                                <AlertCircle className="w-2.5 h-2.5 text-amber-500" />
+                              </div>
+                            )}
+                            
                             {/* Hover Preview */}
                             {hasComment && (
                               <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10 shadow-xl">

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Pencil, Trash2, X, Shield, Calendar, Clock, User, LogIn, Save } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
-import { GlassCard, Button, Input } from './UI';
+import { GlassCard, Button, Input, TextArea } from './UI';
 import { format, addDays, parseISO } from 'date-fns';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
@@ -16,6 +16,7 @@ interface AppUser {
   duration: number | null;
   end_date: string | null;
   is_unlimited: boolean | null;
+  gemini_api_keys: string[] | null;
   created_at: string;
 }
 
@@ -32,7 +33,8 @@ export function AdminManager() {
     start_date: format(new Date(), 'yyyy-MM-dd'),
     duration: 1,
     end_date: '',
-    is_unlimited: false
+    is_unlimited: false,
+    gemini_api_keys: ''
   });
 
   useEffect(() => {
@@ -70,7 +72,8 @@ export function AdminManager() {
         start_date: user.start_date ? format(parseISO(user.start_date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         duration: user.duration || 1,
         end_date: user.end_date ? format(parseISO(user.end_date), 'yyyy-MM-dd') : '',
-        is_unlimited: user.is_unlimited || false
+        is_unlimited: user.is_unlimited || false,
+        gemini_api_keys: user.gemini_api_keys?.join(', ') || ''
       });
     } else {
       setEditingUser(null);
@@ -81,7 +84,8 @@ export function AdminManager() {
         start_date: format(new Date(), 'yyyy-MM-dd'),
         duration: 1,
         end_date: '',
-        is_unlimited: false
+        is_unlimited: false,
+        gemini_api_keys: ''
       });
     }
     setIsModalOpen(true);
@@ -96,7 +100,8 @@ export function AdminManager() {
       start_date: formData.is_unlimited ? null : formData.start_date,
       duration: formData.is_unlimited ? null : formData.duration,
       end_date: formData.is_unlimited ? null : formData.end_date,
-      is_unlimited: formData.is_unlimited
+      is_unlimited: formData.is_unlimited,
+      gemini_api_keys: formData.gemini_api_keys.split(',').map(k => k.trim()).filter(Boolean)
     };
 
     if (editingUser) {
@@ -366,6 +371,17 @@ export function AdminManager() {
                       </div>
                     </>
                   )}
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gemini API Keys (Comma Separated)</label>
+                    <TextArea 
+                      value={formData.gemini_api_keys} 
+                      onChange={e => setFormData({ ...formData, gemini_api_keys: e.target.value })} 
+                      placeholder="key-1, key-2, key-3..."
+                      className="min-h-[100px] text-xs font-mono"
+                    />
+                    <p className="text-[9px] text-slate-400 italic">User can have multiple keys for rolling access.</p>
+                  </div>
 
                   <div className="flex gap-3 pt-4">
                     <Button type="button" variant="ghost" className="flex-1 h-12" onClick={() => setIsModalOpen(false)}>Cancel</Button>

@@ -41,6 +41,7 @@ import { HabitTracker } from './components/HabitTracker';
 import { TodoList } from './components/TodoList';
 import { Supplement } from './components/Supplement';
 import { AdminManager } from './components/AdminManager';
+import { ProblemAdvisor } from './components/ProblemAdvisor';
 import { cn } from '@/src/lib/utils';
 import { differenceInDays, parseISO, format, addDays, isWithinInterval } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -1843,6 +1844,13 @@ export default function App() {
                   </div>
                 </GlassCard>
               </div>
+
+              {/* AI Expert Consultant (Floating) */}
+              <ProblemAdvisor 
+                problem={selectedProblem} 
+                causes={causes} 
+                plans={plans} 
+              />
             </motion.div>
           )}
         </AnimatePresence>
