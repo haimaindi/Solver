@@ -498,7 +498,9 @@ export function HabitTracker() {
                         return (
                           <div 
                             key={dateStr}
-                            onClick={() => toggleHabit(selectedHabit.id, undefined, dateStr)}
+                            onClick={() => {
+                              setCommentingLog({ date: dateStr, habitId: selectedHabit.id, comment: log?.comment || '' });
+                            }}
                             className={cn(
                               "aspect-square rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center relative group",
                               isDone ? "text-white shadow-sm" : "bg-slate-50 text-slate-400 hover:bg-slate-100",
@@ -507,20 +509,6 @@ export function HabitTracker() {
                             style={{ backgroundColor: isDone ? selectedHabit.color : undefined }}
                           >
                             <span className="text-xs font-bold">{format(day, 'd')}</span>
-                            
-                            {/* Comment Button */}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCommentingLog({ date: dateStr, habitId: selectedHabit.id, comment: log?.comment || '' });
-                              }}
-                              className={cn(
-                                "absolute top-1 right-1 p-0.5 rounded-full transition-transform hover:scale-110",
-                                isDone ? "text-white/60 hover:text-white hover:bg-white/20" : "text-slate-200 hover:text-bca-blue hover:bg-bca-blue/5"
-                              )}
-                            >
-                              <MessageSquare className={cn("w-3 h-3", hasComment ? "fill-current" : "")} />
-                            </button>
                             
                             {/* Hover Preview */}
                             {hasComment && (
@@ -583,9 +571,25 @@ export function HabitTracker() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-2">
-                  <Button variant="ghost" onClick={() => setCommentingLog(null)} className="flex-1">Cancel</Button>
-                  <Button onClick={handleSaveComment} className="flex-1 shadow-lg shadow-bca-blue/20">Save Review</Button>
+                <div className="flex flex-col gap-3 pt-2">
+                   {commentingLog && (
+                     <Button 
+                       onClick={() => toggleHabit(commentingLog.habitId, undefined, commentingLog.date)}
+                       variant="ghost"
+                       className={cn(
+                         "h-12 rounded-xl text-sm font-bold border-2",
+                         logs.some(l => l.habit_id === commentingLog.habitId && l.completed_at === commentingLog.date)
+                           ? "bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100"
+                           : "bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100"
+                       )}
+                     >
+                       {logs.some(l => l.habit_id === commentingLog.habitId && l.completed_at === commentingLog.date) ? 'Uncheck' : 'Check'}
+                     </Button>
+                   )}
+                   <div className="grid grid-cols-2 gap-3">
+                     <Button variant="ghost" onClick={() => setCommentingLog(null)} className="h-12 rounded-xl font-bold">Cancel</Button>
+                     <Button onClick={handleSaveComment} className="h-12 rounded-xl font-bold shadow-lg shadow-bca-blue/20">Save Changes</Button>
+                   </div>
                 </div>
               </div>
             </motion.div>

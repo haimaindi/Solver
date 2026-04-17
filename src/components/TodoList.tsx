@@ -490,29 +490,28 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                          </button>
                       </div>
 
-                      <div className="space-y-5">
-                         <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-5">
-                             <div className="flex-1">
-                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Task Title</div>
-                                 <Input 
-                                     value={newTask} 
-                                     onChange={e => setNewTask(e.target.value)} 
-                                     placeholder="What needs to be done?" 
-                                     className="h-14 text-lg font-bold"
-                                 />
-                             </div>
-                             <div className="sm:w-32 w-full flex-shrink-0">
-                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Time</div>
-                                 <Input 
-                                     type="time" 
-                                     value={targetTime} 
-                                     onChange={e => setTargetTime(e.target.value)} 
-                                     className="h-14 text-center font-mono font-bold text-xl"
-                                 />
-                             </div>
+                      <div className="space-y-6">
+                         <div className="space-y-2">
+                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Task Title</div>
+                             <TextArea 
+                                 value={newTask} 
+                                 onChange={e => setNewTask(e.target.value)} 
+                                 placeholder="What needs to be done?" 
+                                 className="min-h-[80px] text-lg font-bold p-4 rounded-2xl"
+                             />
                          </div>
 
-                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                         <div className="space-y-2">
+                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Task Details</div>
+                             <TextArea
+                                 value={newDescription}
+                                 onChange={e => setNewDescription(e.target.value)}
+                                 placeholder="Add some context or specific steps..."
+                                 className="min-h-[120px] p-5 rounded-2xl text-base"
+                             />
+                         </div>
+
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                             <div>
                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Impact</div>
                                <div className="flex bg-slate-100 p-1.5 rounded-2xl h-14">
@@ -559,16 +558,15 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                                   </button>
                                </div>
                             </div>
-                         </div>
-
-                         <div className="space-y-2">
-                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Task Details</div>
-                             <TextArea
-                                 value={newDescription}
-                                 onChange={e => setNewDescription(e.target.value)}
-                                 placeholder="Add some context or specific steps..."
-                                 className="min-h-[120px] p-5 rounded-2xl text-base"
-                             />
+                            <div>
+                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Target Time</div>
+                               <Input 
+                                   type="time" 
+                                   value={targetTime} 
+                                   onChange={e => setTargetTime(e.target.value)} 
+                                   className="h-14 text-center font-mono font-bold text-xl"
+                               />
+                            </div>
                          </div>
                       </div>
 
@@ -669,6 +667,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   }
 
   function renderMatrixColumn(id: string, title: string, desc: string, styles: string, textStyle: string, dotStyle: string, items: Todo[]) {
+    // Verified edit
     return (
       <Droppable droppableId={id}>
         {(provided, snapshot) => (
@@ -713,8 +712,12 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                              ref={dragProvided.innerRef}
                              {...dragProvided.draggableProps}
                              {...dragProvided.dragHandleProps}
+                             style={{
+                               ...dragProvided.draggableProps.style,
+                               transition: dragSnapshot.isDragging ? 'none' : dragProvided.draggableProps.style?.transition
+                             }}
                              className={cn(
-                                "group relative transition-transform",
+                                "relative mb-2",
                                 dragSnapshot.isDragging ? "z-50" : ""
                              )}
                            >
@@ -739,36 +742,39 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
 
                                  <div className="flex-1 min-w-0">
                                     <h5 className={cn(
-                                       "text-[12px] font-bold tracking-tight break-words",
+                                       "text-sm font-bold tracking-tight break-words",
                                        todo.completed ? "text-slate-400 line-through" : "text-slate-900"
                                     )}>
                                        {todo.task}
                                     </h5>
-                                    <div className="flex items-center gap-2 mt-1">
-                                       <span className="text-[9px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
+                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-50">
+                                       <div className="flex items-center gap-1">
+                                          <Clock className="w-3 h-3 text-slate-400" />
+                                          <span className="text-[9px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
+                                       </div>
                                        {overdue && !todo.completed && (
                                           <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
                                        )}
+                                       <div className="ml-auto flex items-center gap-1.5">
+                                          <button 
+                                             onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
+                                             className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                             title="Edit"
+                                          >
+                                             <Pencil className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button 
+                                             onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
+                                             className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                             title="Delete"
+                                          >
+                                             <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                       </div>
                                     </div>
                                  </div>
                               </div>
 
-                              <div className="absolute right-1 top-1.5 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-gradient-to-l from-white via-white/90 to-transparent pl-4 py-1 pr-1">
-                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
-                                    className="p-1 text-slate-400 hover:text-bca-blue transition-all"
-                                    title="Edit"
-                                 >
-                                    <Pencil className="w-3 h-3" />
-                                 </button>
-                                 <button 
-                                    onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
-                                    className="p-1 text-slate-400 hover:text-rose-500 transition-all"
-                                    title="Delete"
-                                 >
-                                    <Trash2 className="w-3 h-3" />
-                                 </button>
-                              </div>
                            </div>
                         )}
                      </Draggable>
