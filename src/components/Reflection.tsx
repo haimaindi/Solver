@@ -368,8 +368,7 @@ export function ReflectionManager() {
           </h2>
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
-        {!isAdding && !selectedReflection && !showArchived && (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
             <button
               onClick={() => setShowArchived(!showArchived)}
               className={cn(
@@ -380,12 +379,13 @@ export function ReflectionManager() {
             >
               <Archive className="w-5 h-5" />
             </button>
-            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
-              <Plus className="w-4 h-4" />
-              <span>New Reflection</span>
-            </Button>
-          </div>
-        )}
+            {!showArchived && (
+              <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
+                <Plus className="w-4 h-4" />
+                <span>New Reflection</span>
+              </Button>
+            )}
+        </div>
       </div>
 
       <AnimatePresence mode="wait">

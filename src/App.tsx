@@ -795,7 +795,7 @@ export default function App() {
                   )}
                 >
                   <ListTodo className="w-5 h-5" />
-                  Problem List
+                  Problem
                 </button>
                 <button 
                   onClick={() => { setView('todos'); setIsSidebarOpen(false); }}
@@ -805,7 +805,7 @@ export default function App() {
                   )}
                 >
                   <ListTodo className="w-5 h-5" />
-                  To Do List
+                  To Do
                 </button>
                 <button 
                   onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
@@ -825,7 +825,7 @@ export default function App() {
                   )}
                 >
                   <TrendingUp className="w-5 h-5" />
-                  Habit Tracker
+                  Habit
                 </button>
                 <button 
                   onClick={() => { setView('supplement'); setIsSidebarOpen(false); }}
