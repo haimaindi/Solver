@@ -341,14 +341,32 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
        console.error('Drag update error:', error);
        fetchTodos(); // Rollback if error
        Swal.fire({ title: 'Update Failed', text: 'Error syncing drag action', icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+    } else {
+      // Show confirmation UI as requested by user to help "reset" interaction state
+      Swal.fire({
+        title: 'Task Moved',
+        text: `Matrix updated to ${title}`,
+        icon: 'success',
+        confirmButtonText: 'Great!',
+        confirmButtonColor: '#003399',
+        timer: 1500,
+        timerProgressBar: true,
+        customClass: {
+          popup: 'rounded-[32px] border-none shadow-2xl',
+          confirmButton: 'rounded-xl px-8 font-bold'
+        }
+      });
     }
 
     // Force browser reflow/interaction reset to fix "stuck" click bug after drop
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
-      // Clear any unintended text selection during drag
       window.getSelection()?.removeAllRanges();
-    }, 150);
+      // Additional hack to ensure focus is removed from any dragging element
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }, 200);
   };
 
   const goToDate = (offset: number) => {

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge } from './UI';
+import { ReflectionAdvisor } from './ReflectionAdvisor';
 import { format } from 'date-fns';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
@@ -526,6 +527,7 @@ export function ReflectionManager() {
                     <div className="flex flex-wrap items-center gap-3">
                       <h3 className="text-2xl font-bold text-slate-900 truncate max-w-[200px] sm:max-w-md">{selectedReflection.title}</h3>
                       <Badge variant="Success" className="bg-bca-blue/10 text-bca-blue">{selectedReflection.mode}</Badge>
+                      <ReflectionAdvisor reflection={selectedReflection} />
                     </div>
                     <div className="flex items-center gap-4 mt-1 text-slate-400 text-xs font-medium">
                       <div className="flex items-center gap-1">
