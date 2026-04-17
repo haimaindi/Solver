@@ -208,26 +208,28 @@ export function TodoList() {
               <ArrowLeft className="w-5 h-5 text-slate-600" />
             </button>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
                 Todo Detail
               </h2>
-              <p className="text-slate-500 font-medium">{format(parseISO(selectedDateStr), 'EEEE, MMMM d, yyyy')}</p>
+              <p className="text-sm md:text-base text-slate-500 font-medium">{format(parseISO(selectedDateStr), 'EEEE, MMMM d, yyyy')}</p>
               
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Achievement</div>
-                  <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                      className={cn(
-                        "h-full transition-all duration-500",
-                        completionRate <= 33 ? "bg-rose-500" : completionRate <= 66 ? "bg-amber-500" : "bg-green-500"
-                      )}
-                      style={{ width: `${completionRate}%` }}
-                      />
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 md:w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                        className={cn(
+                            "h-full transition-all duration-500",
+                            completionRate <= 33 ? "bg-rose-500" : completionRate <= 66 ? "bg-amber-500" : "bg-green-500"
+                        )}
+                        style={{ width: `${completionRate}%` }}
+                        />
+                    </div>
+                    <span className={cn(
+                        "text-xs font-black",
+                        completionRate <= 33 ? "text-rose-600" : completionRate <= 66 ? "text-amber-600" : "text-green-600"
+                    )}>{completionRate}%</span>
                   </div>
-                  <span className={cn(
-                    "text-xs font-black",
-                    completionRate <= 33 ? "text-rose-600" : completionRate <= 66 ? "text-amber-600" : "text-green-600"
-                  )}>{completionRate}%</span>
               </div>
             </div>
           </div>
@@ -237,7 +239,7 @@ export function TodoList() {
           </div>
         </div>
 
-        <GlassCard className="p-6 space-y-4">
+        <GlassCard className="p-4 md:p-6 space-y-4">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
@@ -266,9 +268,12 @@ export function TodoList() {
                 />
             </div>
             <div className="flex items-center justify-end pt-2">
-                <Button onClick={handleCreateTodo} className="h-11 px-8 w-full md:w-auto">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add Task
+                <Button 
+                    onClick={handleCreateTodo} 
+                    className="h-11 px-8 w-full md:w-auto flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                    <Plus className="w-5 h-5 flex-shrink-0" />
+                    <span>Add Task</span>
                 </Button>
             </div>
           </div>
