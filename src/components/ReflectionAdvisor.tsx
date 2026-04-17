@@ -104,7 +104,7 @@ export function ReflectionAdvisor({ reflection }: ReflectionAdvisorProps) {
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 h-14 px-6 bg-bca-blue text-white rounded-full shadow-2xl flex items-center gap-3 z-[50] group"
       >
-        <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+        <ScrollText className="w-5 h-5 group-hover:rotate-12 transition-transform" />
         <span className="font-bold text-sm tracking-wide">Prompt Maker</span>
       </motion.button>
 

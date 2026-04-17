@@ -882,21 +882,21 @@ export default function App() {
       <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-bca-blue/10 selection:text-bca-blue">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 h-[64px] bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-8">
-          <div 
-            className="flex items-center gap-3 cursor-pointer group" 
-            onClick={() => {
-              if (window.innerWidth < 768) setIsSidebarOpen(true);
-              else setView('dashboard');
-            }}
-          >
-            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100 transition-all group-active:scale-95">
-              <img src={ASSETS.LOGO_URL} alt="Solver" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-            </div>
-            <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
+        <div 
+          className="flex items-center gap-3 cursor-pointer group" 
+          onClick={() => {
+            if (window.innerWidth < 768) setIsSidebarOpen(true);
+            else setView('dashboard');
+          }}
+        >
+          <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100 transition-all group-active:scale-95">
+            <img src={ASSETS.LOGO_URL} alt="Solver" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
           </div>
+          <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
+        </div>
 
-          <div className="hidden md:flex flex-1 justify-between items-center gap-2">
+        <div className="absolute left-0 right-0 flex justify-center pointer-events-none">
+          <div className="hidden md:flex items-center gap-2 pointer-events-auto">
             <button 
               onClick={() => setView('dashboard')}
               className={cn(
@@ -973,7 +973,6 @@ export default function App() {
         </div>
         
         <div className="hidden md:flex items-center gap-4">
-
             <span className="text-[13px] font-bold text-slate-900">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
             <button 
               onClick={handleLogout}

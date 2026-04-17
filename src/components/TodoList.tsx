@@ -305,6 +305,12 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
     if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
+    // Immediate cleanup to fix interaction lag
+    window.getSelection()?.removeAllRanges();
+    if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+    }
+
     // Define column mapping
     const columnMapping: Record<string, { impact: 'High' | 'Low', effort: 'High' | 'Low', title: string }> = {
       'top-priorities': { impact: 'High', effort: 'Low', title: 'Top Priorities' },
