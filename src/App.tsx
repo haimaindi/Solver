@@ -275,7 +275,7 @@ export default function App() {
   };
 
   const fetchProblems = async () => {
-    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
 
     const { data, error } = await supabase
       .from('problems')
