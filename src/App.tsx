@@ -348,8 +348,7 @@ export default function App() {
       .from('app_access')
       .select('*')
       .eq('code', code)
-      .eq('password', pass)
-      .single();
+      .eq('password', pass);
 
     if (error) {
       console.error('Supabase Login Error:', error);
@@ -357,46 +356,51 @@ export default function App() {
       return;
     }
 
-    if (data) {
-      const worldNow = await fetchWorldTime();
-      
-      if (!data.is_unlimited) {
-        const end = new Date(data.end_date + 'T00:00:00Z');
-
-        if (worldNow >= end) {
-          Swal.fire({
-            title: 'Access Expired',
-            text: `Your access expired on ${format(end, 'dd/MM/yyyy')}. Please contact administrator.`,
-            icon: 'error',
-            confirmButtonText: 'OK'
-          });
-          return;
-        }
-      }
-
-      localStorage.setItem('solver_auth', 'true');
-      localStorage.setItem('user_id', data.id);
-      localStorage.setItem('user_name', data.username || data.code);
-      localStorage.setItem('session_data', JSON.stringify(data));
-      setSessionData(data);
-      setIsAuthenticated(true);
-      
-      // Auto-open profile modal on login
-      setView('dashboard');
-      setShowProfileModal(true);
-
-      Swal.fire({
-        title: 'Access Granted',
-        text: 'Welcome back to Solver',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
-      });
-    } else {
+    if (!data || data.length === 0) {
       Swal.fire('Login Failed', 'Invalid access code or password.', 'error');
+      return;
     }
+
+    const userData = data[0];
+
+    // Check expiration
+    const worldNow = await fetchWorldTime();
+      
+    if (!userData.is_unlimited) {
+      const end = new Date(userData.end_date + 'T00:00:00Z');
+
+      if (worldNow >= end) {
+        Swal.fire({
+          title: 'Access Expired',
+          text: `Your access expired on ${format(end, 'dd/MM/yyyy')}. Please contact administrator.`,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
+        return;
+      }
+    }
+
+    // Login success
+    localStorage.setItem('solver_auth', 'true');
+    localStorage.setItem('user_id', userData.id);
+    localStorage.setItem('user_name', userData.username || userData.code);
+    localStorage.setItem('session_data', JSON.stringify(userData));
+    setSessionData(userData);
+    setIsAuthenticated(true);
+    
+    // Auto-open profile modal
+    setView('dashboard');
+    setShowProfileModal(true);
+
+    Swal.fire({
+      title: 'Access Granted',
+      text: 'Welcome back to Solver',
+      icon: 'success',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000
+    });
   };
 
   const handleLogout = () => {
