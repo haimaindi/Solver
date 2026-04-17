@@ -858,13 +858,21 @@ export default function App() {
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleLogout}
-                  className="w-full h-12 mt-6 flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[11px]"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out Platform
-                </Button>
+                 <div className="flex gap-4 mt-6">
+                    <Button 
+                      onClick={() => setShowProfileModal(false)}
+                      className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-widest text-[11px]"
+                    >
+                      UNDERSTAND
+                    </Button>
+                    <Button 
+                      onClick={handleLogout}
+                      className="flex-1 h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold uppercase tracking-widest text-[11px]"
+                    >
+                      LOGOUT
+                    </Button>
+                 </div>
+
               </GlassCard>
             </motion.div>
           </div>
@@ -888,7 +896,7 @@ export default function App() {
             <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
 
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex flex-1 justify-center items-center gap-2">
             <button 
               onClick={() => setView('dashboard')}
               className={cn(
@@ -965,18 +973,10 @@ export default function App() {
         </div>
         
         <div className="hidden md:flex items-center gap-4">
-          <div 
-            className="flex items-center gap-3 cursor-pointer p-1.5 rounded-xl hover:bg-slate-50 transition-all"
-            onClick={() => setShowProfileModal(true)}
-          >
-            <span className="text-[13px] font-bold text-slate-900">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
-            <div className="w-8 h-8 rounded-full bg-bca-blue/5 flex items-center justify-center text-bca-blue border border-bca-blue/10">
-              <User className="w-4 h-4" />
-            </div>
-          </div>
+
           <button 
             onClick={handleLogout}
-            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+            className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
             title="Logout"
           >
             <LogOut className="w-4 h-4" />
@@ -1085,22 +1085,11 @@ export default function App() {
               </div>
 
               <div className="p-6 border-t border-slate-100 mt-auto">
-                 <div 
-                   className="flex items-center gap-3 mb-4 px-2 cursor-pointer hover:bg-slate-50 rounded-xl p-2 transition-all"
-                   onClick={() => { setShowProfileModal(true); setIsSidebarOpen(false); }}
-                 >
-                    <div className="w-10 h-10 rounded-full bg-bca-blue/5 flex items-center justify-center text-bca-blue border border-bca-blue/10">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-slate-900 leading-none">{localStorage.getItem('user_name') || PROFILE_NAME}</div>
-                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Authorized User</div>
-                    </div>
-                 </div>
+
                  <Button 
                    onClick={handleLogout}
                    variant="ghost" 
-                   className="w-full h-12 flex items-center justify-center gap-3 hover:bg-rose-50 hover:text-rose-600 transition-all text-slate-500 font-bold uppercase tracking-widest text-[11px]"
+                   className="w-full h-12 flex items-center justify-center gap-3 bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all font-bold uppercase tracking-widest text-[11px]"
                  >
                    <LogOut className="w-4 h-4" />
                    Sign Out Platform

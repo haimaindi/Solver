@@ -306,11 +306,11 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     // Define column mapping
-    const columnMapping: Record<string, { impact: 'High' | 'Low', effort: 'High' | 'Low' }> = {
-      'top-priorities': { impact: 'High', effort: 'Low' },
-      'second-priorities': { impact: 'High', effort: 'High' },
-      'delegates': { impact: 'Low', effort: 'Low' },
-      'ignore': { impact: 'Low', effort: 'High' }
+    const columnMapping: Record<string, { impact: 'High' | 'Low', effort: 'High' | 'Low', title: string }> = {
+      'top-priorities': { impact: 'High', effort: 'Low', title: 'Top Priorities' },
+      'second-priorities': { impact: 'High', effort: 'High', title: 'Second Priorities' },
+      'delegates': { impact: 'Low', effort: 'Low', title: 'Delegates' },
+      'ignore': { impact: 'Low', effort: 'High', title: 'Ignore / Postpone' }
     };
 
     const targetConfig = columnMapping[destination.droppableId];
@@ -345,7 +345,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
       // Show confirmation UI as requested by user to help "reset" interaction state
       Swal.fire({
         title: 'Task Moved',
-        text: `Matrix updated to ${title}`,
+        text: `Matrix updated to ${targetConfig.title}`,
         icon: 'success',
         confirmButtonText: 'Great!',
         confirmButtonColor: '#003399',

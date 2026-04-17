@@ -196,3 +196,4 @@ export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) 
     </>
   );
 }
+
