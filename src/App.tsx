@@ -34,6 +34,7 @@ import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
 import { ReflectionManager } from './components/Reflection';
 import { HabitTracker } from './components/HabitTracker';
+import { TodoList } from './components/TodoList';
 import { Supplement } from './components/Supplement';
 import { cn } from '@/src/lib/utils';
 import { format, isAfter, addDays } from 'date-fns';
@@ -158,7 +159,7 @@ function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boo
 }
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits' | 'todos'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -797,6 +798,16 @@ export default function App() {
                   Problem List
                 </button>
                 <button 
+                  onClick={() => { setView('todos'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'todos' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <ListTodo className="w-5 h-5" />
+                  To Do List
+                </button>
+                <button 
                   onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
                   className={cn(
                     "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
@@ -1197,6 +1208,17 @@ export default function App() {
               exit={{ opacity: 0, x: -20 }}
             >
               <ReflectionManager />
+            </motion.div>
+          )}
+
+          {view === 'todos' && (
+            <motion.div 
+              key="todos"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <TodoList />
             </motion.div>
           )}
 
