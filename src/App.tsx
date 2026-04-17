@@ -274,21 +274,20 @@ export default function App() {
     setIsAuthChecking(false);
   };
 
-  // Get authoritative time from Supabase
+  // Get authoritative time using HTTP Date header
   const getServerTime = async (): Promise<Date> => {
     try {
-      // Supabase returns server time in the 'now()' function
-      const { data, error } = await supabase.rpc('get_server_time');
-      if (error || !data) {
-        // Fallback to minimal DB request as secondary
-        const { data: { server_time }, error: err } = await supabase.from('app_access').select('now() as server_time').single();
-        if (err) throw err;
-        return new Date(server_time);
+      // Fetching from a reliable global endpoint just for the Date header
+      const res = await fetch('https://www.google.com', { method: 'HEAD', cache: 'no-store' });
+      const dateHeader = res.headers.get('Date');
+      
+      if (dateHeader) {
+        return new Date(dateHeader);
       }
-      return new Date(data);
+      throw new Error('Date header not found');
     } catch (err) {
-      console.error('Failed to fetch server time from Supabase:', err);
-      // Absolute fallback to logout for security if DB time is unreachable
+      console.error('Failed to fetch server time:', err);
+      // Absolute fallback to logout for security if server time is unreachable
       handleLogout();
       throw new Error('Server time unavailable');
     }
