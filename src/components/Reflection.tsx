@@ -229,7 +229,7 @@ export function ReflectionManager() {
   }, []);
 
   const fetchReflections = async () => {
-    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
     
     const { data, error } = await supabase
       .from('reflections')
@@ -246,7 +246,7 @@ export function ReflectionManager() {
       Swal.fire('Error', 'Please enter a title', 'error');
       return;
     }
-    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
 
     const reflectionData = {
       mode: currentMode,

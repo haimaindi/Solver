@@ -239,6 +239,7 @@ export default function App() {
 
     if (data) {
       localStorage.setItem('solver_auth', 'true');
+      localStorage.setItem('user_id', data.id);
       setIsAuthenticated(true);
       Swal.fire({
         title: 'Access Granted',
@@ -346,6 +347,7 @@ export default function App() {
 
   const handleCreateProblem = async () => {
     if (!newProblem.category) return;
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
 
     // Optimistic Update
     const tempId = Math.random().toString();
@@ -354,7 +356,7 @@ export default function App() {
       id: tempId,
       created_at: new Date().toISOString(),
       is_archived: false,
-      user_id: 'temp'
+      user_id: currentUser
     };
     setProblems([optimisticProblem, ...problems]);
     setView('list');
@@ -364,7 +366,8 @@ export default function App() {
       .insert([{
         ...newProblem,
         category: newProblem.category,
-        is_archived: false
+        is_archived: false,
+        user_id: currentUser
       }])
       .select()
       .single();
@@ -559,13 +562,14 @@ export default function App() {
   };
 
   const handleAddPlan = async (plan: Partial<ActionPlan>) => {
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
     // Optimistic Update
     const tempId = Math.random().toString();
     const optimisticPlan: ActionPlan = {
       ...plan as ActionPlan,
       id: tempId,
       problem_id: selectedProblem!.id,
-      user_id: 'temp', // This will be replaced by actual logic after authentication/supabase setup
+      user_id: currentUser,
       is_archived: false,
       created_at: new Date().toISOString()
     };
@@ -575,7 +579,8 @@ export default function App() {
       .from('action_plans')
       .insert([{
         ...plan,
-        problem_id: selectedProblem!.id
+        problem_id: selectedProblem!.id,
+        user_id: currentUser
       }])
       .select()
       .single();

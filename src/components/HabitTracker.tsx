@@ -53,7 +53,7 @@ export function HabitTracker() {
   }, []);
 
   const fetchData = async () => {
-    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
     
     const [habitsRes, logsRes] = await Promise.all([
       supabase.from('habits').select('*').eq('user_id', currentUser).eq('is_archived', false).order('created_at', { ascending: false }),
@@ -80,7 +80,7 @@ export function HabitTracker() {
 
   const handleCreateHabit = async () => {
     if (!newHabit.name) return;
-    const currentUser = JSON.parse(localStorage.getItem('user_id') || '"{}"').id || 'unknown';
+    const currentUser = localStorage.getItem('user_id') || 'unknown';
 
     // Optimistic Update
     const tempId = Math.random().toString();
