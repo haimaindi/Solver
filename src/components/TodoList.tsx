@@ -198,11 +198,22 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   const copyTodo = async (todo: Todo) => {
     const { value: date } = await Swal.fire({
       title: 'Copy to Date',
+      html: `
+        <div class="text-sm text-slate-500 mb-2">Select target date for duplication</div>
+      `,
       input: 'date',
-      inputLabel: 'Select target date',
       inputValue: todo.date,
       showCancelButton: true,
+      confirmButtonText: 'Duplicate',
       confirmButtonColor: '#003399',
+      width: '360px',
+      customClass: {
+        popup: 'rounded-3xl border-none shadow-2xl',
+        title: 'text-xl font-black text-slate-800 pt-6',
+        input: 'max-w-[240px] mx-auto rounded-xl border-slate-200 focus:ring-bca-blue text-center font-bold h-12',
+        confirmButton: 'rounded-xl px-6 py-2.5 font-bold uppercase tracking-wider text-xs',
+        cancelButton: 'rounded-xl px-6 py-2.5 font-bold uppercase tracking-wider text-xs'
+      }
     });
 
     if (date) {
