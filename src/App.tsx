@@ -282,8 +282,8 @@ export default function App() {
         return;
       }
 
-      // 2. Validate expiration (Strict UTC check)
-      const currentTime = new Date();
+      // 2. Validate expiration (Strict UTC check against verified server time)
+      const currentTime = await fetchWorldTime();
       setWorldTime(currentTime);
       const expiryDate = new Date(data.end_date + 'T00:00:00Z');
       
@@ -310,33 +310,33 @@ export default function App() {
   };
 
   const fetchWorldTime = async (): Promise<Date> => {
-    try {
-      // 1. Try to get geolocation-based time
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-      });
+    // List of reliable time APIs for fallback
+    const timeApis = [
+      'https://worldtimeapi.org/api/timezone/Etc/UTC',
+      'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
+      'https://showcase.api.linx.twenty57.net:8080/UnixTime/unixtimestamp?format=json'
+    ];
 
-      const { latitude, longitude } = position.coords;
-      const res = await fetch(`https://timeapi.io/api/Time/current/coordinate?latitude=${latitude}&longitude=${longitude}`);
-      if (!res.ok) throw new Error('Coordinate API failed');
-      const data = await res.json();
-      return parseISO(data.dateTime);
-    } catch (err) {
-      console.warn('Geolocation/Coordinate time API failed, falling back to general API:', err);
-      
+    for (const url of timeApis) {
       try {
-        // 2. Fallback to general API
-        const res = await fetch('https://timeapi.io/api/Time/current/zone?timeZone=UTC');
-        if (!res.ok) throw new Error('Fallback API failed');
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) continue;
         const data = await res.json();
-        return parseISO(data.dateTime);
-      } catch (err2) {
-        // 3. SECURE FALLBACK: If cannot verify time, force logout
-        console.error('All time verification failed, forcing logout for security:', err2);
-        handleLogout();
-        throw new Error('Time verification failed');
+        
+        // Handle different API response structures
+        if (data.datetime) return parseISO(data.datetime); // worldtimeapi
+        if (data.dateTime) return parseISO(data.dateTime); // timeapi
+        if (data.UnixTimeStamp) return new Date(data.UnixTimeStamp * 1000); // linx
+      } catch (err) {
+        console.warn(`Time API ${url} failed, trying next...`);
       }
     }
+
+    // CRITICAL: If all external time APIs fail, we absolutely cannot trust 
+    // local time. Forced logout is the required secure behavior.
+    console.error('All secure time APIs failed.');
+    handleLogout();
+    throw new Error('Time verification failed');
   };
 
   const handleLogin = async (code: string, pass: string) => {
