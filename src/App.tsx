@@ -344,49 +344,59 @@ export default function App() {
   };
 
   const handleLogin = async (code: string, pass: string) => {
-    const { data, error } = await supabase
+    // Check if user exists
+    const { data, error: fetchError } = await supabase
       .from('app_access')
       .select('*')
       .eq('code', code)
       .eq('password', pass)
       .single();
 
-    if (data) {
-      const worldNow = await fetchWorldTime();
-      
-      if (!data.is_unlimited) {
-        const start = data.start_date ? parseISO(data.start_date) : worldNow;
-        const end = data.end_date ? parseISO(data.end_date) : worldNow;
-
-        if (!isWithinInterval(worldNow, { start, end })) {
-          Swal.fire('Access Expired', `Your access period was from ${format(start, 'MMM d, yyyy')} to ${format(end, 'MMM d, yyyy')}`, 'error');
-          return;
-        }
-      }
-
-      localStorage.setItem('solver_auth', 'true');
-      localStorage.setItem('user_id', data.id);
-      localStorage.setItem('user_name', data.username || data.code);
-      localStorage.setItem('session_data', JSON.stringify(data));
-      setSessionData(data);
-      setIsAuthenticated(true);
-      
-      // Auto-open profile modal on login
-      setView('dashboard');
-      setShowProfileModal(true);
-
+    if (fetchError || !data) {
       Swal.fire({
-        title: 'Access Granted',
-        text: 'Welcome back to Solver',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
+        title: 'Access Denied',
+        text: 'Invalid access code or password.',
+        icon: 'error'
       });
-    } else {
-      Swal.fire('Access Denied', 'Invalid code or password', 'error');
+      return;
     }
+
+    // Logic exists, now check expiry
+    const worldNow = await fetchWorldTime();
+    
+    if (!data.is_unlimited && data.end_date) {
+      const expiryDate = new Date(data.end_date + 'T00:00:00Z');
+      
+      if (worldNow >= expiryDate) {
+        Swal.fire({
+          title: 'Access Expired',
+          text: `Your access expired on ${format(expiryDate, 'MMMM d, yyyy')}. Please contact support.`,
+          icon: 'error'
+        });
+        return;
+      }
+    }
+
+    localStorage.setItem('solver_auth', 'true');
+    localStorage.setItem('user_id', data.id);
+    localStorage.setItem('user_name', data.username || data.code);
+    localStorage.setItem('session_data', JSON.stringify(data));
+    setSessionData(data);
+    setIsAuthenticated(true);
+    
+    // Auto-open profile modal on login
+    setView('dashboard');
+    setShowProfileModal(true);
+
+    Swal.fire({
+      title: 'Access Granted',
+      text: 'Welcome back to Solver',
+      icon: 'success',
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000
+    });
   };
 
   const handleLogout = () => {
