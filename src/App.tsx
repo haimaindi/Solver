@@ -202,8 +202,8 @@ export default function App() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   useEffect(() => {
-    // FORCE LOGOUT ON RELOAD: Mitigation for expired users
-    handleLogout();
+    // Initial check on mount
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -267,33 +267,10 @@ export default function App() {
   }, [isSidebarOpen]);
 
   const checkAuth = async () => {
-    const auth = localStorage.getItem('solver_auth');
-    if (auth === 'true') {
-      const data = localStorage.getItem('session_data');
-      if (data) {
-        const session = JSON.parse(data);
-        
-        // Use local browser time as fallback for access control
-        // to prevent being locked out by network issues with external APIs.
-        const currentTime = new Date();
-        setWorldTime(currentTime);
-        
-        // Strict date parsing (YYYY-MM-DD + T00:00:00Z) ensure no timezone local shifts
-        const expiryDate = new Date(session.end_date + 'T00:00:00Z');
-        
-        // If expired based on local system time, force logout
-        if (session.end_date && !session.is_unlimited && currentTime >= expiryDate) {
-          handleLogout();
-          return;
-        }
-
-        setSessionData(session);
-        setIsAuthenticated(true);
-      } else {
-        handleLogout();
-        return;
-      }
-    }
+    // FORCE LOGOUT ON RELOAD
+    handleLogout();
+    
+    // After handling logout, stop checking
     setIsAuthChecking(false);
   };
 
