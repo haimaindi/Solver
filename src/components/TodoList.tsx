@@ -23,6 +23,7 @@ import {
   Pencil,
   XCircle
 } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Todo, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Badge } from './UI';
 import { format, startOfToday, addDays, parseISO, isSameDay, isBefore } from 'date-fns';
@@ -289,12 +290,6 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
     }
   };
 
-  const goToDate = (offset: number) => {
-    const current = parseISO(selectedDateStr);
-    const next = addDays(current, offset);
-    setSelectedDateStr(format(next, 'yyyy-MM-dd'));
-  };
-
   const selectedDateTodos = useMemo(() => {
     return todos.filter(t => t.date === selectedDateStr);
   }, [todos, selectedDateStr]);
@@ -302,6 +297,57 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   const completionRate = selectedDateTodos.length > 0
     ? Math.round((selectedDateTodos.filter(t => t.completed).length / selectedDateTodos.length) * 100)
     : 0;
+
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
+
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    // Define column mapping
+    const columnMapping: Record<string, { impact: 'High' | 'Low', effort: 'High' | 'Low' }> = {
+      'top-priorities': { impact: 'High', effort: 'Low' },
+      'second-priorities': { impact: 'High', effort: 'High' },
+      'delegates': { impact: 'Low', effort: 'Low' },
+      'ignore': { impact: 'Low', effort: 'High' }
+    };
+
+    const targetConfig = columnMapping[destination.droppableId];
+    if (!targetConfig) return;
+
+    // Update local state first for instant feedback (Optimistic Update)
+    setTodos(prev => prev.map(todo => {
+      if (todo.id === draggableId) {
+        return {
+          ...todo,
+          impact_level: targetConfig.impact,
+          effort_level: targetConfig.effort
+        };
+      }
+      return todo;
+    }));
+
+    // Update Supabase
+    const { error } = await supabase
+      .from('todos')
+      .update({
+        impact_level: targetConfig.impact,
+        effort_level: targetConfig.effort
+      })
+      .eq('id', draggableId);
+
+    if (error) {
+       console.error('Drag update error:', error);
+       fetchTodos(); // Rollback if error
+       Swal.fire({ title: 'Update Failed', text: 'Error syncing drag action', icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+    }
+  };
+
+  const goToDate = (offset: number) => {
+    const current = parseISO(selectedDateStr);
+    const next = addDays(current, offset);
+    setSelectedDateStr(format(next, 'yyyy-MM-dd'));
+  };
 
   const isOverdue = (todo: Todo) => {
     if (todo.completed) return false;
@@ -370,48 +416,53 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
           </div>
         </div>
 
-        {/* 2x2 Matrix */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {/* TOP LEFT: Top Priorities (High Impact, Low Effort) */}
-           {renderMatrixCell(
-             "Top Priorities", 
-             "Immediate actions for maximum gain with minimal cost.",
-             "bg-blue-50/50 hover:bg-blue-50 border-blue-200/50",
-             "text-blue-700",
-             "bg-blue-600",
-             selectedDateTodos.filter(t => t.impact_level === 'High' && t.effort_level === 'Low')
-           )}
+        <DragDropContext onDragEnd={onDragEnd}>
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-start overflow-x-auto pb-4 px-1">
+              {/* Column 1: Top Priorities */}
+              {renderMatrixColumn(
+                "top-priorities",
+                "Top Priorities", 
+                "Immediate actions",
+                "bg-blue-50/40 border-blue-100",
+                "text-blue-700",
+                "bg-blue-600",
+                selectedDateTodos.filter(t => t.impact_level === 'High' && t.effort_level === 'Low')
+              )}
 
-           {/* TOP RIGHT: Second Priorities (High Impact, High Effort) */}
-           {renderMatrixCell(
-             "Second Priorities", 
-             "Strategic projects requiring significant resource commitment.",
-             "bg-emerald-50/50 hover:bg-emerald-50 border-emerald-200/50",
-             "text-emerald-700",
-             "bg-emerald-600",
-             selectedDateTodos.filter(t => t.impact_level === 'High' && t.effort_level === 'High')
-           )}
+              {/* Column 2: Second Priorities */}
+              {renderMatrixColumn(
+                "second-priorities",
+                "Second Priorities", 
+                "Strategic projects",
+                "bg-emerald-50/40 border-emerald-100",
+                "text-emerald-700",
+                "bg-emerald-600",
+                selectedDateTodos.filter(t => t.impact_level === 'High' && t.effort_level === 'High')
+              )}
 
-           {/* BOTTOM LEFT: Delegates (Low Impact, Low Effort) */}
-           {renderMatrixCell(
-             "Delegates", 
-             "Quick tasks that provide some value but can be offloaded.",
-             "bg-amber-50/50 hover:bg-amber-50 border-amber-200/50",
-             "text-amber-700",
-             "bg-amber-600",
-             selectedDateTodos.filter(t => t.impact_level === 'Low' && t.effort_level === 'Low')
-           )}
+              {/* Column 3: Delegates */}
+              {renderMatrixColumn(
+                "delegates",
+                "Delegates", 
+                "Quick tasks",
+                "bg-amber-50/40 border-amber-100",
+                "text-amber-700",
+                "bg-amber-600",
+                selectedDateTodos.filter(t => t.impact_level === 'Low' && t.effort_level === 'Low')
+              )}
 
-           {/* BOTTOM RIGHT: Ignore (Low Impact, High Effort) */}
-           {renderMatrixCell(
-             "Ignore / Postpone", 
-             "Low value tasks with high costs. Likely distractions.",
-             "bg-rose-50/50 hover:bg-rose-50 border-rose-200/50",
-             "text-rose-700",
-             "bg-rose-600",
-             selectedDateTodos.filter(t => (t.impact_level === 'Low' && t.effort_level === 'High') || (!t.impact_level && t.effort_level === 'High'))
-           )}
-        </div>
+              {/* Column 4: Ignore */}
+              {renderMatrixColumn(
+                "ignore",
+                "Ignore / Postpone", 
+                "Low value distractions",
+                "bg-rose-50/40 border-rose-100",
+                "text-rose-700",
+                "bg-rose-600",
+                selectedDateTodos.filter(t => (t.impact_level === 'Low' && (t.effort_level === 'High' || !t.effort_level)) || (!t.impact_level && t.effort_level === 'High'))
+              )}
+           </div>
+        </DragDropContext>
 
         {/* Add/Edit Form Modal */}
         <AnimatePresence>
@@ -592,13 +643,12 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
 
                       <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
                          <Button 
-                            className="flex-1 h-12 rounded-2xl gap-2 whitespace-nowrap px-4"
+                            className="flex-1 h-12 rounded-2xl whitespace-nowrap px-4 font-bold flex items-center justify-center leading-none"
                             onClick={() => {
                                toggleTodo(viewingTodo);
                                setViewingTodo(null);
                             }}
                          >
-                            <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
                             <span className="truncate">{viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}</span>
                          </Button>
                          <Button 
@@ -618,100 +668,118 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
     );
   }
 
-  function renderMatrixCell(title: string, desc: string, styles: string, textStyle: string, dotStyle: string, items: Todo[]) {
+  function renderMatrixColumn(id: string, title: string, desc: string, styles: string, textStyle: string, dotStyle: string, items: Todo[]) {
     return (
-      <GlassCard className={cn(
-        "flex flex-col h-full min-h-[350px] transition-all border-2 overflow-hidden",
-        styles
-      )}>
-        <div className="p-5 border-b border-slate-100 flex-shrink-0">
-          <div className="flex items-center justify-between mb-2">
-             <div className="flex items-center gap-2">
-                <div className={cn("w-2 h-2 rounded-full", dotStyle)} />
-                <h4 className={cn("font-black tracking-tight text-lg uppercase", textStyle)}>{title}</h4>
-             </div>
-             <Badge variant="Pending" className="bg-white/80 border-none font-black">{items.length}</Badge>
-          </div>
-          <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{desc}</p>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-           {items.length === 0 ? (
-             <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-12">
-                <LayoutGrid className="w-8 h-8 mb-2" />
-                <span className="text-xs font-bold">No tasks found</span>
-             </div>
-           ) : (
-             items.map(todo => {
-               const overdue = isOverdue(todo);
-               return (
-                 <div 
-                   key={todo.id}
-                   className="group relative"
-                 >
-                    <div 
-                       onClick={() => setViewingTodo(todo)}
-                       className={cn(
-                          "w-full bg-white p-3 rounded-2xl border shadow-sm transition-all cursor-pointer hover:shadow-md flex items-center gap-3",
-                          todo.completed ? "opacity-60 grayscale border-slate-100 bg-slate-50/50" : 
-                          overdue ? "border-rose-100 ring-1 ring-rose-100" : "border-slate-100"
-                       )}
-                    >
-                       <button 
-                          onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
-                          className={cn(
-                             "w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center border-2 transition-all",
-                             todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200"
-                          )}
-                       >
-                          {todo.completed && <Check className="w-3.5 h-3.5" />}
-                       </button>
-
-                       <div className="flex-1 min-w-0 pr-12">
-                          <h5 className={cn(
-                             "text-[13px] font-bold truncate tracking-tight",
-                             todo.completed ? "text-slate-400 line-through" : "text-slate-900"
-                          )}>
-                             {todo.task}
-                          </h5>
-                          <div className="flex items-center gap-2 mt-0.5">
-                             <span className="text-[10px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
-                             {overdue && !todo.completed && (
-                                <span className="text-[9px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
-                             )}
-                          </div>
-                       </div>
-                    </div>
-
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-gradient-to-l from-white via-white to-transparent pl-4 py-1 pr-1">
-                       <button 
-                          onClick={(e) => { e.stopPropagation(); copyTodo(todo); }}
-                          className="p-1.5 text-slate-400 hover:text-bca-blue transition-all"
-                          title="Copy"
-                       >
-                          <Copy className="w-3.5 h-3.5" />
-                       </button>
-                       <button 
-                          onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
-                          className="p-1.5 text-slate-400 hover:text-bca-blue transition-all"
-                          title="Edit"
-                       >
-                          <Pencil className="w-3.5 h-3.5" />
-                       </button>
-                       <button 
-                          onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 transition-all"
-                          title="Delete"
-                       >
-                          <Trash2 className="w-3.5 h-3.5" />
-                       </button>
-                    </div>
+      <Droppable droppableId={id}>
+        {(provided, snapshot) => (
+          <GlassCard 
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={cn(
+              "flex flex-col h-[calc(100vh-280px)] min-h-[500px] transition-all border overflow-hidden",
+              styles,
+              snapshot.isDraggingOver ? "ring-2 ring-indigo-400/50 border-indigo-200 bg-indigo-50/30" : "border-slate-100"
+            )}
+            style={{ minWidth: 'min(300px, 90vw)' }}
+          >
+            <div className="p-4 border-b border-slate-100 flex-shrink-0 bg-white/40 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-1">
+                 <div className="flex items-center gap-2 overflow-hidden">
+                    <div className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", dotStyle)} />
+                    <h4 className={cn("font-black tracking-tight text-[11px] sm:text-xs uppercase truncate", textStyle)} title={title}>{title}</h4>
                  </div>
-               );
-             })
-           )}
-        </div>
-      </GlassCard>
+                 <Badge variant="Pending" className="bg-white/80 border-none font-bold text-[10px] h-5">{items.length}</Badge>
+              </div>
+              <p className="text-[9px] text-slate-500 font-medium leading-tight truncate">{desc}</p>
+            </div>
+
+            <div 
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar"
+            >
+               {items.length === 0 ? (
+                 <div className="h-48 flex flex-col items-center justify-center opacity-20 italic">
+                    <LayoutGrid className="w-5 h-5 mb-1" />
+                    <span className="text-[8px] font-bold">Drop tasks here</span>
+                 </div>
+               ) : (
+                 items.map((todo, index) => {
+                   const overdue = isOverdue(todo);
+                   return (
+                     <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                        {(dragProvided, dragSnapshot) => (
+                           <div 
+                             ref={dragProvided.innerRef}
+                             {...dragProvided.draggableProps}
+                             {...dragProvided.dragHandleProps}
+                             className={cn(
+                                "group relative transition-transform",
+                                dragSnapshot.isDragging ? "z-50" : ""
+                             )}
+                           >
+                              <div 
+                                 onClick={() => setViewingTodo(todo)}
+                                 className={cn(
+                                    "w-full bg-white p-2.5 rounded-xl border shadow-sm transition-all cursor-pointer hover:shadow-md flex items-start gap-2",
+                                    todo.completed ? "opacity-60 grayscale border-slate-100 bg-slate-50/50" : 
+                                    overdue ? "border-rose-100 ring-1 ring-rose-50" : "border-slate-100",
+                                    dragSnapshot.isDragging ? "shadow-xl ring-2 ring-indigo-500/20" : ""
+                                 )}
+                              >
+                                 <button 
+                                    onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
+                                    className={cn(
+                                       "w-5 h-5 rounded-full mt-0.5 flex-shrink-0 flex items-center justify-center border-2 transition-all",
+                                       todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200"
+                                    )}
+                                 >
+                                    {todo.completed && <Check className="w-3 h-3" />}
+                                 </button>
+
+                                 <div className="flex-1 min-w-0">
+                                    <h5 className={cn(
+                                       "text-[12px] font-bold tracking-tight break-words",
+                                       todo.completed ? "text-slate-400 line-through" : "text-slate-900"
+                                    )}>
+                                       {todo.task}
+                                    </h5>
+                                    <div className="flex items-center gap-2 mt-1">
+                                       <span className="text-[9px] font-medium text-slate-400 font-mono">{todo.target_time}</span>
+                                       {overdue && !todo.completed && (
+                                          <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+
+                              <div className="absolute right-1 top-1.5 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all pointer-events-none group-hover:pointer-events-auto bg-gradient-to-l from-white via-white/90 to-transparent pl-4 py-1 pr-1">
+                                 <button 
+                                    onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
+                                    className="p-1 text-slate-400 hover:text-bca-blue transition-all"
+                                    title="Edit"
+                                 >
+                                    <Pencil className="w-3 h-3" />
+                                 </button>
+                                 <button 
+                                    onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
+                                    className="p-1 text-slate-400 hover:text-rose-500 transition-all"
+                                    title="Delete"
+                                 >
+                                    <Trash2 className="w-3 h-3" />
+                                 </button>
+                              </div>
+                           </div>
+                        )}
+                     </Draggable>
+                   );
+                 })
+               )}
+               {provided.placeholder}
+            </div>
+          </GlassCard>
+        )}
+      </Droppable>
     );
   }
 
