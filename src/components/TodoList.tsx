@@ -212,6 +212,23 @@ export function TodoList() {
                 Todo Detail
               </h2>
               <p className="text-slate-500 font-medium">{format(parseISO(selectedDateStr), 'EEEE, MMMM d, yyyy')}</p>
+              
+              <div className="flex items-center gap-2 mt-2">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Achievement</div>
+                  <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                      className={cn(
+                        "h-full transition-all duration-500",
+                        completionRate <= 33 ? "bg-rose-500" : completionRate <= 66 ? "bg-amber-500" : "bg-green-500"
+                      )}
+                      style={{ width: `${completionRate}%` }}
+                      />
+                  </div>
+                  <span className={cn(
+                    "text-xs font-black",
+                    completionRate <= 33 ? "text-rose-600" : completionRate <= 66 ? "text-amber-600" : "text-green-600"
+                  )}>{completionRate}%</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -248,18 +265,8 @@ export function TodoList() {
                     className="min-h-[100px]"
                 />
             </div>
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Achievement</div>
-                    <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                        className="h-full bg-bca-blue transition-all duration-500"
-                        style={{ width: `${completionRate}%` }}
-                        />
-                    </div>
-                    <span className="text-sm font-black text-bca-blue">{completionRate}%</span>
-                </div>
-                <Button onClick={handleCreateTodo} className="h-11 px-8">
+            <div className="flex items-center justify-end pt-2">
+                <Button onClick={handleCreateTodo} className="h-11 px-8 w-full md:w-auto">
                     <Plus className="w-5 h-5 mr-2" />
                     Add Task
                 </Button>
@@ -451,7 +458,7 @@ export function TodoList() {
                       <div className="text-right">
                          <div className={cn(
                            "text-2xl font-black",
-                           rate === 100 ? "text-green-600" : rate >= 50 ? "text-bca-blue" : "text-amber-600"
+                           rate <= 33 ? "text-rose-600" : rate <= 66 ? "text-amber-600" : "text-green-600"
                          )}>
                            {rate}<span className="text-base font-bold opacity-40">%</span>
                          </div>
@@ -464,13 +471,11 @@ export function TodoList() {
                         animate={{ width: `${rate}%` }}
                         className={cn(
                           "h-full transition-all duration-1000",
-                          rate === 100 ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.3)]" : 
-                          rate >= 50 ? "bg-bca-blue" : "bg-amber-500"
+                          rate <= 33 ? "bg-rose-500" : rate <= 66 ? "bg-amber-500" : "bg-green-500"
                         )}
                       />
                     </div>
                   </div>
-                  <Calendar className="absolute -right-4 -bottom-4 w-16 h-16 text-slate-50 transition-all group-hover:text-slate-100 rotate-12" />
                 </GlassCard>
               </motion.div>
             );
