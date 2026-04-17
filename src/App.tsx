@@ -180,6 +180,7 @@ export default function App() {
   const [showArchivedProblems, setShowArchivedProblems] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [sessionData, setSessionData] = useState<any>(null);
+  const [worldTime, setWorldTime] = useState<Date>(new Date());
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [prefillTodo, setPrefillTodo] = useState<{ task: string; description: string; date: string } | null>(null);
@@ -271,12 +272,13 @@ export default function App() {
       const data = localStorage.getItem('session_data');
       if (data) {
         const session = JSON.parse(data);
+        const currentTime = await fetchWorldTime();
+        setWorldTime(currentTime);
         setSessionData(session);
         
         // Force logout if expired (check against world time)
         if (session.end_date && !session.is_unlimited) {
-          const now = await fetchWorldTime();
-          if (now >= parseISO(session.end_date)) {
+          if (currentTime >= parseISO(session.end_date)) {
             handleLogout();
             return;
           }
@@ -990,11 +992,11 @@ export default function App() {
               {sessionData && (
                 <span className={cn(
                   "text-[10px] leading-none mt-0.5",
-                  (sessionData.is_unlimited || (sessionData.end_date && differenceInDays(parseISO(sessionData.end_date), new Date()) > 7)) ? "text-emerald-600" : "text-rose-600"
+                  (sessionData.is_unlimited || (sessionData.end_date && differenceInDays(parseISO(sessionData.end_date), worldTime) > 7)) ? "text-emerald-600" : "text-rose-600"
                 )}>
                   {sessionData.is_unlimited ? 'Unlimited Access' : 
-                    (differenceInDays(parseISO(sessionData.end_date), new Date()) < 0 ? 'Has expired' :
-                    (differenceInDays(parseISO(sessionData.end_date), new Date()) <= 7 ? `Expired at ${format(parseISO(sessionData.end_date), 'dd/MM/yyyy')} (${differenceInDays(parseISO(sessionData.end_date), new Date())} days)` :
+                    (differenceInDays(parseISO(sessionData.end_date), worldTime) < 0 ? 'Has expired' :
+                    (differenceInDays(parseISO(sessionData.end_date), worldTime) <= 7 ? `Expired at ${format(parseISO(sessionData.end_date), 'dd/MM/yyyy')} (${differenceInDays(parseISO(sessionData.end_date), worldTime)} days)` :
                     `Expired at ${format(parseISO(sessionData.end_date), 'dd/MM/yyyy')}`))}
                 </span>
               )}
