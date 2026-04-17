@@ -264,12 +264,24 @@ export default function App() {
     };
   }, [isSidebarOpen]);
 
-  const checkAuth = () => {
+  const checkAuth = async () => {
     const auth = localStorage.getItem('solver_auth');
     if (auth === 'true') {
       setIsAuthenticated(true);
       const data = localStorage.getItem('session_data');
-      if (data) setSessionData(JSON.parse(data));
+      if (data) {
+        const session = JSON.parse(data);
+        setSessionData(session);
+        
+        // Force logout if expired (check against world time)
+        if (session.end_date && !session.is_unlimited) {
+          const now = await fetchWorldTime();
+          if (now >= parseISO(session.end_date)) {
+            handleLogout();
+            return;
+          }
+        }
+      }
     }
     setIsAuthChecking(false);
   };
@@ -973,7 +985,20 @@ export default function App() {
         </div>
         
         <div className="hidden md:flex items-center gap-4">
-            <span className="text-[13px] font-bold text-slate-900">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
+            <div className="flex flex-col items-end">
+              <span className="text-[13px] font-bold text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
+              {sessionData && (
+                <span className={cn(
+                  "text-[10px] leading-none mt-0.5",
+                  (sessionData.is_unlimited || (sessionData.end_date && differenceInDays(parseISO(sessionData.end_date), new Date()) > 7)) ? "text-emerald-600" : "text-rose-600"
+                )}>
+                  {sessionData.is_unlimited ? 'Unlimited Access' : 
+                    (differenceInDays(parseISO(sessionData.end_date), new Date()) < 0 ? 'Has expired' :
+                    (differenceInDays(parseISO(sessionData.end_date), new Date()) <= 7 ? `Expired at ${format(parseISO(sessionData.end_date), 'dd/MM/yyyy')} (${differenceInDays(parseISO(sessionData.end_date), new Date())} days)` :
+                    `Expired at ${format(parseISO(sessionData.end_date), 'dd/MM/yyyy')}`))}
+                </span>
+              )}
+            </div>
             <button 
               onClick={handleLogout}
               className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
