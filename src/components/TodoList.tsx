@@ -346,7 +346,9 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
     // Force browser reflow/interaction reset to fix "stuck" click bug after drop
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
-    }, 100);
+      // Clear any unintended text selection during drag
+      window.getSelection()?.removeAllRanges();
+    }, 150);
   };
 
   const goToDate = (offset: number) => {
@@ -404,7 +406,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
             <div className="flex items-center gap-1">
               <Button onClick={() => goToDate(-1)} variant="ghost" className="p-2 aspect-square"><ChevronLeft className="w-5 h-5" /></Button>
               <Button onClick={() => goToDate(1)} variant="ghost" className="p-2 aspect-square"><ChevronRight className="w-5 h-5" /></Button>
@@ -414,10 +416,11 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                 resetForm();
                 setIsFormModalOpen(true);
               }}
-              className="h-10 px-4 flex items-center gap-2 ml-2"
+              className="h-10 px-4 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Task</span>
+              <span className="hidden xs:inline">Add Task</span>
+              <span className="xs:hidden">Add</span>
             </Button>
           </div>
         </div>

@@ -34,8 +34,7 @@ export function AdminManager() {
     start_date: format(new Date(), 'yyyy-MM-dd'),
     duration: 1,
     end_date: '',
-    is_unlimited: false,
-    gemini_api_keys: ''
+    is_unlimited: false
   });
 
   useEffect(() => {
@@ -73,8 +72,7 @@ export function AdminManager() {
         start_date: user.start_date ? format(parseISO(user.start_date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
         duration: user.duration || 1,
         end_date: user.end_date ? format(parseISO(user.end_date), 'yyyy-MM-dd') : '',
-        is_unlimited: user.is_unlimited || false,
-        gemini_api_keys: user.gemini_api_keys?.join(', ') || ''
+        is_unlimited: user.is_unlimited || false
       });
     } else {
       setEditingUser(null);
@@ -85,8 +83,7 @@ export function AdminManager() {
         start_date: format(new Date(), 'yyyy-MM-dd'),
         duration: 1,
         end_date: '',
-        is_unlimited: false,
-        gemini_api_keys: ''
+        is_unlimited: false
       });
     }
     setIsModalOpen(true);
@@ -101,8 +98,7 @@ export function AdminManager() {
       start_date: formData.is_unlimited ? null : formData.start_date,
       duration: formData.is_unlimited ? null : formData.duration,
       end_date: formData.is_unlimited ? null : formData.end_date,
-      is_unlimited: formData.is_unlimited,
-      gemini_api_keys: formData.gemini_api_keys.split(',').map(k => k.trim()).filter(Boolean)
+      is_unlimited: formData.is_unlimited
     };
 
     if (editingUser) {
@@ -165,10 +161,12 @@ export function AdminManager() {
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Manage access codes and platform user permissions.</p>
         </div>
-        <Button onClick={() => handleOpenModal(null)} className="h-11 px-6 flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          <span>New User</span>
-        </Button>
+        <div className="flex justify-end">
+          <Button onClick={() => handleOpenModal(null)} className="h-11 px-6 flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            <span>New User</span>
+          </Button>
+        </div>
       </div>
 
       <GlassCard className="overflow-hidden border-slate-200 shadow-sm">
@@ -372,52 +370,6 @@ export function AdminManager() {
                       </div>
                     </>
                   )}
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Gemini API Keys (Comma Separated)</label>
-                      <button 
-                        type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        className="text-[10px] font-bold text-bca-blue hover:text-bca-light-blue flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-bca-blue/5 transition-all outline-none"
-                      >
-                        {showApiKey ? (
-                          <>
-                            <EyeOff className="w-3.5 h-3.5" />
-                            <span>Hide Keys</span>
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Show Keys</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    <div className="relative group">
-                      <TextArea 
-                        value={formData.gemini_api_keys} 
-                        onChange={e => setFormData({ ...formData, gemini_api_keys: e.target.value })} 
-                        placeholder="key-1, key-2, key-3..."
-                        className={cn(
-                          "min-h-[100px] text-xs font-mono transition-all duration-300",
-                          !showApiKey && "blur-[8px] select-none pointer-events-none opacity-40 grayscale"
-                        )}
-                      />
-                      {!showApiKey && (
-                        <div 
-                          onClick={() => setShowApiKey(true)}
-                          className="absolute inset-0 flex items-center justify-center cursor-pointer rounded-lg bg-black/5 hover:bg-black/10 transition-all z-10"
-                        >
-                          <div className="bg-white/95 px-4 py-2 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-2.5 text-slate-600 text-[11px] font-bold uppercase tracking-wider transform hover:scale-105 transition-transform">
-                            <Shield className="w-4 h-4 text-bca-blue" />
-                            Click to Reveal Keys
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[9px] text-slate-400 italic">User can have multiple keys for rolling access.</p>
-                  </div>
 
                   <div className="flex gap-3 pt-4">
                     <Button type="button" variant="ghost" className="flex-1 h-12" onClick={() => setIsModalOpen(false)}>Cancel</Button>
