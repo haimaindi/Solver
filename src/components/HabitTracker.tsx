@@ -54,7 +54,8 @@ export function HabitTracker() {
   }, [showArchived]);
 
   const fetchData = async () => {
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') return;
     
     const [habitsRes, logsRes] = await Promise.all([
       supabase.from('habits').select('*').eq('user_id', currentUser).eq('is_archived', showArchived).order('created_at', { ascending: false }),
@@ -81,7 +82,11 @@ export function HabitTracker() {
 
   const handleCreateHabit = async () => {
     if (!newHabit.name) return;
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') {
+      Swal.fire('Error', 'Authentication error. Please re-login.', 'error');
+      return;
+    }
 
     // Optimistic Update
     const tempId = Math.random().toString();

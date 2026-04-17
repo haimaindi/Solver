@@ -250,7 +250,8 @@ export function ReflectionManager() {
   }, [showArchived]);
 
   const fetchReflections = async () => {
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') return;
     
     const { data, error } = await supabase
       .from('reflections')
@@ -268,7 +269,11 @@ export function ReflectionManager() {
       Swal.fire('Error', 'Please enter a title', 'error');
       return;
     }
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') {
+      Swal.fire('Error', 'Authentication error. Please re-login.', 'error');
+      return;
+    }
 
     const reflectionData = {
       mode: currentMode,

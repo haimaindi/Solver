@@ -187,9 +187,16 @@ export default function App() {
 
   useEffect(() => {
     checkAuth();
-    fetchProblems();
-    fetchDashboardPlans();
+  }, []);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProblems();
+      fetchDashboardPlans();
+    }
+  }, [isAuthenticated, view, showArchivedProblems]);
+
+  useEffect(() => {
     // Mobile Gestures
     let touchStart = 0;
     let touchStartX = 0;
@@ -313,7 +320,8 @@ export default function App() {
   };
 
   const fetchProblems = async () => {
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!isAuthenticated || !currentUser || currentUser === 'unknown') return;
 
     const { data, error } = await supabase
       .from('problems')
@@ -331,6 +339,9 @@ export default function App() {
   };
 
   const fetchDashboardPlans = async () => {
+    const currentUser = localStorage.getItem('user_id');
+    if (!isAuthenticated || !currentUser || currentUser === 'unknown') return;
+
     const today = new Date().toISOString().split('T')[0];
     
     const { data, error } = await supabase
@@ -341,6 +352,7 @@ export default function App() {
           title
         )
       `)
+      .eq('user_id', currentUser)
       .eq('is_controllable', true)
       .eq('status', 'Pending')
       .lte('scheduled_date', addDays(new Date(), 3).toISOString().split('T')[0])
@@ -385,7 +397,11 @@ export default function App() {
 
   const handleCreateProblem = async () => {
     if (!newProblem.category) return;
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') {
+      Swal.fire('Error', 'Authentication error. Please re-login.', 'error');
+      return;
+    }
 
     // Optimistic Update
     const tempId = Math.random().toString();

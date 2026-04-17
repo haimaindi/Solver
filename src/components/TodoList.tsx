@@ -40,7 +40,11 @@ export function TodoList() {
 
   const fetchTodos = async () => {
     setIsLoading(true);
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') {
+      setIsLoading(false);
+      return;
+    }
     
     try {
       const { data, error } = await supabase
@@ -74,7 +78,11 @@ export function TodoList() {
 
   const handleCreateTodo = async () => {
     if (!newTask) return;
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
+    const currentUser = localStorage.getItem('user_id');
+    if (!currentUser || currentUser === 'unknown') {
+      Swal.fire('Error', 'Authentication error. Please re-login.', 'error');
+      return;
+    }
     
     const newTodo = {
       user_id: currentUser,
