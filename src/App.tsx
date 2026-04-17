@@ -702,7 +702,17 @@ export default function App() {
               )}
             >
               <ListTodo className="w-4 h-4" />
-              Problem List
+              Problem
+            </button>
+            <button 
+              onClick={() => setView('todos')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'todos' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <ListTodo className="w-4 h-4" />
+              To Do
             </button>
             <button 
               onClick={() => setView('reflection')}
@@ -722,7 +732,7 @@ export default function App() {
               )}
             >
               <TrendingUp className="w-4 h-4" />
-              Habit Tracker
+              Habit
             </button>
             <button 
               onClick={() => setView('supplement')}
@@ -1078,7 +1088,7 @@ export default function App() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    {showArchivedProblems ? 'Archived Problems' : 'Problem List'}
+                    {showArchivedProblems ? 'Archived Problem' : 'Problem'}
                   </h2>
                   <p className="text-slate-500 mt-1">Detailed view of all documented engineering challenges.</p>
                 </div>
