@@ -304,7 +304,6 @@ export default function App() {
       `)
       .eq('is_controllable', true)
       .eq('status', 'Pending')
-      .eq('is_archived', false)
       .lte('scheduled_date', addDays(new Date(), 3).toISOString().split('T')[0])
       .order('scheduled_date', { ascending: true });
 
@@ -321,7 +320,7 @@ export default function App() {
   const fetchDetails = async (problemId: string) => {
     const [causesRes, plansRes] = await Promise.all([
       supabase.from('root_causes').select('*').eq('problem_id', problemId).order('created_at', { ascending: true }),
-      supabase.from('action_plans').select('*').eq('problem_id', problemId).eq('is_archived', false).order('created_at', { ascending: true })
+      supabase.from('action_plans').select('*').eq('problem_id', problemId).order('created_at', { ascending: true })
     ]);
 
     if (causesRes.data) setCauses(causesRes.data);
@@ -576,8 +575,7 @@ export default function App() {
       .from('action_plans')
       .insert([{
         ...plan,
-        problem_id: selectedProblem!.id,
-        is_archived: false
+        problem_id: selectedProblem!.id
       }])
       .select()
       .single();
