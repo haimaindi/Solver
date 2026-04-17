@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   Check,
   AlignLeft,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  PlusCircle
 } from 'lucide-react';
 import { Todo, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Badge } from './UI';
@@ -22,7 +24,12 @@ import { format, startOfToday, addDays, parseISO, isSameDay, isBefore } from 'da
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
 
-export function TodoList() {
+interface TodoListProps {
+  prefillData?: { task: string; description: string; date: string } | null;
+  onPrefillHandled?: () => void;
+}
+
+export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
   const [selectedDateStr, setSelectedDateStr] = useState(format(startOfToday(), 'yyyy-MM-dd'));
@@ -37,6 +44,16 @@ export function TodoList() {
   useEffect(() => {
     fetchTodos();
   }, [showArchived]);
+
+  useEffect(() => {
+    if (prefillData) {
+      setNewTask(prefillData.task);
+      setNewDescription(prefillData.description);
+      setSelectedDateStr(prefillData.date);
+      setViewMode('detail');
+      onPrefillHandled?.();
+    }
+  }, [prefillData]);
 
   const fetchTodos = async () => {
     setIsLoading(true);
@@ -174,6 +191,44 @@ export function TodoList() {
       if (!error) {
         fetchTodos();
         Swal.fire('Deleted', 'All tasks removed', 'success');
+      }
+    }
+  };
+
+  const copyTodo = async (todo: Todo) => {
+    const { value: date } = await Swal.fire({
+      title: 'Copy to Date',
+      input: 'date',
+      inputLabel: 'Select target date',
+      inputValue: todo.date,
+      showCancelButton: true,
+      confirmButtonColor: '#003399',
+    });
+
+    if (date) {
+      const currentUser = localStorage.getItem('user_id');
+      if (!currentUser) return;
+
+      const { data, error } = await supabase.from('todos').insert([{
+        user_id: currentUser,
+        task: todo.task,
+        description: todo.description,
+        target_time: todo.target_time,
+        completed: false,
+        date: date,
+        is_archived: false
+      }]).select().single();
+
+      if (data) {
+        setTodos(prev => [...prev, data]);
+        Swal.fire({
+          title: 'Task Copied',
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 1500
+        });
       }
     }
   };
@@ -354,7 +409,14 @@ export function TodoList() {
                         )}
                     </div>
 
-                    <div className="flex items-center justify-end mt-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-end mt-4 pt-4 border-t border-slate-100 gap-2">
+                        <button 
+                            onClick={() => copyTodo(todo)}
+                            className="p-2 text-slate-300 hover:text-bca-blue transition-colors"
+                            title="Duplicate/Copy Task"
+                        >
+                            <Copy className="w-4 h-4" />
+                        </button>
                         <button 
                             onClick={() => deleteTodo(todo.id)}
                             className="p-2 text-slate-300 hover:text-red-500 transition-colors"

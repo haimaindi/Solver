@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Trash2, Calendar, CheckCircle2, XCircle, Clock, Settings, Zap, Pencil } from 'lucide-react';
+import { Plus, Trash2, Calendar, CheckCircle2, XCircle, Clock, Settings, Zap, Pencil, ListPlus } from 'lucide-react';
 import { ActionPlan, Status } from '@/src/lib/supabase';
 import { Button, Input, Badge, Select, TextArea } from './UI';
 import { cn } from '@/src/lib/utils';
@@ -11,9 +11,10 @@ interface ActionPlanProps {
   onAdd: (plan: Partial<ActionPlan>) => void;
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<ActionPlan>) => void;
+  onAddToTodo: (description: string, notes: string, date: string | null) => void;
 }
 
-export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPlanProps) {
+export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate, onAddToTodo }: ActionPlanProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newPlan, setNewPlan] = useState<Partial<ActionPlan>>({
@@ -93,9 +94,19 @@ export function ActionPlanManager({ plans, onAdd, onDelete, onUpdate }: ActionPl
           ))}
         </div>
         <div className="flex items-center gap-2">
+          {plan.is_controllable && (
+            <button 
+              onClick={() => onAddToTodo(plan.description, plan.notes || '', plan.scheduled_date)}
+              className="text-emerald-500 hover:text-emerald-600 p-1 bg-emerald-50 rounded transition-all"
+              title="Add to To Do List"
+            >
+              <ListPlus className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button 
             onClick={() => handleEdit(plan)}
             className="text-bca-blue hover:text-bca-blue/80 p-1 bg-bca-blue/5 rounded transition-all"
+            title="Edit Action"
           >
             <Pencil className="w-3.5 h-3.5" />
           </button>

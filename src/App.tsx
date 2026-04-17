@@ -181,6 +181,7 @@ export default function App() {
   const [sessionData, setSessionData] = useState<any>(null);
   const [categories, setCategories] = useState(['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial']);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [prefillTodo, setPrefillTodo] = useState<{ task: string; description: string; date: string } | null>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
   
   // Close dropdown on click outside
@@ -609,6 +610,15 @@ export default function App() {
     }
   };
 
+  const handleActionPlanToTodo = (description: string, notes: string, date: string | null) => {
+    setPrefillTodo({
+      task: description,
+      description: notes || '',
+      date: date || format(new Date(), 'yyyy-MM-dd')
+    });
+    setView('todos');
+  };
+
   const handleDeleteCause = async (id: string) => {
     const result = await Swal.fire({
       title: 'Delete Cause?',
@@ -807,14 +817,14 @@ export default function App() {
                     {sessionData?.is_unlimited ? (
                        <div className="flex items-center gap-2 text-emerald-600">
                          
-                         <span className="text-[13px] font-bold uppercase tracking-wider">Unlimited Access Status</span>
+                         <span className="text-[13px] font-bold uppercase tracking-wider text-center block">Unlimited Access</span>
                        </div>
                     ) : (
                       <>
                         <div className="flex items-center justify-between">
                            <div className="flex items-center gap-2 text-slate-500">
                              <Calendar className="w-4 h-4" />
-                             <span className="text-[11px] font-bold uppercase tracking-wider">Access Expired</span>
+                             <span className="text-[11px] font-bold uppercase tracking-wider ">Access Expired</span>
                            </div>
                            <span className="text-[13px] font-bold text-slate-700">
                             {sessionData?.end_date ? format(parseISO(sessionData.end_date), 'MMM d, yyyy') : 'N/A'}
@@ -909,16 +919,6 @@ export default function App() {
               To Do
             </button>
             <button 
-              onClick={() => setView('reflection')}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <BookOpen className="w-4 h-4" />
-              Reflection
-            </button>
-            <button 
               onClick={() => setView('habits')}
               className={cn(
                 "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
@@ -927,6 +927,16 @@ export default function App() {
             >
               <TrendingUp className="w-4 h-4" />
               Habit
+            </button>
+            <button 
+              onClick={() => setView('reflection')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <BookOpen className="w-4 h-4" />
+              Reflection
             </button>
             <button 
               onClick={() => setView('supplement')}
@@ -1030,16 +1040,6 @@ export default function App() {
                   To Do
                 </button>
                 <button 
-                  onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
-                  className={cn(
-                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
-                    view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <BookOpen className="w-5 h-5" />
-                  Reflection
-                </button>
-                <button 
                   onClick={() => { setView('habits'); setIsSidebarOpen(false); }}
                   className={cn(
                     "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
@@ -1048,6 +1048,16 @@ export default function App() {
                 >
                   <TrendingUp className="w-5 h-5" />
                   Habit
+                </button>
+                <button 
+                  onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <BookOpen className="w-5 h-5" />
+                  Reflection
                 </button>
                 <button 
                   onClick={() => { setView('supplement'); setIsSidebarOpen(false); }}
@@ -1481,7 +1491,10 @@ export default function App() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
             >
-              <TodoList />
+              <TodoList 
+                prefillData={prefillTodo} 
+                onPrefillHandled={() => setPrefillTodo(null)} 
+              />
             </motion.div>
           )}
 
@@ -1770,6 +1783,7 @@ export default function App() {
                       onAdd={handleAddPlan}
                       onDelete={handleDeletePlan}
                       onUpdate={handleUpdatePlan}
+                      onAddToTodo={handleActionPlanToTodo}
                     />
                   </GlassCard>
                 </div>
