@@ -562,14 +562,13 @@ export default function App() {
   };
 
   const handleAddPlan = async (plan: Partial<ActionPlan>) => {
-    const currentUser = localStorage.getItem('user_id') || 'unknown';
     // Optimistic Update
     const tempId = Math.random().toString();
     const optimisticPlan: ActionPlan = {
       ...plan as ActionPlan,
       id: tempId,
       problem_id: selectedProblem!.id,
-      user_id: currentUser,
+      user_id: null,
       is_archived: false,
       created_at: new Date().toISOString()
     };
@@ -580,7 +579,7 @@ export default function App() {
       .insert([{
         ...plan,
         problem_id: selectedProblem!.id,
-        user_id: currentUser
+        user_id: null
       }])
       .select()
       .single();
