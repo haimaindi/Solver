@@ -23,6 +23,7 @@ import {
   Pill, 
   ChevronDown,
   Waypoints, 
+  Puzzle,
   BookOpen,
   Loader2,
   Eye,
@@ -39,6 +40,7 @@ import { Supplement } from './components/Supplement';
 import { cn } from '@/src/lib/utils';
 import { format, isAfter, addDays } from 'date-fns';
 import { PROFILE_NAME } from './profile';
+import { ASSETS } from './assets';
 import Swal from 'sweetalert2';
 import { 
   BarChart, 
@@ -677,8 +679,8 @@ export default function App() {
               else setView('dashboard');
             }}
           >
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center transition-all group-active:scale-90">
-              <Waypoints className="text-bca-blue w-7 h-7" />
+            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100 transition-all group-active:scale-95">
+              <img src={ASSETS.LOGO_URL} alt="Solver" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
             </div>
             <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
           </div>
@@ -701,7 +703,7 @@ export default function App() {
                 view === 'list' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
-              <ListTodo className="w-4 h-4" />
+              <Puzzle className="w-4 h-4" />
               Problem
             </button>
             <button 
@@ -780,8 +782,8 @@ export default function App() {
               className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] md:hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center">
-                  <Waypoints className="text-bca-blue w-7 h-7" />
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100">
+                  <img src={ASSETS.LOGO_URL} alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                 </div>
                 <h1 className="text-xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
               </div>
@@ -804,7 +806,7 @@ export default function App() {
                     view === 'list' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
                   )}
                 >
-                  <ListTodo className="w-5 h-5" />
+                  <Puzzle className="w-5 h-5" />
                   Problem
                 </button>
                 <button 
@@ -1557,8 +1559,10 @@ export default function App() {
       {/* Footer */}
       <footer className="py-12 px-6 border-t border-slate-200 mt-20">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Waypoints className="w-5 h-5 text-bca-blue" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100">
+              <img src={ASSETS.LOGO_URL} alt="Solver Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+            </div>
             <span className="font-bold text-slate-900">Solver</span>
             <span className="text-slate-400 text-sm">© 2026 Daily Solver Engineering</span>
           </div>

@@ -95,12 +95,10 @@ export interface Todo {
   id: string;
   user_id: string;
   task: string;
+  description: string;
   target_time: string;
   completed: boolean;
   date: string; // YYYY-MM-DD
   is_archived: boolean;
   created_at: string;
-  latitude: number | null;
-  longitude: number | null;
-  location_name: string | null;
 }
