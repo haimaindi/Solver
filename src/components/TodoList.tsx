@@ -342,6 +342,11 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
        fetchTodos(); // Rollback if error
        Swal.fire({ title: 'Update Failed', text: 'Error syncing drag action', icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
     }
+
+    // Force browser reflow/interaction reset to fix "stuck" click bug after drop
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
   };
 
   const goToDate = (offset: number) => {
@@ -473,7 +478,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                    initial={{ opacity: 0, y: 20 }}
                    animate={{ opacity: 1, y: 0 }}
                    exit={{ opacity: 0, y: 20 }}
-                   className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-hidden"
+                   className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-y-auto max-h-[92vh] custom-scrollbar"
                 >
                    <div className="p-8 space-y-6">
                       <div className="flex items-center justify-between">
@@ -604,7 +609,7 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                    initial={{ opacity: 0, scale: 0.95 }}
                    animate={{ opacity: 1, scale: 1 }}
                    exit={{ opacity: 0, scale: 0.95 }}
-                   className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden"
+                   className="w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-y-auto max-h-[92vh] custom-scrollbar"
                 >
                    <div className="p-8 space-y-6">
                       <div className="flex items-start justify-between">

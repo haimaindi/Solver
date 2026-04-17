@@ -277,9 +277,9 @@ export function AdminManager() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg"
+              className="relative w-full max-w-lg max-h-[90vh] flex flex-col"
             >
-              <GlassCard className="p-8 shadow-2xl border-white/20">
+              <GlassCard className="p-8 shadow-2xl border-white/20 overflow-y-auto custom-scrollbar overflow-x-hidden">
                 <div className="flex justify-between items-start mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-bca-blue flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">

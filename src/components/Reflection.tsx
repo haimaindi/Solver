@@ -554,7 +554,7 @@ export function ReflectionManager() {
                   <div key={field.id} className="space-y-3">
                     <div className="text-[10px] font-bold text-bca-blue uppercase tracking-widest">{field.label}</div>
                     <div 
-                      className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed reflection-content"
+                      className="p-5 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed reflection-content break-words overflow-hidden"
                       dangerouslySetInnerHTML={{ __html: selectedReflection.content[field.id] || '<span class="text-slate-300 italic">No content provided.</span>' }}
                     />
                   </div>
