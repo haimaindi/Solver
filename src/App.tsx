@@ -1468,9 +1468,9 @@ export default function App() {
 
                 {/* Section 2: Middle - 2 Columns (Analysis & Action Plan) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                  <GlassCard className="p-6 min-h-[500px] overflow-hidden">
-                    <div className="overflow-x-auto hide-scrollbar -mx-6 px-6">
-                      <div className="min-w-[500px]">
+                  <GlassCard className="p-4 md:p-6 min-h-[500px] overflow-hidden">
+                    <div className="w-full">
+                      <div className="w-full">
                         <Fishbone 
                           causes={causes}
                           onAdd={handleAddCause}
@@ -1486,7 +1486,7 @@ export default function App() {
                     </div>
                   </GlassCard>
 
-                  <GlassCard className="p-6 min-h-[500px]">
+                  <GlassCard className="p-4 md:p-6 min-h-[500px]">
                     <ActionPlanManager 
                       plans={plans}
                       onAdd={handleAddPlan}
