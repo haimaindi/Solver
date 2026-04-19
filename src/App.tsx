@@ -644,8 +644,16 @@ export default function App() {
   };
 
   const handleCreateIdea = async (idea: Partial<Idea>) => {
+    let userId = null;
+    
+    // 1. Try Supabase session
     const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
+    if (session?.user?.id) {
+      userId = session.user.id;
+    } else {
+      // 2. Fallback to localStorage
+      userId = localStorage.getItem('user_id');
+    }
     
     if (!userId) {
       console.error('No authenticated user found');
