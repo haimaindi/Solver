@@ -410,11 +410,11 @@ export function HabitTracker() {
               onClick={() => setSelectedHabit(null)}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
-            <motion.div 
+              <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] overflow-x-hidden"
             >
               <div className="p-6 md:p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-4">
@@ -423,10 +423,6 @@ export function HabitTracker() {
                     style={{ backgroundColor: selectedHabit.color }}
                   >
                     <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-900">{selectedHabit.name}</h3>
-                    <p className="text-sm text-slate-500 font-medium">{selectedHabit.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -452,6 +448,12 @@ export function HabitTracker() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                {/* NEW SECTION FOR TITLE AND DESCRIPTION */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-slate-900">{selectedHabit.name}</h3>
+                  <p className="text-sm text-slate-500 font-medium">{selectedHabit.description}</p>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* Stats Column */}
                   <div className="space-y-6">
