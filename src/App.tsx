@@ -644,7 +644,20 @@ export default function App() {
   };
 
   const handleCreateIdea = async (idea: Partial<Idea>) => {
-    const { data, error } = await supabase.from('ideas').insert([{ ...idea }]).select().single();
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    
+    if (!userId) {
+      console.error('No authenticated user found');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('ideas')
+      .insert([{ ...idea, user_id: userId }])
+      .select()
+      .single();
+
     if (error) {
       console.error('Error creating idea:', error);
       return;
