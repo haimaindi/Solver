@@ -19,6 +19,7 @@ import {
   Archive,
   TrendingUp,
   ListTodo, 
+  Lightbulb,
   Sparkles,
   X,
   Pill, 
