@@ -22,11 +22,14 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
     category: 'General',
     idea: '',
     description: '',
-    act_content: '',
-    research_content: '',
-    plan_content: '',
+    action_type: 'Act',
+    action_description: '',
     checked: false
   });
+
+  // Get unique categories for the dropdown
+  const categories = Array.from(new Set(ideas.map(i => i.category).filter(Boolean)));
+  const [customCategory, setCustomCategory] = useState('');
 
   const handleEdit = (idea: Idea, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -109,7 +112,27 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[32px] shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold mb-6">{editingId ? 'Edit Idea' : 'Add New Idea'}</h3>
               <div className="space-y-4">
-                <Input className="h-12 border-slate-200 rounded-xl" placeholder="Category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Category</label>
+                  <div className="flex gap-2">
+                    <Select className="h-12 border-slate-200 rounded-xl flex-1" value={formData.category} onChange={e => {
+                        if (e.target.value === 'custom') {
+                          setCustomCategory('');
+                        } else {
+                          setFormData({...formData, category: e.target.value});
+                        }
+                      }}>
+                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="custom">+ Add Custom</option>
+                    </Select>
+                  </div>
+                  {(formData.category === 'custom' || categories.length === 0) && (
+                    <Input className="h-12 border-slate-200 rounded-xl" placeholder="Enter custom category" value={customCategory} onChange={e => {
+                      setCustomCategory(e.target.value);
+                      setFormData({...formData, category: e.target.value});
+                    }} />
+                  )}
+                </div>
                 <Input className="h-12 border-slate-200 rounded-xl" placeholder="Idea Name" value={formData.idea} onChange={e => setFormData({...formData, idea: e.target.value})} />
                 <TextArea className="min-h-[100px] border-slate-200 rounded-xl" placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
                 <Select className="h-12 border-slate-200 rounded-xl" value={formData.action_type || 'Act'} onChange={e => setFormData({...formData, action_type: e.target.value as any})}>
