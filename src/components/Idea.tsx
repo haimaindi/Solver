@@ -44,9 +44,9 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Capture your sparks of genius and plan your next steps.</p>
         </div>
-        <Button onClick={() => { setFormData({ category: 'General', idea: '', description: '', action_type: 'Act', action_description: '', checked: false }); setIsAdding(true); setEditingId(null); }} className="h-11 px-6 shadow-lg shadow-bca-blue/20">
-          <Plus className="w-4 h-4 mr-2" />
-          New Idea
+        <Button onClick={() => { setFormData({ category: 'General', idea: '', description: '', action_type: 'Act', action_description: '', checked: false }); setIsAdding(true); setEditingId(null); }} className="h-11 px-6 shadow-lg shadow-bca-blue/20 flex items-center gap-2">
+          <Plus className="w-4 h-4" />
+          <span className="font-bold">New Idea</span>
         </Button>
       </div>
 
@@ -109,20 +109,16 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-[32px] shadow-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-xl font-bold mb-6">{editingId ? 'Edit Idea' : 'Add New Idea'}</h3>
               <div className="space-y-4">
-                <Input placeholder="Category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
-                <Input placeholder="Idea Name" value={formData.idea} onChange={e => setFormData({...formData, idea: e.target.value})} />
-                <TextArea placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <Select value={formData.action_type || 'Act'} onChange={e => setFormData({...formData, action_type: e.target.value as any})}>
+                <Input className="h-12 border-slate-200 rounded-xl" placeholder="Category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
+                <Input className="h-12 border-slate-200 rounded-xl" placeholder="Idea Name" value={formData.idea} onChange={e => setFormData({...formData, idea: e.target.value})} />
+                <TextArea className="min-h-[100px] border-slate-200 rounded-xl" placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <Select className="h-12 border-slate-200 rounded-xl" value={formData.action_type || 'Act'} onChange={e => setFormData({...formData, action_type: e.target.value as any})}>
                   <option value="Act">Act</option>
                   <option value="Research">Research</option>
                   <option value="Plan">Plan</option>
                 </Select>
-                <TextArea placeholder="Action Description" value={formData.action_description} onChange={e => setFormData({...formData, action_description: e.target.value})} />
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked={formData.checked} onChange={e => setFormData({...formData, checked: e.target.checked})} />
-                  <label>Finished (Checked)</label>
-                </div>
-                <Button onClick={() => { if(editingId) onUpdate(editingId, formData); else onAdd(formData); setIsAdding(false); }}>{editingId ? 'Update' : 'Save'}</Button>
+                <TextArea className="min-h-[100px] border-slate-200 rounded-xl" placeholder="Action Description" value={formData.action_description} onChange={e => setFormData({...formData, action_description: e.target.value})} />
+                <Button className="w-full h-12 rounded-xl mt-4" onClick={() => { if(editingId) onUpdate(editingId, formData); else onAdd(formData); setIsAdding(false); }}>{editingId ? 'Update' : 'Save'}</Button>
               </div>
             </motion.div>
           </div>
