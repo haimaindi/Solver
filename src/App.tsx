@@ -19,7 +19,6 @@ import {
   Archive,
   TrendingUp,
   ListTodo, 
-  Lightbulb,
   Sparkles,
   X,
   Pill, 
@@ -33,13 +32,12 @@ import {
   Shield,
   Calendar
 } from 'lucide-react';
-import { Problem, Status, RootCause, ActionPlan, Reflection, Idea, supabase } from '@/src/lib/supabase';
+import { Problem, Status, RootCause, ActionPlan, Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
 import { ReflectionManager } from './components/Reflection';
 import { HabitTracker } from './components/HabitTracker';
-import { IdeaManager } from './components/Idea';
 import { TodoList } from './components/TodoList';
 import { Supplement } from './components/Supplement';
 import { AdminManager } from './components/AdminManager';
@@ -168,11 +166,10 @@ function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boo
 }
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits' | 'todos' | 'admin' | 'idea'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'supplement' | 'reflection' | 'habits' | 'todos' | 'admin'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
-  const [ideas, setIdeas] = useState<Idea[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
   const [causes, setCauses] = useState<RootCause[]>([]);
@@ -433,25 +430,26 @@ export default function App() {
     const currentUser = localStorage.getItem('user_id');
     if (!isAuthenticated || !currentUser || currentUser === 'unknown') return;
 
-    const [problemsRes, ideasRes] = await Promise.all([
-      supabase.from('problems').select('*').eq('user_id', currentUser).eq('is_archived', showArchivedProblems).order('created_at', { ascending: false }),
-      supabase.from('ideas').select('*').eq('user_id', currentUser).order('created_at', { ascending: false })
-    ]);
+    const { data, error } = await supabase
+      .from('problems')
+      .select('*')
+      .eq('user_id', currentUser)
+      .eq('is_archived', showArchivedProblems)
+      .order('created_at', { ascending: false });
     
-    if (problemsRes.data) {
-      setProblems(problemsRes.data);
-      // ... (categories logic continues)
-      const dbCategories = Array.from(new Set(problemsRes.data.map(p => p.category))).filter(Boolean);
+    if (data) {
+      setProblems(data);
+      // Get unique categories from user's problems
+      const dbCategories = Array.from(new Set(data.map(p => p.category))).filter(Boolean);
       const defaultCategories = ['Technical', 'Infrastructure', 'Process', 'Human Resource', 'Financial'];
       
+      // Merge defaults with DB categories, uniquely
       setCategories(prev => {
         const combined = Array.from(new Set([...defaultCategories, ...dbCategories])).sort();
         return combined;
       });
     }
-    if (ideasRes.data) setIdeas(ideasRes.data);
-    if (problemsRes.error) console.error('Error fetching problems:', problemsRes.error);
-    if (ideasRes.error) console.error('Error fetching ideas:', ideasRes.error);
+    if (error) console.error('Error fetching problems:', error);
   };
 
   const fetchDashboardPlans = async () => {
@@ -630,47 +628,6 @@ export default function App() {
       }
       Swal.fire('Deleted!', 'Problem has been deleted.', 'success');
     }
-  };
-
-  const handleDeleteIdea = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this idea?')) return;
-    const { error } = await supabase.from('ideas').delete().eq('id', id);
-    if (!error) setIdeas(ideas.filter(i => i.id !== id));
-  };
-
-  const handleUpdateIdea = async (id: string, updates: Partial<Idea>) => {
-    const { data, error } = await supabase.from('ideas').update(updates).eq('id', id).select().single();
-    if (data) setIdeas(ideas.map(i => i.id === id ? data : i));
-  };
-
-  const handleCreateIdea = async (idea: Partial<Idea>) => {
-    let userId = null;
-    
-    // 1. Try Supabase session
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user?.id) {
-      userId = session.user.id;
-    } else {
-      // 2. Fallback to localStorage
-      userId = localStorage.getItem('user_id');
-    }
-    
-    if (!userId) {
-      console.error('No authenticated user found');
-      return;
-    }
-
-    const { data, error } = await supabase
-      .from('ideas')
-      .insert([{ ...idea, user_id: userId }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating idea:', error);
-      return;
-    }
-    if (data) setIdeas([data, ...ideas]);
   };
 
   const handleSelectProblem = async (problem: Problem) => {
@@ -1015,16 +972,6 @@ export default function App() {
               Problem
             </button>
             <button 
-              onClick={() => setView('idea')}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'idea' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <Lightbulb className="w-4 h-4" />
-              Idea
-            </button>
-            <button 
               onClick={() => setView('todos')}
               className={cn(
                 "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
@@ -1170,16 +1117,6 @@ export default function App() {
                 >
                   <TrendingUp className="w-5 h-5" />
                   Habit
-                </button>
-                <button 
-                  onClick={() => { setView('idea'); setIsSidebarOpen(false); }}
-                  className={cn(
-                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
-                    view === 'idea' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <Lightbulb className="w-5 h-5" />
-                  Idea
                 </button>
                 <button 
                   onClick={() => { setView('reflection'); setIsSidebarOpen(false); }}
@@ -1615,22 +1552,6 @@ export default function App() {
               <TodoList 
                 prefillData={prefillTodo} 
                 onPrefillHandled={() => setPrefillTodo(null)} 
-              />
-            </motion.div>
-          )}
-
-          {view === 'idea' && (
-            <motion.div 
-              key="idea"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-            >
-              <IdeaManager 
-                ideas={ideas}
-                onAdd={handleCreateIdea}
-                onUpdate={handleUpdateIdea}
-                onDelete={handleDeleteIdea}
               />
             </motion.div>
           )}
