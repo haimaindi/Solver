@@ -1011,6 +1011,16 @@ export default function App() {
               Habit
             </button>
             <button 
+              onClick={() => setView('idea')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'idea' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Lightbulb className="w-4 h-4" />
+              Idea
+            </button>
+            <button 
               onClick={() => setView('reflection')}
               className={cn(
                 "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",

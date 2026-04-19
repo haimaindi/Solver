@@ -74,9 +74,12 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
             <p className="text-sm text-slate-600 line-clamp-3 mb-4">{idea.description}</p>
             
             <div className="flex gap-2 text-[10px] font-bold uppercase tracking-wider">
-              <span className="px-2 py-1 bg-red-100 text-red-600 rounded">Act</span>
-              <span className="px-2 py-1 bg-orange-100 text-orange-600 rounded">Res</span>
-              <span className="px-2 py-1 bg-emerald-100 text-emerald-600 rounded">Plan</span>
+              <span className={cn(
+                "px-2 py-1 rounded",
+                idea.action_type === 'Act' ? "bg-red-100 text-red-600" :
+                idea.action_type === 'Research' ? "bg-orange-100 text-orange-600" :
+                "bg-emerald-100 text-emerald-600"
+              )}>{idea.action_type}</span>
             </div>
           </motion.div>
         ))}
@@ -93,11 +96,7 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
               </div>
               <div className="space-y-4">
                 <p className="text-slate-600">{selectedIdea.description}</p>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="p-4 bg-red-50 rounded-xl"><h5 className="font-bold text-red-600 mb-1">Act</h5><p className="text-sm">{selectedIdea.act_content}</p></div>
-                  <div className="p-4 bg-orange-50 rounded-xl"><h5 className="font-bold text-orange-600 mb-1">Research</h5><p className="text-sm">{selectedIdea.research_content}</p></div>
-                  <div className="p-4 bg-emerald-50 rounded-xl"><h5 className="font-bold text-emerald-600 mb-1">Plan</h5><p className="text-sm">{selectedIdea.plan_content}</p></div>
-                </div>
+                <div className="p-4 bg-slate-50 rounded-xl"><h5 className="font-bold text-slate-900 mb-1">{selectedIdea.action_type}</h5><p className="text-sm">{selectedIdea.action_description}</p></div>
               </div>
             </motion.div>
           </div>
@@ -114,9 +113,12 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
                 <Input placeholder="Category" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} />
                 <Input placeholder="Idea Name" value={formData.idea} onChange={e => setFormData({...formData, idea: e.target.value})} />
                 <TextArea placeholder="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
-                <TextArea placeholder="Act Content" value={formData.act_content} onChange={e => setFormData({...formData, act_content: e.target.value})} />
-                <TextArea placeholder="Research Content" value={formData.research_content} onChange={e => setFormData({...formData, research_content: e.target.value})} />
-                <TextArea placeholder="Plan Content" value={formData.plan_content} onChange={e => setFormData({...formData, plan_content: e.target.value})} />
+                <Select value={formData.action_type || 'Act'} onChange={e => setFormData({...formData, action_type: e.target.value as any})}>
+                  <option value="Act">Act</option>
+                  <option value="Research">Research</option>
+                  <option value="Plan">Plan</option>
+                </Select>
+                <TextArea placeholder="Action Description" value={formData.action_description} onChange={e => setFormData({...formData, action_description: e.target.value})} />
                 <div className="flex items-center gap-2">
                   <input type="checkbox" checked={formData.checked} onChange={e => setFormData({...formData, checked: e.target.checked})} />
                   <label>Finished (Checked)</label>

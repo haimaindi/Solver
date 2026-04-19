@@ -127,9 +127,8 @@ export interface Idea {
   category: string;
   idea: string;
   description: string;
-  act_content: string;
-  research_content: string;
-  plan_content: string;
+  action_type: 'Act' | 'Research' | 'Plan';
+  action_description: string;
   checked: boolean;
   created_at: string;
 }
