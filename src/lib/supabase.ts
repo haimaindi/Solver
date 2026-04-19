@@ -120,3 +120,16 @@ export interface Todo {
   effort_level: 'High' | 'Low';
   created_at: string;
 }
+
+export interface Idea {
+  id: string;
+  user_id: string;
+  category: string;
+  idea: string;
+  description: string;
+  act_content: string;
+  research_content: string;
+  plan_content: string;
+  checked: boolean;
+  created_at: string;
+}
