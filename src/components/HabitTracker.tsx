@@ -287,7 +287,6 @@ export function HabitTracker() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="text-left md:text-left">
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center justify-start md:justify-start gap-3">
-            <TrendingUp className="w-8 h-8 text-bca-blue" />
             {showArchived ? 'Archived Habit' : 'Habit'}
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Consistency is the key to mastery. Track your progress daily.</p>

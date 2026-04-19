@@ -40,14 +40,13 @@ export function IdeaManager({ ideas, onAdd, onUpdate, onDelete }: IdeaProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-            <Lightbulb className="w-8 h-8 text-amber-500" />
             Ideas
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Capture your sparks of genius and plan your next steps.</p>
         </div>
-        <Button onClick={() => { setFormData({ category: 'General', idea: '', description: '', act_content: '', research_content: '', plan_content: '', checked: false }); setIsAdding(true); setEditingId(null); }} className="h-11 px-6 shadow-lg shadow-bca-blue/20">
+        <Button onClick={() => { setFormData({ category: 'General', idea: '', description: '', action_type: 'Act', action_description: '', checked: false }); setIsAdding(true); setEditingId(null); }} className="h-11 px-6 shadow-lg shadow-bca-blue/20">
           <Plus className="w-4 h-4 mr-2" />
-          Add New Idea
+          New Idea
         </Button>
       </div>
 
