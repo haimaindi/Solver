@@ -38,7 +38,8 @@ export function Fishbone({ causes, onAdd, onDelete, onToggleHighlight, onUpdateS
     const children = causes.filter(c => c.parent_id === cause.id);
     
     return (
-      <div key={cause.id} className="ml-2 sm:ml-4 mt-3 border-l border-slate-200 pl-3 sm:pl-4 relative">
+      <div key={cause.id} className="ml-2 sm:ml-4 mt-3 border-l-2 border-bca-blue/40 pl-3 sm:pl-4 relative">
+        <div className="absolute -left-[5px] -bottom-[4px] w-2 h-2 border-r-2 border-b-2 border-bca-blue/40 rotate-[-45deg] bg-white"></div>
         <div className={cn(
           "group relative p-3 rounded-lg transition-all bg-white border border-slate-200 shadow-sm",
           cause.is_highlighted && "border-2 border-bca-blue shadow-[0_0_10px_rgba(0,51,153,0.1)]"
