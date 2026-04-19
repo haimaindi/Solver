@@ -644,9 +644,11 @@ export default function App() {
   };
 
   const handleCreateIdea = async (idea: Partial<Idea>) => {
-    const currentUser = localStorage.getItem('user_id');
-    if (!currentUser) return;
-    const { data, error } = await supabase.from('ideas').insert([{ ...idea, user_id: currentUser }]).select().single();
+    const { data, error } = await supabase.from('ideas').insert([{ ...idea }]).select().single();
+    if (error) {
+      console.error('Error creating idea:', error);
+      return;
+    }
     if (data) setIdeas([data, ...ideas]);
   };
 
