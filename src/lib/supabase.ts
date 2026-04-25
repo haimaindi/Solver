@@ -120,3 +120,19 @@ export interface Todo {
   effort_level: 'High' | 'Low';
   created_at: string;
 }
+
+export type Maturity = 'Thin' | 'Mature';
+export type NextAction = 'Execute Now' | 'Research' | 'Plan';
+
+export interface Idea {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  maturity: Maturity;
+  next_action: NextAction;
+  is_archived: boolean;
+  remind_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
