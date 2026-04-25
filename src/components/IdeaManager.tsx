@@ -69,37 +69,38 @@ export function IdeaManager() {
         <div class="space-y-4 text-left w-full max-w-full">
           <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Idea Heading</label>
-            <input id="swal-title" class="swal2-input w-full rounded-xl border-slate-200 text-sm font-bold h-11" placeholder="What's the spark?">
+            <input id="swal-title" class="swal2-input w-full" placeholder="What's the spark?">
           </div>
           <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description / Context</label>
-            <textarea id="swal-description" class="swal2-textarea w-full rounded-xl border-slate-200 text-xs sm:text-sm min-h-[100px] p-3" placeholder="Flesh out the idea briefly..."></textarea>
+            <textarea id="swal-description" class="swal2-textarea w-full" placeholder="Flesh out the idea briefly..."></textarea>
           </div>
           <div class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1 space-y-1">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Maturity</label>
-              <select id="swal-maturity" class="swal2-select w-full rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+              <select id="swal-maturity" class="swal2-select w-full">
                 <option value="Thin">Thin (Draft)</option>
                 <option value="Mature">Mature (Solid)</option>
               </select>
             </div>
             <div class="flex-1 space-y-1">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Next Action</label>
-              <select id="swal-action" class="swal2-select w-full rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+              <select id="swal-action" class="swal2-select w-full">
                 <option value="Research">Research (Study)</option>
                 <option value="Plan">Plan (Blueprint)</option>
                 <option value="Execute Now">Execute Now (Action)</option>
               </select>
             </div>
           </div>
-          <div class="space-y-1 text-center sm:text-left">
+          <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Recall Reminder (Optional)</label>
-            <input id="swal-remind" type="date" class="swal2-input w-full rounded-xl border-slate-200 text-sm font-bold h-11" placeholder="Reminder date">
+            <input id="swal-remind" type="date" class="swal2-input w-full">
           </div>
         </div>
       `,
       focusConfirm: false,
       showCancelButton: true,
+      showDenyButton: false,
       confirmButtonText: 'Document Spark',
       cancelButtonText: 'Discard',
       confirmButtonColor: '#003399',
@@ -107,8 +108,8 @@ export function IdeaManager() {
         popup: 'swal2-popup shadow-2xl',
         title: 'swal2-title pt-2',
         htmlContainer: 'swal2-html-container',
-        confirmButton: 'rounded-xl px-4 py-3 font-black uppercase tracking-widest text-[11px] h-12 shadow-lg shadow-bca-blue/20',
-        cancelButton: 'rounded-xl px-4 py-3 font-black uppercase tracking-widest text-[11px] h-12 text-slate-500 bg-slate-50'
+        confirmButton: 'shadow-lg shadow-bca-blue/20',
+        cancelButton: 'text-slate-500 bg-slate-100 hover:bg-slate-200'
       },
       preConfirm: () => {
         const title = (document.getElementById('swal-title') as HTMLInputElement).value;
@@ -170,37 +171,38 @@ export function IdeaManager() {
         <div class="space-y-4 text-left w-full max-w-full">
           <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Idea Heading</label>
-            <input id="swal-title" class="swal2-input w-full rounded-xl border-slate-200 text-sm font-bold h-11" placeholder="What's the spark?" value="${idea.title.replace(/"/g, '&quot;')}">
+            <input id="swal-title" class="swal2-input w-full" placeholder="What's the spark?" value="${idea.title.replace(/"/g, '&quot;')}">
           </div>
           <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description / Context</label>
-            <textarea id="swal-description" class="swal2-textarea w-full rounded-xl border-slate-200 text-xs sm:text-sm min-h-[100px] p-3" placeholder="Flesh out the idea briefly...">${(idea.description || '').replace(/"/g, '&quot;')}</textarea>
+            <textarea id="swal-description" class="swal2-textarea w-full" placeholder="Flesh out the idea briefly...">${(idea.description || '').replace(/"/g, '&quot;')}</textarea>
           </div>
           <div class="flex flex-col sm:flex-row gap-4">
             <div class="flex-1 space-y-1">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Maturity</label>
-              <select id="swal-maturity" class="swal2-select w-full rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+              <select id="swal-maturity" class="swal2-select w-full">
                 <option value="Thin" ${idea.maturity === 'Thin' ? 'selected' : ''}>Thin (Draft)</option>
                 <option value="Mature" ${idea.maturity === 'Mature' ? 'selected' : ''}>Mature (Solid)</option>
               </select>
             </div>
             <div class="flex-1 space-y-1">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Next Action</label>
-              <select id="swal-action" class="swal2-select w-full rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+              <select id="swal-action" class="swal2-select w-full">
                 <option value="Research" ${idea.next_action === 'Research' ? 'selected' : ''}>Research (Study)</option>
                 <option value="Plan" ${idea.next_action === 'Plan' ? 'selected' : ''}>Plan (Blueprint)</option>
                 <option value="Execute Now" ${idea.next_action === 'Execute Now' ? 'selected' : ''}>Execute Now (Action)</option>
               </select>
             </div>
           </div>
-          <div class="space-y-1 text-center sm:text-left">
+          <div class="space-y-1">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Recall Reminder (Optional)</label>
-            <input id="swal-remind" type="date" class="swal2-input w-full rounded-xl border-slate-200 text-sm font-bold h-11" value="${idea.remind_at || ''}">
+            <input id="swal-remind" type="date" class="swal2-input w-full" value="${idea.remind_at || ''}">
           </div>
         </div>
       `,
       focusConfirm: false,
       showCancelButton: true,
+      showDenyButton: false,
       confirmButtonText: 'Save Refinement',
       cancelButtonText: 'Cancel',
       confirmButtonColor: '#003399',
@@ -208,8 +210,8 @@ export function IdeaManager() {
         popup: 'swal2-popup shadow-2xl',
         title: 'swal2-title pt-2',
         htmlContainer: 'swal2-html-container',
-        confirmButton: 'rounded-xl px-4 py-3 font-black uppercase tracking-widest text-[11px] h-12 shadow-lg shadow-bca-blue/20',
-        cancelButton: 'rounded-xl px-4 py-3 font-black uppercase tracking-widest text-[11px] h-12 text-slate-500 bg-slate-50'
+        confirmButton: 'shadow-lg shadow-bca-blue/20',
+        cancelButton: 'text-slate-500 bg-slate-100 hover:bg-slate-200'
       },
       preConfirm: () => {
         const title = (document.getElementById('swal-title') as HTMLInputElement).value;
