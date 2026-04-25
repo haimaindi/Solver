@@ -257,10 +257,12 @@ export function IdeaManager() {
           >
             <Archive className="w-5 h-5" />
           </button>
-          <Button onClick={() => setShowAddModal(true)} className="h-11 px-6 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            <span>Capture Idea</span>
-          </Button>
+          {!showArchived && (
+            <Button onClick={() => setShowAddModal(true)} className="h-11 px-6 flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span>Capture Idea</span>
+            </Button>
+          )}
         </div>
       </div>
 
