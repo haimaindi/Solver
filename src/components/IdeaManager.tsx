@@ -36,24 +36,7 @@ export function IdeaManager() {
 
   // Detail/Edit Modal State
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    maturity: 'Thin' as Maturity,
-    next_action: 'Research' as NextAction,
-    remind_at: ''
-  });
-
-  const [editFormData, setEditFormData] = useState({
-    title: '',
-    description: '',
-    maturity: 'Thin' as Maturity,
-    next_action: 'Research' as NextAction,
-    remind_at: ''
-  });
 
   useEffect(() => {
     fetchIdeas();
@@ -79,110 +62,212 @@ export function IdeaManager() {
     setIsLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const userId = localStorage.getItem('user_id');
-    if (!userId) return;
+  const handleAddIdea = async () => {
+    const { value: formValues } = await Swal.fire({
+      title: 'New Idea Spark',
+      html: `
+        <div class="space-y-4 text-left">
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Idea Heading</label>
+            <input id="swal-title" class="swal2-input w-full m-0 rounded-xl border-slate-200 text-sm font-bold h-11" placeholder="What's the spark?">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description / Context</label>
+            <textarea id="swal-description" class="swal2-textarea w-full m-0 rounded-xl border-slate-200 text-xs sm:text-sm min-h-[100px] p-3" placeholder="Flesh out the idea briefly..."></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Maturity</label>
+              <select id="swal-maturity" class="swal2-select w-full m-0 rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+                <option value="Thin">Thin (Draft)</option>
+                <option value="Mature">Mature (Solid)</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Next Action</label>
+              <select id="swal-action" class="swal2-select w-full m-0 rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+                <option value="Research">Research (Study)</option>
+                <option value="Plan">Plan (Blueprint)</option>
+                <option value="Execute Now">Execute Now (Action)</option>
+              </select>
+            </div>
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Recall Reminder (Optional)</label>
+            <input id="swal-remind" type="date" class="swal2-input w-full m-0 rounded-xl border-slate-200 text-sm font-bold h-11" placeholder="Reminder date">
+          </div>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Document Spark',
+      cancelButtonText: 'Discard',
+      confirmButtonColor: '#003399',
+      width: 'min(480px, 95vw)',
+      padding: '2rem',
+      customClass: {
+        popup: 'rounded-[32px] border-none shadow-2xl overflow-hidden',
+        title: 'text-xl font-black text-slate-900 pt-2 uppercase tracking-tighter',
+        htmlContainer: 'text-left overflow-visible p-0 mt-6',
+        confirmButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-[11px] h-12 shadow-lg shadow-bca-blue/20',
+        cancelButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-[11px] h-12 text-slate-500 bg-slate-50'
+      },
+      preConfirm: () => {
+        const title = (document.getElementById('swal-title') as HTMLInputElement).value;
+        const description = (document.getElementById('swal-description') as HTMLTextAreaElement).value;
+        const maturity = (document.getElementById('swal-maturity') as HTMLSelectElement).value;
+        const next_action = (document.getElementById('swal-action') as HTMLSelectElement).value;
+        const remind_at = (document.getElementById('swal-remind') as HTMLInputElement).value;
 
-    if (!formData.title.trim()) {
-      Swal.fire('Error', 'Title is required', 'error');
-      return;
+        if (!title.trim()) {
+          Swal.showValidationMessage('Title is required');
+          return false;
+        }
+
+        return { title, description, maturity, next_action, remind_at };
+      }
+    });
+
+    if (formValues) {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) return;
+
+      const newIdea = {
+        user_id: userId,
+        title: formValues.title,
+        description: formValues.description,
+        maturity: formValues.maturity as Maturity,
+        next_action: formValues.next_action as NextAction,
+        remind_at: formValues.remind_at || null,
+        is_archived: false
+      };
+
+      const { data, error } = await supabase
+        .from('ideas')
+        .insert([newIdea])
+        .select()
+        .single();
+
+      if (error) {
+        Swal.fire('Error', 'Failed to save idea', 'error');
+      } else {
+        setIdeas([data, ...ideas]);
+        Swal.fire({
+          title: 'Idea Captured',
+          text: 'Brilliance documented.',
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
     }
+  };
 
-    const newIdea = {
-      user_id: userId,
-      title: formData.title,
-      description: formData.description,
-      maturity: formData.maturity,
-      next_action: formData.next_action,
-      remind_at: formData.remind_at || null,
-      is_archived: false
-    };
+  const handleEditIdea = async (idea: Idea) => {
+    const { value: formValues } = await Swal.fire({
+      title: 'Refine Idea Spark',
+      html: `
+        <div class="space-y-4 text-left">
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Idea Heading</label>
+            <input id="swal-title" class="swal2-input w-full m-0 rounded-xl border-slate-200 text-sm font-bold h-11" placeholder="What's the spark?" value="${idea.title.replace(/"/g, '&quot;')}">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description / Context</label>
+            <textarea id="swal-description" class="swal2-textarea w-full m-0 rounded-xl border-slate-200 text-xs sm:text-sm min-h-[100px] p-3" placeholder="Flesh out the idea briefly...">${(idea.description || '').replace(/"/g, '&quot;')}</textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Maturity</label>
+              <select id="swal-maturity" class="swal2-select w-full m-0 rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+                <option value="Thin" ${idea.maturity === 'Thin' ? 'selected' : ''}>Thin (Draft)</option>
+                <option value="Mature" ${idea.maturity === 'Mature' ? 'selected' : ''}>Mature (Solid)</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Next Action</label>
+              <select id="swal-action" class="swal2-select w-full m-0 rounded-xl border-slate-200 text-xs font-bold h-11 px-3">
+                <option value="Research" ${idea.next_action === 'Research' ? 'selected' : ''}>Research (Study)</option>
+                <option value="Plan" ${idea.next_action === 'Plan' ? 'selected' : ''}>Plan (Blueprint)</option>
+                <option value="Execute Now" ${idea.next_action === 'Execute Now' ? 'selected' : ''}>Execute Now (Action)</option>
+              </select>
+            </div>
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Recall Reminder (Optional)</label>
+            <input id="swal-remind" type="date" class="swal2-input w-full m-0 rounded-xl border-slate-200 text-sm font-bold h-11" value="${idea.remind_at || ''}">
+          </div>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Save Refinement',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#003399',
+      width: 'min(480px, 95vw)',
+      padding: '2rem',
+      customClass: {
+        popup: 'rounded-[32px] border-none shadow-2xl overflow-hidden',
+        title: 'text-xl font-black text-slate-900 pt-2 uppercase tracking-tighter',
+        htmlContainer: 'text-left overflow-visible p-0 mt-6',
+        confirmButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-[11px] h-12 shadow-lg shadow-bca-blue/20',
+        cancelButton: 'rounded-xl px-8 py-3 font-black uppercase tracking-widest text-[11px] h-12 text-slate-500 bg-slate-50'
+      },
+      preConfirm: () => {
+        const title = (document.getElementById('swal-title') as HTMLInputElement).value;
+        const description = (document.getElementById('swal-description') as HTMLTextAreaElement).value;
+        const maturity = (document.getElementById('swal-maturity') as HTMLSelectElement).value;
+        const next_action = (document.getElementById('swal-action') as HTMLSelectElement).value;
+        const remind_at = (document.getElementById('swal-remind') as HTMLInputElement).value;
 
-    const { data, error } = await supabase
-      .from('ideas')
-      .insert([newIdea])
-      .select()
-      .single();
+        if (!title.trim()) {
+          Swal.showValidationMessage('Title is required');
+          return false;
+        }
 
-    if (error) {
-      Swal.fire('Error', 'Failed to save idea', 'error');
-    } else {
-      setIdeas([data, ...ideas]);
-      setShowAddModal(false);
-      setFormData({
-        title: '',
-        description: '',
-        maturity: 'Thin',
-        next_action: 'Research',
-        remind_at: ''
-      });
-      Swal.fire({
-        title: 'Idea Captured',
-        text: 'Your idea has been documented successfully.',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
-      });
+        return { title, description, maturity, next_action, remind_at };
+      }
+    });
+
+    if (formValues) {
+      const updatedIdea = {
+        title: formValues.title,
+        description: formValues.description,
+        maturity: formValues.maturity as Maturity,
+        next_action: formValues.next_action as NextAction,
+        remind_at: formValues.remind_at || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('ideas')
+        .update(updatedIdea)
+        .eq('id', idea.id)
+        .select()
+        .single();
+
+      if (error) {
+        Swal.fire('Error', 'Failed to update idea', 'error');
+      } else {
+        setIdeas(ideas.map(i => i.id === idea.id ? data : i));
+        if (selectedIdea?.id === idea.id) setSelectedIdea(data);
+        Swal.fire({
+          title: 'Refinement Saved',
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
     }
   };
 
   const handleViewDetail = (idea: Idea) => {
     setSelectedIdea(idea);
-    setEditFormData({
-      title: idea.title,
-      description: idea.description,
-      maturity: idea.maturity,
-      next_action: idea.next_action,
-      remind_at: idea.remind_at || ''
-    });
-    setIsEditing(false);
     setIsDetailOpen(true);
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedIdea) return;
-
-    if (!editFormData.title.trim()) {
-      Swal.fire('Error', 'Title is required', 'error');
-      return;
-    }
-
-    const updatedIdea = {
-      title: editFormData.title,
-      description: editFormData.description,
-      maturity: editFormData.maturity,
-      next_action: editFormData.next_action,
-      remind_at: editFormData.remind_at || null,
-      updated_at: new Date().toISOString()
-    };
-
-    const { data, error } = await supabase
-      .from('ideas')
-      .update(updatedIdea)
-      .eq('id', selectedIdea.id)
-      .select()
-      .single();
-
-    if (error) {
-      Swal.fire('Error', 'Failed to update idea', 'error');
-    } else {
-      setIdeas(ideas.map(i => i.id === selectedIdea.id ? data : i));
-      setSelectedIdea(data);
-      setIsEditing(false);
-      Swal.fire({
-        title: 'Updated',
-        text: 'Idea details saved.',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
-      });
-    }
   };
 
   const handleToggleArchive = async (id: string, currentStatus: boolean) => {
@@ -258,7 +343,7 @@ export function IdeaManager() {
             <Archive className="w-5 h-5" />
           </button>
           {!showArchived && (
-            <Button onClick={() => setShowAddModal(true)} className="h-11 px-6 flex items-center gap-2">
+            <Button onClick={handleAddIdea} className="h-11 px-6 flex items-center gap-2">
               <Plus className="w-4 h-4" />
               <span>Capture Idea</span>
             </Button>
@@ -385,6 +470,12 @@ export function IdeaManager() {
                         <Info className="w-4 h-4" />
                       </button>
                       <button 
+                        onClick={(e) => { e.stopPropagation(); handleEditIdea(idea); }}
+                        className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
                         onClick={(e) => { e.stopPropagation(); handleToggleArchive(idea.id, idea.is_archived); }}
                         className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                       >
@@ -438,119 +529,7 @@ export function IdeaManager() {
         </div>
       )}
 
-      {/* Add Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 sm:p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl max-h-[95vh] flex flex-col"
-            >
-              <GlassCard className="flex flex-col h-full shadow-2xl border-white/20 overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-8 border-b border-slate-100 bg-white/50 backdrop-blur-md">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
-                      <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tighter line-clamp-1">New Idea Spark</h3>
-                      <p className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Document it now before it's gone</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
-                  <form id="addIdeaForm" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
-                      <Input 
-                        placeholder="What's the spark?" 
-                        className="h-10 sm:h-12 text-sm sm:text-base font-medium"
-                        value={formData.title}
-                        onChange={e => setFormData({ ...formData, title: e.target.value })}
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description / Context</label>
-                      <TextArea 
-                        placeholder="Flesh out the idea briefly..." 
-                        className="min-h-[100px] sm:min-h-[120px] text-xs sm:text-sm py-3 sm:py-4"
-                        value={formData.description}
-                        onChange={e => setFormData({ ...formData, description: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity Level</label>
-                        <Select 
-                          value={formData.maturity}
-                          onChange={e => setFormData({ ...formData, maturity: e.target.value as Maturity })}
-                          className="h-10 sm:h-12 text-sm"
-                        >
-                          <option value="Thin">Thin (Surface Level)</option>
-                          <option value="Mature">Mature (Ready)</option>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Engagement</label>
-                        <Select 
-                          value={formData.next_action}
-                          onChange={e => setFormData({ ...formData, next_action: e.target.value as NextAction })}
-                          className="h-10 sm:h-12 text-sm"
-                        >
-                          <option value="Research">Research (Study)</option>
-                          <option value="Plan">Plan (Blueprint)</option>
-                          <option value="Execute Now">Execute Now (Action)</option>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recall Reminder (Optional)</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input 
-                          type="date" 
-                          className="h-10 sm:h-12 pl-12 text-sm"
-                          value={formData.remind_at}
-                          onChange={e => setFormData({ ...formData, remind_at: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </form>
-                </div>
-
-                <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
-                  <Button type="button" variant="secondary" onClick={() => setShowAddModal(false)} className="flex-1 h-10 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest border-slate-200">
-                    Discard
-                  </Button>
-                  <Button type="submit" form="addIdeaForm" className="flex-2 h-10 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest shadow-xl shadow-bca-blue/20">
-                    Document Spark
-                  </Button>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </div>
-
-        )}
-      </AnimatePresence>
-
-      {/* Detail / Edit Modal */}
+      {/* Detail / View Modal */}
       <AnimatePresence>
         {isDetailOpen && selectedIdea && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 sm:p-4">
@@ -574,24 +553,19 @@ export function IdeaManager() {
                       <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tighter line-clamp-1">
-                        {isEditing ? 'Edit Idea' : 'Idea Vision'}
-                      </h3>
-                      <p className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {isEditing ? 'Refine your spark into a flame' : 'The architecture of your thought'}
-                      </p>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tighter line-clamp-1">Idea Vision</h3>
+                      <p className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">The architecture of your thought</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    {!isEditing && (
-                      <button 
-                        onClick={() => setIsEditing(true)}
-                        className="p-2 text-bca-blue hover:bg-bca-blue/10 rounded-full transition-colors"
-                        title="Edit Idea"
-                      >
-                        <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => { setIsDetailOpen(false); handleEditIdea(selectedIdea); }}
+                      className="p-2.5 text-bca-blue bg-bca-blue/5 hover:bg-bca-blue/10 rounded-xl transition-all flex items-center gap-2"
+                      title="Refine Idea"
+                    >
+                      <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Refine</span>
+                    </button>
                     <button onClick={() => setIsDetailOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
                       <X className="w-5 h-5" />
                     </button>
@@ -599,139 +573,73 @@ export function IdeaManager() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
-                  {isEditing ? (
-                    <form id="editIdeaForm" onSubmit={handleUpdate} className="space-y-4 sm:space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
-                        <Input 
-                          placeholder="What's the spark?" 
-                          className="h-10 sm:h-12 text-sm sm:text-base font-medium"
-                          value={editFormData.title}
-                          onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
-                        />
-                      </div>
+                  <div className="space-y-6 sm:space-y-8 pb-4">
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
+                       <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tighter leading-tight">{selectedIdea.title}</h2>
+                    </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description / Context</label>
-                        <TextArea 
-                          placeholder="Flesh out the idea briefly..." 
-                          className="min-h-[100px] sm:min-h-[120px] text-xs sm:text-sm py-3 sm:py-4"
-                          value={editFormData.description}
-                          onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insights & Context</label>
+                       <div className="text-sm sm:text-base text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 italic">
+                        {selectedIdea.description || 'No detailed context provided for this spark.'}
+                       </div>
+                    </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity Level</label>
-                          <Select 
-                            value={editFormData.maturity}
-                            onChange={e => setEditFormData({ ...editFormData, maturity: e.target.value as Maturity })}
-                            className="h-10 sm:h-12 text-sm"
-                          >
-                            <option value="Thin">Thin (Surface Level)</option>
-                            <option value="Mature">Mature (Ready)</option>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Engagement</label>
-                          <Select 
-                            value={editFormData.next_action}
-                            onChange={e => setEditFormData({ ...editFormData, next_action: e.target.value as NextAction })}
-                            className="h-10 sm:h-12 text-sm"
-                          >
-                            <option value="Research">Research (Study)</option>
-                            <option value="Plan">Plan (Blueprint)</option>
-                            <option value="Execute Now">Execute Now (Action)</option>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recall Reminder (Optional)</label>
-                        <div className="relative">
-                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                          <Input 
-                            type="date" 
-                            className="h-10 sm:h-12 pl-12 text-sm"
-                            value={editFormData.remind_at}
-                            onChange={e => setEditFormData({ ...editFormData, remind_at: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                    </form>
-                  ) : (
-                    <div className="space-y-6 sm:space-y-8 pb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-1">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
-                         <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tighter leading-tight">{selectedIdea.title}</h2>
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity</label>
+                         <div className="flex items-center gap-2 mt-1">
+                            <span className={cn(
+                              "px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter",
+                              selectedIdea.maturity === 'Mature' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"
+                            )}>
+                              {selectedIdea.maturity}
+                            </span>
+                         </div>
                       </div>
-
                       <div className="space-y-1">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insights & Context</label>
-                         <p className="text-sm sm:text-base text-slate-600 leading-relaxed whitespace-pre-wrap">{selectedIdea.description || 'No detailed context provided for this spark.'}</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-                        <div className="space-y-1">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity</label>
-                           <div className="flex items-center gap-2 mt-1">
-                              <span className={cn(
-                                "px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter",
-                                selectedIdea.maturity === 'Mature' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"
-                              )}>
-                                {selectedIdea.maturity}
-                              </span>
-                           </div>
-                        </div>
-                        <div className="space-y-1">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Action</label>
-                           <div className="flex items-center gap-2 mt-1 px-3 py-1 bg-slate-50 border border-slate-100 rounded-full w-fit">
-                              {getActionIcon(selectedIdea.next_action)}
-                              <span className="text-[10px] sm:text-xs font-black text-slate-700 uppercase tracking-tighter">{selectedIdea.next_action}</span>
-                           </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 mt-4 gap-4">
-                        <div className="flex flex-col">
-                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Captured On</span>
-                           <span className="text-xs font-bold text-slate-700">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
-                        </div>
-                        {selectedIdea.remind_at && (
-                          <div className="flex flex-col sm:items-end">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scheduled Recall</span>
-                            <div className="flex items-center gap-1.5 text-bca-blue">
-                              <Calendar className="w-3.5 h-3.5" />
-                              <span className="text-xs font-black uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
-                            </div>
-                          </div>
-                        )}
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Action</label>
+                         <div className="flex items-center gap-2 mt-1 px-4 py-1.5 bg-bca-blue/5 border border-bca-blue/10 rounded-full w-fit">
+                            {getActionIcon(selectedIdea.next_action)}
+                            <span className="text-[10px] sm:text-xs font-black text-bca-blue uppercase tracking-tighter">{selectedIdea.next_action}</span>
+                         </div>
                       </div>
                     </div>
-                  )}
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-slate-50/80 rounded-3xl border border-slate-100 mt-4 gap-4">
+                      <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
+                           <Clock className="w-5 h-5" />
+                         </div>
+                         <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Captured On</span>
+                            <span className="text-xs font-bold text-slate-700">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
+                         </div>
+                      </div>
+                      {selectedIdea.remind_at && (
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100">
+                            <Calendar className="w-5 h-5" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Scheduled Recall</span>
+                            <span className="text-xs font-black text-emerald-700 uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
-                  {isEditing ? (
-                    <>
-                      <Button type="button" variant="secondary" onClick={() => setIsEditing(false)} className="flex-1 h-10 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest border-slate-200">
-                        Cancel
-                      </Button>
-                      <Button type="submit" form="editIdeaForm" className="flex-2 h-10 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest shadow-xl shadow-bca-blue/20">
-                        Save Changes
-                      </Button>
-                    </>
-                  ) : (
-                    <Button type="button" variant="secondary" onClick={() => setIsDetailOpen(false)} className="w-full h-10 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest border-slate-200">
-                      Close Vision
-                    </Button>
-                  )}
+                <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-100 flex gap-3">
+                  <Button type="button" variant="secondary" onClick={() => setIsDetailOpen(false)} className="w-full h-11 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest border-slate-200">
+                    Close Vision
+                  </Button>
                 </div>
               </GlassCard>
             </motion.div>
           </div>
-
         )}
       </AnimatePresence>
     </div>
