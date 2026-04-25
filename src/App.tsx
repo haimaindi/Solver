@@ -984,122 +984,97 @@ export default function App() {
 
       <div className="min-h-screen bg-[#f8fafc] text-slate-900 selection:bg-bca-blue/10 selection:text-bca-blue">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 h-[64px] bg-white border-b border-slate-200 px-6 flex items-center justify-between flex-shrink-0">
+      <nav className="sticky top-0 z-50 h-[56px] md:h-[64px] bg-white border-b border-slate-100 px-4 md:px-6 flex items-center justify-between flex-shrink-0 shadow-sm">
         <div 
-          className="flex items-center gap-3 cursor-pointer group" 
+          className="flex items-center gap-2 md:gap-3 cursor-pointer group" 
           onClick={() => {
-            if (window.innerWidth < 768) setIsSidebarOpen(true);
-            else setView('dashboard');
+            setView('dashboard');
           }}
         >
-          <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100 transition-all group-active:scale-95">
+          <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100 transition-all group-active:scale-95">
             <img src={ASSETS.LOGO_URL} alt="Solver" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
+          <h1 className="text-xl md:text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
         </div>
 
         <div className="absolute left-0 right-0 flex justify-center pointer-events-none">
-          <div className="hidden md:flex items-center gap-2 pointer-events-auto">
+          <div className="hidden md:flex items-center gap-2 pointer-events-auto bg-slate-100/50 p-1 rounded-xl">
             <button 
               onClick={() => setView('dashboard')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'dashboard' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+                "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                view === 'dashboard' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              Dash
             </button>
             <button 
               onClick={() => setView('list')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'list' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+                "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                view === 'list' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <Puzzle className="w-4 h-4" />
+              <Puzzle className="w-3.5 h-3.5" />
               Problem
             </button>
             <button 
               onClick={() => setView('ideas')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'ideas' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+                "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                view === 'ideas' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <Lightbulb className="w-4 h-4" />
+              <Lightbulb className="w-3.5 h-3.5" />
               Idea
             </button>
             <button 
               onClick={() => setView('todos')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'todos' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+                "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                view === 'todos' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <ListTodo className="w-4 h-4" />
+              <ListTodo className="w-3.5 h-3.5" />
               To Do
             </button>
             <button 
               onClick={() => setView('habits')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'habits' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+                "px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                view === 'habits' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
-              <TrendingUp className="w-4 h-4" />
+              <TrendingUp className="w-3.5 h-3.5" />
               Habit
             </button>
-            <button 
-              onClick={() => setView('reflection')}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <BookOpen className="w-4 h-4" />
-              Reflection
-            </button>
-            <button 
-              onClick={() => setView('supplement')}
-              className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                view === 'supplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-              )}
-            >
-              <Pill className="w-4 h-4" />
-              Supplement
-            </button>
-            {localStorage.getItem('user_name') === 'admin' && (
-              <button 
-                onClick={() => setView('admin')}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
-                  view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
-                )}
-              >
-                <Shield className="w-4 h-4" />
-                Admin
-              </button>
-            )}
           </div>
         </div>
         
-        <div className="hidden md:flex items-center gap-4">
-            <div className="flex flex-col items-end">
-              <span className="text-[13px] font-bold text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
-              {sessionData && (
-                <span className={cn(
-                  "text-[10px] leading-none mt-0.5",
-                  (sessionData.is_unlimited || (sessionData.end_date && 
-                    new Date(sessionData.end_date + 'T00:00:00Z').getTime() - worldTime.getTime() > 7 * 24 * 60 * 60 * 1000
-                  )) ? "text-emerald-600" : "text-rose-600"
-                )}>
-                  {sessionData.is_unlimited ? 'Unlimited Access' : 
-                    (new Date(sessionData.end_date + 'T00:00:00Z') < worldTime ? 'Has expired' :
-                    `Expired at ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy')}`)}
-                </span>
-              )}
+        <div className="flex items-center gap-2 md:gap-4">
+            <div 
+              className="flex items-center gap-2 md:gap-3 cursor-pointer"
+              onClick={() => setShowProfileModal(true)}
+            >
+                <div className="hidden sm:flex flex-col items-end">
+                  <span className="text-[11px] md:text-[13px] font-bold text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
+                  {sessionData && (
+                    <span className={cn(
+                      "text-[9px] md:text-[10px] leading-none mt-0.5",
+                      (sessionData.is_unlimited || (sessionData.end_date && 
+                        new Date(sessionData.end_date + 'T00:00:00Z').getTime() - worldTime.getTime() > 7 * 24 * 60 * 60 * 1000
+                      )) ? "text-emerald-600" : "text-rose-600"
+                    )}>
+                      {sessionData.is_unlimited ? 'Unlimited Access' : 
+                        (new Date(sessionData.end_date + 'T00:00:00Z') < worldTime ? 'Has expired' :
+                        `Expires: ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yy')}`)}
+                    </span>
+                  )}
+                </div>
+                <div className="w-8 h-8 md:w-9 md:h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
+                    <User className="w-4 h-4 md:w-5 md:h-5" />
+                </div>
             </div>
             <button 
               onClick={handleLogout}
@@ -1110,6 +1085,60 @@ export default function App() {
             </button>
         </div>
       </nav>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-100 flex items-center justify-around px-2 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <button 
+          onClick={() => setView('dashboard')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all",
+            view === 'dashboard' ? "text-bca-blue" : "text-slate-400"
+          )}
+        >
+          <LayoutDashboard className={cn("w-5 h-5", view === 'dashboard' && "fill-bca-blue/10")} />
+          <span className="text-[9px] font-black uppercase tracking-tighter">Dash</span>
+        </button>
+        <button 
+          onClick={() => setView('list')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all",
+            view === 'list' ? "text-bca-blue" : "text-slate-400"
+          )}
+        >
+          <Puzzle className={cn("w-5 h-5", view === 'list' && "fill-bca-blue/10")} />
+          <span className="text-[9px] font-black uppercase tracking-tighter">Problem</span>
+        </button>
+        <button 
+          onClick={() => setView('ideas')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all",
+            view === 'ideas' ? "text-bca-blue" : "text-slate-400"
+          )}
+        >
+          <Lightbulb className={cn("w-5 h-5", view === 'ideas' && "fill-bca-blue/10")} />
+          <span className="text-[9px] font-black uppercase tracking-tighter">Idea</span>
+        </button>
+        <button 
+          onClick={() => setView('todos')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all",
+            view === 'todos' ? "text-bca-blue" : "text-slate-400"
+          )}
+        >
+          <ListTodo className={cn("w-5 h-5", view === 'todos' && "fill-bca-blue/10")} />
+          <span className="text-[9px] font-black uppercase tracking-tighter">To Do</span>
+        </button>
+        <button 
+          onClick={() => setView('habits')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all",
+            view === 'habits' ? "text-bca-blue" : "text-slate-400"
+          )}
+        >
+          <TrendingUp className={cn("w-5 h-5", view === 'habits' && "fill-bca-blue/10")} />
+          <span className="text-[9px] font-black uppercase tracking-tighter">Habit</span>
+        </button>
+      </div>
 
       {/* Mobile Sidebar */}
       <AnimatePresence>
@@ -1244,7 +1273,7 @@ export default function App() {
           x: isSwiping ? 20 : 0
         }}
         transition={{ duration: 0.3 }}
-        className="max-w-[1400px] mx-auto px-6 py-6 min-h-[calc(100vh-64px)]"
+        className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 md:py-6 min-h-[calc(100vh-56px)] md:min-h-[calc(100vh-64px)] pb-24 md:pb-6"
       >
         <AnimatePresence mode="wait">
           {view === 'dashboard' && (
@@ -1255,83 +1284,83 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-8"
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-8">
                 <div className="text-center md:text-left">
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Executive Dashboard</h2>
-                  <p className="text-slate-500 mt-1">Real-time overview of engineering problem solving metrics.</p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Executive Dashboard</h2>
+                  <p className="text-xs md:text-sm text-slate-500 mt-1">Real-time overview of engineering metrics.</p>
                 </div>
-                <div className="flex flex-col sm:flex-row justify-center md:justify-end gap-3">
-                  <Button variant="secondary" onClick={() => setView('list')} className="h-11 px-6 w-full sm:w-auto">View All Problems</Button>
-                  <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2 w-full sm:w-auto">
-                    <Plus className="w-4 h-4" />
+                <div className="flex flex-row justify-center md:justify-end gap-2 md:gap-3">
+                  <Button variant="secondary" onClick={() => setView('list')} className="h-10 md:h-11 px-4 md:px-6 flex-1 md:flex-none text-[10px] md:text-xs">All Problems</Button>
+                  <Button onClick={() => setView('create')} className="h-10 md:h-11 px-4 md:px-6 flex items-center justify-center gap-2 flex-1 md:flex-none text-[10px] md:text-xs">
+                    <Plus className="w-3 h-3 md:w-4 md:h-4" />
                     <span>New Problem</span>
                   </Button>
                 </div>
               </div>
 
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <GlassCard className="p-6 border-l-4 border-l-bca-blue">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                <GlassCard className="p-4 md:p-6 border-l-4 border-l-bca-blue">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total Problems</p>
-                      <h3 className="text-3xl font-bold text-slate-900">{problems.length}</h3>
+                      <p className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Total</p>
+                      <h3 className="text-xl md:text-3xl font-bold text-slate-900">{problems.length}</h3>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-bca-blue/10 flex items-center justify-center">
-                      <BarChart3 className="w-5 h-5 text-bca-blue" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-bca-blue/10 flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-bca-blue" />
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center gap-2 text-[11px] font-medium text-emerald-600">
+                  <div className="mt-3 md:mt-4 flex items-center gap-1 text-[9px] md:text-[11px] font-medium text-emerald-600">
                     <TrendingUp className="w-3 h-3" />
-                    <span>Active tracking enabled</span>
+                    <span>Active tracking</span>
                   </div>
                 </GlassCard>
 
-                <GlassCard className="p-6 border-l-4 border-l-emerald-500">
+                <GlassCard className="p-4 md:p-6 border-l-4 border-l-emerald-500">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Solved</p>
-                      <h3 className="text-3xl font-bold text-slate-900">
+                      <p className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Solved</p>
+                      <h3 className="text-xl md:text-3xl font-bold text-slate-900">
                         {problems.filter(p => p.status === 'Success').length}
                       </h3>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-emerald-50 flex items-center justify-center">
+                      <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
                     </div>
                   </div>
-                  <p className="mt-4 text-[11px] text-slate-400">
-                    {Math.round((problems.filter(p => p.status === 'Success').length / (problems.length || 1)) * 100)}% resolution rate
+                  <p className="mt-3 md:mt-4 text-[9px] md:text-[11px] text-slate-400">
+                    {Math.round((problems.filter(p => p.status === 'Success').length / (problems.length || 1)) * 100)}% Res.
                   </p>
                 </GlassCard>
 
-                <GlassCard className="p-6 border-l-4 border-l-amber-500">
+                <GlassCard className="p-4 md:p-6 border-l-4 border-l-amber-500">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pending</p>
-                      <h3 className="text-3xl font-bold text-slate-900">
+                      <p className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pending</p>
+                      <h3 className="text-xl md:text-3xl font-bold text-slate-900">
                         {problems.filter(p => p.status === 'Pending').length}
                       </h3>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-amber-500" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-amber-50 flex items-center justify-center">
+                      <Clock className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
                     </div>
                   </div>
-                  <p className="mt-4 text-[11px] text-slate-400">Requires immediate attention</p>
+                  <p className="mt-3 md:mt-4 text-[9px] md:text-[11px] text-slate-400">Requires focus</p>
                 </GlassCard>
 
-                <GlassCard className="p-6 border-l-4 border-l-rose-500">
+                <GlassCard className="p-4 md:p-6 border-l-4 border-l-rose-500">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cancelled</p>
-                      <h3 className="text-3xl font-bold text-slate-900">
+                      <p className="text-[8px] md:text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Archived</p>
+                      <h3 className="text-xl md:text-3xl font-bold text-slate-900">
                         {problems.filter(p => p.status === 'Cancel').length}
                       </h3>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
-                      <XCircle className="w-5 h-5 text-rose-500" />
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-rose-50 flex items-center justify-center">
+                      <XCircle className="w-4 h-4 md:w-5 md:h-5 text-rose-500" />
                     </div>
                   </div>
-                  <p className="mt-4 text-[11px] text-slate-400">Archived/Not feasible</p>
+                  <p className="mt-3 md:mt-4 text-[9px] md:text-[11px] text-slate-400">Not feasible</p>
                 </GlassCard>
               </div>
 
@@ -1451,21 +1480,21 @@ export default function App() {
               </GlassCard>
 
               {/* Today's Focus Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                 {/* Today's Tasks */}
-                <GlassCard className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-bca-blue/10 rounded-lg">
-                        <ListTodo className="w-5 h-5 text-bca-blue" />
+                <GlassCard className="p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-4 md:mb-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="p-1.5 md:p-2 bg-bca-blue/10 rounded-lg">
+                        <ListTodo className="w-4 h-4 md:w-5 md:h-5 text-bca-blue" />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-900">Today's Task List</h3>
+                      <h3 className="text-base md:text-lg font-bold text-slate-900">Today's Task List</h3>
                     </div>
-                    <Badge variant="Pending" className="bg-slate-100 text-slate-600 border-none">
+                    <Badge variant="Pending" className="bg-slate-100 text-slate-600 border-none text-[9px] md:text-[10px]">
                       {todayTodos.length} Incomplete
                     </Badge>
                   </div>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-2 md:space-y-3 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
                     {todayTodos.length > 0 ? (
                       todayTodos.map(todo => (
                         <div 
@@ -1474,14 +1503,14 @@ export default function App() {
                             setPrefillTodoId(todo.id);
                             setView('todos');
                           }}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 group transition-all cursor-pointer hover:bg-white hover:shadow-md hover:border-bca-blue/20"
+                          className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-xl bg-slate-50 border border-slate-100 group transition-all cursor-pointer hover:bg-white hover:shadow-md hover:border-bca-blue/20"
                         >
                           <div className="flex-1">
-                            <p className="text-sm font-bold text-slate-700 leading-tight group-hover:text-bca-blue transition-colors">{todo.task}</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">{todo.target_time}</p>
+                            <p className="text-[13px] md:text-sm font-bold text-slate-700 leading-tight group-hover:text-bca-blue transition-colors line-clamp-2">{todo.task}</p>
+                            <p className="text-[8px] md:text-[10px] text-slate-400 mt-0.5">{todo.target_time}</p>
                           </div>
                           <Badge className={cn(
-                            "text-[10px] uppercase font-black tracking-tighter",
+                            "text-[8px] md:text-[10px] uppercase font-black tracking-tighter shrink-0",
                             todo.impact_level === 'High' ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
                           )}>
                             {todo.impact_level} Impact
@@ -1489,34 +1518,34 @@ export default function App() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-10">
-                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <CheckCircle className="w-6 h-6 text-emerald-500" />
+                      <div className="text-center py-6 md:py-10">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
                         </div>
-                        <p className="text-sm font-bold text-slate-900">Clear Focus!</p>
-                        <p className="text-xs text-slate-400">All tasks for today are completed.</p>
+                        <p className="text-xs md:text-sm font-bold text-slate-900">Clear Focus!</p>
+                        <p className="text-[10px] md:text-xs text-slate-400">All tasks completed.</p>
                       </div>
                     )}
                   </div>
-                  <Button variant="ghost" onClick={() => setView('todos')} className="w-full mt-4 h-10 text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5">
+                  <Button variant="ghost" onClick={() => setView('todos')} className="w-full mt-3 md:mt-4 h-9 md:h-10 text-[9px] md:text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5">
                     Manage All Todos
                   </Button>
                 </GlassCard>
 
                 {/* Incomplete Habits */}
-                <GlassCard className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-50 rounded-lg">
-                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <GlassCard className="p-4 md:p-6">
+                  <div className="flex items-center justify-between mb-4 md:mb-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="p-1.5 md:p-2 bg-emerald-50 rounded-lg">
+                        <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-emerald-600" />
                       </div>
-                      <h3 className="text-lg font-bold text-slate-900">Incomplete Habits</h3>
+                      <h3 className="text-base md:text-lg font-bold text-slate-900">Incomplete Habits</h3>
                     </div>
-                    <Badge variant="Pending" className="bg-slate-100 text-slate-600 border-none">
+                    <Badge variant="Pending" className="bg-slate-100 text-slate-600 border-none text-[9px] md:text-[10px]">
                       {todayHabits.length} Remaining
                     </Badge>
                   </div>
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="space-y-2 md:space-y-3 max-h-[250px] md:max-h-[300px] overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
                     {todayHabits.length > 0 ? (
                       todayHabits.map(habit => (
                         <div 
@@ -1525,26 +1554,26 @@ export default function App() {
                             setPrefillHabitId(habit.id);
                             setView('habits');
                           }}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 group transition-all cursor-pointer hover:bg-white hover:shadow-md hover:border-emerald-200"
+                          className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3 rounded-xl bg-slate-50 border border-slate-100 group transition-all cursor-pointer hover:bg-white hover:shadow-md hover:border-emerald-200"
                         >
-                          <div className={cn("w-2 h-8 rounded-full", habit.color)} />
+                          <div className={cn("w-1.5 h-6 md:w-2 md:h-8 rounded-full shrink-0", habit.color)} />
                           <div className="flex-1">
-                            <p className="text-sm font-bold text-slate-700 leading-tight group-hover:text-emerald-600 transition-colors">{habit.name}</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{habit.description}</p>
+                            <p className="text-[13px] md:text-sm font-bold text-slate-700 leading-tight group-hover:text-emerald-600 transition-colors line-clamp-1">{habit.name}</p>
+                            <p className="text-[8px] md:text-[10px] text-slate-400 mt-0.5 line-clamp-1">{habit.description}</p>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-10">
-                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Sparkles className="w-6 h-6 text-amber-500" />
+                      <div className="text-center py-6 md:py-10">
+                        <div className="w-10 h-10 md:w-12 md:h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
                         </div>
-                        <p className="text-sm font-bold text-slate-900">Momentum Maintained!</p>
-                        <p className="text-xs text-slate-400">All habits for today have been logged.</p>
+                        <p className="text-xs md:text-sm font-bold text-slate-900">Momentum!</p>
+                        <p className="text-[10px] md:text-xs text-slate-400">All habits logged.</p>
                       </div>
                     )}
                   </div>
-                  <Button variant="ghost" onClick={() => setView('habits')} className="w-full mt-4 h-10 text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-emerald-600 hover:bg-emerald-50">
+                  <Button variant="ghost" onClick={() => setView('habits')} className="w-full mt-3 md:mt-4 h-9 md:h-10 text-[9px] md:text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-emerald-600 hover:bg-emerald-50">
                     Open Habit Tracker
                   </Button>
                 </GlassCard>

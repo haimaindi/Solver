@@ -306,21 +306,21 @@ export function IdeaManager() {
       )}
 
       {/* Filters & Search */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
           <Input 
             placeholder="Search through your sparks..." 
-            className="pl-12 h-12" 
+            className="pl-12 h-11 md:h-12 text-sm md:text-base rounded-xl" 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-3 md:gap-4 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
           <Select 
             value={maturityFilter} 
             onChange={(e) => setMaturityFilter(e.target.value as Maturity | 'All')}
-            className="h-12 w-40"
+            className="h-11 md:h-12 w-32 md:w-40 text-xs md:text-sm rounded-xl shrink-0"
           >
             <option value="All">All Maturity</option>
             <option value="Thin">Thin (Draft)</option>
@@ -329,7 +329,7 @@ export function IdeaManager() {
           <Select 
             value={actionFilter} 
             onChange={(e) => setActionFilter(e.target.value as NextAction | 'All')}
-            className="h-12 w-48"
+            className="h-11 md:h-12 w-36 md:w-48 text-xs md:text-sm rounded-xl shrink-0"
           >
             <option value="All">All Actions</option>
             <option value="Execute Now">Execute Now</option>
@@ -441,76 +441,72 @@ export function IdeaManager() {
       {/* Add Modal */}
       <AnimatePresence>
         {showAddModal && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-y-auto max-h-[92vh] custom-scrollbar"
             >
-              <GlassCard className="p-8 shadow-2xl border-white/20">
-                <div className="flex justify-between items-center mb-8 sticky top-0 bg-white/10 backdrop-blur-lg -mx-8 -mt-8 p-8 border-b border-white/20 z-10">
+              <div className="p-6 md:p-8 space-y-6">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
                       <Lightbulb className="w-6 h-6" />
                     </div>
                     <div>
                       <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">New Idea Spark</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Document it now before it's gone</p>
+                      <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Document it now before it's gone</p>
                     </div>
                   </div>
-                  <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                  <button 
+                    onClick={() => setShowAddModal(false)} 
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
+                  >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
+                <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Idea Heading</label>
                     <Input 
                       placeholder="What's the spark?" 
-                      className="h-12 text-base font-medium"
+                      className="h-12 md:h-14 text-base md:text-lg font-bold p-4 rounded-2xl"
                       value={formData.title}
                       onChange={e => setFormData({ ...formData, title: e.target.value })}
                       autoFocus
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description / Context</label>
+                  <div className="space-y-1.5 md:space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Description / Context</label>
                     <TextArea 
                       placeholder="Flesh out the idea briefly..." 
-                      className="min-h-[120px] text-sm py-4"
+                      className="min-h-[120px] md:min-h-[150px] p-4 md:p-5 text-sm md:text-base rounded-2xl"
                       value={formData.description}
                       onChange={e => setFormData({ ...formData, description: e.target.value })}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="space-y-1.5 md:space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity Level</label>
                       <Select 
                         value={formData.maturity}
                         onChange={e => setFormData({ ...formData, maturity: e.target.value as Maturity })}
-                        className="h-12"
+                        className="h-12 md:h-14 rounded-2xl"
                       >
                         <option value="Thin">Thin (Surface Level)</option>
                         <option value="Mature">Mature (Ready)</option>
                       </Select>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 md:space-y-2">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Engagement</label>
                       <Select 
                         value={formData.next_action}
                         onChange={e => setFormData({ ...formData, next_action: e.target.value as NextAction })}
-                        className="h-12"
+                        className="h-12 md:h-14 rounded-2xl"
                       >
                         <option value="Research">Research (Study)</option>
                         <option value="Plan">Plan (Blueprint)</option>
@@ -519,29 +515,37 @@ export function IdeaManager() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 md:space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recall Reminder (Optional)</label>
                     <div className="relative">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input 
                         type="date" 
-                        className="h-12 pl-12"
+                        className="h-12 md:h-14 pl-12 rounded-2xl"
                         value={formData.remind_at}
                         onChange={e => setFormData({ ...formData, remind_at: e.target.value })}
                       />
                     </div>
                   </div>
 
-                  <div className="pt-4 flex gap-4">
-                    <Button type="button" variant="secondary" onClick={() => setShowAddModal(false)} className="flex-1 h-12 uppercase font-black text-[11px] tracking-widest border-slate-200">
-                      Discard
-                    </Button>
-                    <Button type="submit" className="flex-2 h-12 uppercase font-black text-[11px] tracking-widest shadow-xl shadow-bca-blue/20">
+                  <div className="pt-4 flex flex-col md:flex-row gap-3 md:gap-4 border-t border-slate-100">
+                    <Button 
+                      type="submit" 
+                      className="order-last md:order-first flex-1 h-12 md:h-14 uppercase font-black text-[11px] tracking-widest shadow-xl shadow-bca-blue/20 rounded-2xl"
+                    >
                       Document Spark
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      onClick={() => setShowAddModal(false)} 
+                      className="h-12 md:h-14 px-8 uppercase font-black text-[11px] tracking-widest text-slate-400 rounded-2xl"
+                    >
+                      Discard
                     </Button>
                   </div>
                 </form>
-              </GlassCard>
+              </div>
             </motion.div>
           </div>
         )}
@@ -550,31 +554,24 @@ export function IdeaManager() {
       {/* Detail / Edit Modal */}
       <AnimatePresence>
         {isDetailOpen && selectedIdea && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
-              onClick={() => setIsDetailOpen(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="w-full max-w-2xl bg-white rounded-[32px] shadow-2xl overflow-y-auto max-h-[92vh] custom-scrollbar"
             >
-              <GlassCard className="p-8 shadow-2xl border-white/20">
-                <div className="flex justify-between items-center mb-8 sticky top-0 bg-white/10 backdrop-blur-lg -mx-8 -mt-8 p-8 border-b border-white/20 z-10">
+              <div className="p-6 md:p-8 space-y-6">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
-                      <Lightbulb className="w-6 h-6" />
+                    <div className="w-10 h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20 text-xl font-bold">
+                      {isEditing ? <Edit2 className="w-5 h-5" /> : <Lightbulb className="w-6 h-6" />}
                     </div>
                     <div>
                       <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">
                         {isEditing ? 'Edit Idea' : 'Idea Vision'}
                       </h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         {isEditing ? 'Refine your spark into a flame' : 'The architecture of your thought'}
                       </p>
                     </div>
@@ -589,53 +586,56 @@ export function IdeaManager() {
                         <Edit2 className="w-5 h-5" />
                       </button>
                     )}
-                    <button onClick={() => setIsDetailOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                    <button 
+                      onClick={() => setIsDetailOpen(false)} 
+                      className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
+                    >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="pt-4">
+                <div className="pt-2">
                   {isEditing ? (
-                    <form onSubmit={handleUpdate} className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
+                    <form onSubmit={handleUpdate} className="space-y-5 md:space-y-6">
+                      <div className="space-y-1.5 md:space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Idea Heading</label>
                         <Input 
                           placeholder="What's the spark?" 
-                          className="h-12 text-base font-medium"
+                          className="h-12 md:h-14 text-base md:text-lg font-bold p-4 rounded-2xl"
                           value={editFormData.title}
                           onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description / Context</label>
+                      <div className="space-y-1.5 md:space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Description / Context</label>
                         <TextArea 
                           placeholder="Flesh out the idea briefly..." 
-                          className="min-h-[120px] text-sm py-4"
+                          className="min-h-[120px] md:min-h-[150px] p-4 md:p-5 text-sm md:text-base rounded-2xl"
                           value={editFormData.description}
                           onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div className="space-y-1.5 md:space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity Level</label>
                           <Select 
                             value={editFormData.maturity}
                             onChange={e => setEditFormData({ ...editFormData, maturity: e.target.value as Maturity })}
-                            className="h-12"
+                            className="h-12 md:h-14 rounded-2xl"
                           >
                             <option value="Thin">Thin (Surface Level)</option>
                             <option value="Mature">Mature (Ready)</option>
                           </Select>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1.5 md:space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Engagement</label>
                           <Select 
                             value={editFormData.next_action}
                             onChange={e => setEditFormData({ ...editFormData, next_action: e.target.value as NextAction })}
-                            className="h-12"
+                            className="h-12 md:h-14 rounded-2xl"
                           >
                             <option value="Research">Research (Study)</option>
                             <option value="Plan">Plan (Blueprint)</option>
@@ -644,80 +644,99 @@ export function IdeaManager() {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="space-y-1.5 md:space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recall Reminder (Optional)</label>
                         <div className="relative">
                           <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                           <Input 
                             type="date" 
-                            className="h-12 pl-12"
+                            className="h-12 md:h-14 pl-12 rounded-2xl"
                             value={editFormData.remind_at}
                             onChange={e => setEditFormData({ ...editFormData, remind_at: e.target.value })}
                           />
                         </div>
                       </div>
 
-                      <div className="pt-4 flex gap-4">
-                        <Button type="button" variant="secondary" onClick={() => setIsEditing(false)} className="flex-1 h-12 uppercase font-black text-[11px] tracking-widest border-slate-200">
-                          Cancel
-                        </Button>
-                        <Button type="submit" className="flex-2 h-12 uppercase font-black text-[11px] tracking-widest shadow-xl shadow-bca-blue/20">
+                      <div className="pt-4 flex flex-col md:flex-row gap-3 md:gap-4 border-t border-slate-100">
+                        <Button 
+                          type="submit" 
+                          className="order-last md:order-first flex-1 h-12 md:h-14 uppercase font-black text-[11px] tracking-widest shadow-xl shadow-bca-blue/20 rounded-2xl"
+                        >
                           Save Changes
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          onClick={() => setIsEditing(false)} 
+                          className="h-12 md:h-14 px-8 uppercase font-black text-[11px] tracking-widest text-slate-400 rounded-2xl"
+                        >
+                          Cancel
                         </Button>
                       </div>
                     </form>
                   ) : (
-                    <div className="space-y-8 pb-4">
-                      <div className="space-y-1">
+                    <div className="space-y-6 md:space-y-8 pb-4">
+                      <div className="space-y-1.5">
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
-                         <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">{selectedIdea.title}</h2>
+                         <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter leading-tight">{selectedIdea.title}</h2>
                       </div>
 
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insights & Context</label>
-                         <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{selectedIdea.description || 'No detailed context provided for this spark.'}</p>
+                         <div className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50/50 p-4 md:p-5 rounded-2xl border border-slate-100 min-h-[100px]">
+                            {selectedIdea.description || 'No detailed context provided for this spark.'}
+                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-8">
-                        <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-4 md:gap-8">
+                        <div className="space-y-1.5 p-3 md:p-4 bg-slate-50 rounded-2xl border border-slate-100">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity</label>
                            <div className="flex items-center gap-2 mt-1">
                               <span className={cn(
-                                "px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter",
+                                "px-3 py-1 rounded-full text-[10px] md:text-xs font-black uppercase tracking-tighter",
                                 selectedIdea.maturity === 'Mature' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"
                               )}>
                                 {selectedIdea.maturity}
                               </span>
                            </div>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5 p-3 md:p-4 bg-slate-50 rounded-2xl border border-slate-100">
                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Action</label>
-                           <div className="flex items-center gap-2 mt-1 px-3 py-1 bg-slate-50 border border-slate-100 rounded-full w-fit">
+                           <div className="flex items-center gap-2 mt-1 px-3 py-1 bg-white border border-slate-100 rounded-full w-fit">
                               {getActionIcon(selectedIdea.next_action)}
-                              <span className="text-xs font-black text-slate-700 uppercase tracking-tighter">{selectedIdea.next_action}</span>
+                              <span className="text-[10px] md:text-xs font-black text-slate-700 uppercase tracking-tighter">{selectedIdea.next_action}</span>
                            </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 mt-4">
+                      <div className="flex items-center justify-between p-4 md:p-5 bg-slate-50 rounded-2xl border border-slate-100 mt-4">
                         <div className="flex flex-col">
                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Captured On</span>
-                           <span className="text-xs font-bold text-slate-700">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
+                           <span className="text-xs md:text-sm font-bold text-slate-700">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
                         </div>
                         {selectedIdea.remind_at && (
                           <div className="flex flex-col items-end">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scheduled Recall</span>
                             <div className="flex items-center gap-1.5 text-bca-blue">
                               <Calendar className="w-3.5 h-3.5" />
-                              <span className="text-xs font-black uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
+                              <span className="text-xs md:text-sm font-black uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
                             </div>
                           </div>
                         )}
                       </div>
+
+                      <div className="pt-4 flex flex-col md:flex-row gap-3 border-t border-slate-100">
+                        <Button 
+                          className="flex-1 h-12 md:h-14 rounded-2xl font-bold flex items-center justify-center"
+                          onClick={() => setIsDetailOpen(false)}
+                        >
+                          Close Vision
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
-              </GlassCard>
+              </div>
             </motion.div>
           </div>
         )}
