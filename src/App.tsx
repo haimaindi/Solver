@@ -31,9 +31,11 @@ import {
   EyeOff,
   Shield,
   Calendar,
-  Lightbulb
+  Lightbulb,
+  CheckCircle,
+  Circle
 } from 'lucide-react';
-import { Problem, Status, RootCause, ActionPlan, Reflection, supabase } from '@/src/lib/supabase';
+import { Problem, Status, RootCause, ActionPlan, Reflection, Habit, HabitLog, Todo, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
@@ -177,6 +179,8 @@ export default function App() {
   const [causes, setCauses] = useState<RootCause[]>([]);
   const [plans, setPlans] = useState<ActionPlan[]>([]);
   const [dashboardPlans, setDashboardPlans] = useState<(ActionPlan & { problem_title?: string })[]>([]);
+  const [todayTodos, setTodayTodos] = useState<Todo[]>([]);
+  const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [showArchivedProblems, setShowArchivedProblems] = useState(false);
@@ -212,6 +216,7 @@ export default function App() {
     if (isAuthenticated) {
       fetchProblems();
       fetchDashboardPlans();
+      fetchTodayTasks();
     }
   }, [isAuthenticated, view, showArchivedProblems]);
 
@@ -482,6 +487,46 @@ export default function App() {
       setDashboardPlans(formattedPlans);
     }
     if (error) console.error('Error fetching dashboard plans:', error);
+  };
+
+  const fetchTodayTasks = async () => {
+    const currentUser = localStorage.getItem('user_id');
+    if (!isAuthenticated || !currentUser) return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    // Fetch incomplete todos for today
+    const { data: todos, error: todoError } = await supabase
+      .from('todos')
+      .select('*')
+      .eq('user_id', currentUser)
+      .eq('date', today)
+      .eq('completed', false)
+      .eq('is_archived', false)
+      .order('created_at', { ascending: true });
+
+    if (!todoError) setTodayTodos(todos || []);
+
+    // Fetch habits not completed today
+    const { data: habits, error: habitError } = await supabase
+      .from('habits')
+      .select('*')
+      .eq('user_id', currentUser)
+      .eq('is_archived', false);
+
+    if (!habitError && habits) {
+      const { data: logs, error: logError } = await supabase
+        .from('habit_logs')
+        .select('habit_id')
+        .eq('completed_at', today)
+        .eq('is_completed', true);
+
+      if (!logError && logs) {
+        const completedIds = new Set(logs.map(l => l.habit_id));
+        const incompleteHabits = habits.filter(h => !completedIds.has(h.id));
+        setTodayHabits(incompleteHabits);
+      }
+    }
   };
 
   const fetchDetails = async (problemId: string) => {
@@ -1341,6 +1386,104 @@ export default function App() {
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
+                </GlassCard>
+              </div>
+
+              {/* Today's Focus Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Today's Tasks */}
+                <GlassCard className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-bca-blue/10 rounded-lg">
+                        <ListTodo className="w-5 h-5 text-bca-blue" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900">Today's Task List</h3>
+                    </div>
+                    <Badge variant="Pending" className="bg-slate-100 text-slate-600 border-none">
+                      {todayTodos.length} Incomplete
+                    </Badge>
+                  </div>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {todayTodos.length > 0 ? (
+                      todayTodos.map(todo => (
+                        <div key={todo.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 group transition-all">
+                          <button 
+                            onClick={() => setView('todos')}
+                            className="text-slate-300 hover:text-bca-blue transition-colors"
+                          >
+                            <Circle className="w-5 h-5" />
+                          </button>
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-slate-700 leading-tight">{todo.task}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{todo.target_time}</p>
+                          </div>
+                          <Badge className={cn(
+                            "text-[10px] uppercase font-black tracking-tighter",
+                            todo.impact_level === 'High' ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
+                          )}>
+                            {todo.impact_level} Impact
+                          </Badge>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-10">
+                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <CheckCircle className="w-6 h-6 text-emerald-500" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-900">Clear Focus!</p>
+                        <p className="text-xs text-slate-400">All tasks for today are completed.</p>
+                      </div>
+                    )}
+                  </div>
+                  <Button variant="ghost" onClick={() => setView('todos')} className="w-full mt-4 h-10 text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5">
+                    Manage All Todos
+                  </Button>
+                </GlassCard>
+
+                {/* Incomplete Habits */}
+                <GlassCard className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-emerald-50 rounded-lg">
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900">Incomplete Habits</h3>
+                    </div>
+                    <Badge variant="Pending" className="bg-slate-100 text-slate-600 border-none">
+                      {todayHabits.length} Remaining
+                    </Badge>
+                  </div>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {todayHabits.length > 0 ? (
+                      todayHabits.map(habit => (
+                        <div key={habit.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100 group transition-all">
+                          <div className={cn("w-2 h-8 rounded-full", habit.color)} />
+                          <div className="flex-1">
+                            <p className="text-sm font-bold text-slate-700 leading-tight">{habit.name}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-1">{habit.description}</p>
+                          </div>
+                          <button 
+                            onClick={() => setView('habits')}
+                            className="p-2 bg-white rounded-lg border border-slate-100 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 transition-all shadow-sm"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-10">
+                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Sparkles className="w-6 h-6 text-amber-500" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-900">Momentum Maintained!</p>
+                        <p className="text-xs text-slate-400">All habits for today have been logged.</p>
+                      </div>
+                    )}
+                  </div>
+                  <Button variant="ghost" onClick={() => setView('habits')} className="w-full mt-4 h-10 text-[10px] uppercase font-black tracking-widest text-slate-400 hover:text-emerald-600 hover:bg-emerald-50">
+                    Open Habit Tracker
+                  </Button>
                 </GlassCard>
               </div>
 

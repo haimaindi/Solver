@@ -14,7 +14,9 @@ import {
   Target,
   FlaskConical,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Edit2,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase, Idea, Maturity, NextAction } from '@/src/lib/supabase';
@@ -32,7 +34,20 @@ export function IdeaManager() {
   const [actionFilter, setActionFilter] = useState<NextAction | 'All'>('All');
   const [showArchived, setShowArchived] = useState(false);
 
+  // Detail/Edit Modal State
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
   const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    maturity: 'Thin' as Maturity,
+    next_action: 'Research' as NextAction,
+    remind_at: ''
+  });
+
+  const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
     maturity: 'Thin' as Maturity,
@@ -105,6 +120,62 @@ export function IdeaManager() {
       Swal.fire({
         title: 'Idea Captured',
         text: 'Your idea has been documented successfully.',
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    }
+  };
+
+  const handleViewDetail = (idea: Idea) => {
+    setSelectedIdea(idea);
+    setEditFormData({
+      title: idea.title,
+      description: idea.description,
+      maturity: idea.maturity,
+      next_action: idea.next_action,
+      remind_at: idea.remind_at || ''
+    });
+    setIsEditing(false);
+    setIsDetailOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedIdea) return;
+
+    if (!editFormData.title.trim()) {
+      Swal.fire('Error', 'Title is required', 'error');
+      return;
+    }
+
+    const updatedIdea = {
+      title: editFormData.title,
+      description: editFormData.description,
+      maturity: editFormData.maturity,
+      next_action: editFormData.next_action,
+      remind_at: editFormData.remind_at || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabase
+      .from('ideas')
+      .update(updatedIdea)
+      .eq('id', selectedIdea.id)
+      .select()
+      .single();
+
+    if (error) {
+      Swal.fire('Error', 'Failed to update idea', 'error');
+    } else {
+      setIdeas(ideas.map(i => i.id === selectedIdea.id ? data : i));
+      setSelectedIdea(data);
+      setIsEditing(false);
+      Swal.fire({
+        title: 'Updated',
+        text: 'Idea details saved.',
         icon: 'success',
         toast: true,
         position: 'top-end',
@@ -278,7 +349,10 @@ export function IdeaManager() {
               transition={{ delay: idx * 0.05 }}
               layout
             >
-              <GlassCard className="h-full flex flex-col group hover:border-bca-blue/30 transition-all cursor-default overflow-hidden relative border-white/40">
+              <GlassCard 
+                className="h-full flex flex-col group hover:border-bca-blue/30 transition-all cursor-pointer overflow-hidden relative border-white/40"
+                onClick={() => handleViewDetail(idea)}
+              >
                 {/* Status Bar */}
                 <div className={cn(
                   "h-1.5 w-full",
@@ -303,13 +377,19 @@ export function IdeaManager() {
                     
                     <div className="flex items-center gap-1">
                       <button 
-                        onClick={() => handleToggleArchive(idea.id, idea.is_archived)}
+                        onClick={(e) => { e.stopPropagation(); handleViewDetail(idea); }}
+                        className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleToggleArchive(idea.id, idea.is_archived); }}
                         className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                       >
                         <Archive className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDelete(idea.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(idea.id); }}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -371,10 +451,10 @@ export function IdeaManager() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl"
+              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto"
             >
               <GlassCard className="p-8 shadow-2xl border-white/20">
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-center mb-8 sticky top-0 bg-white/10 backdrop-blur-lg -mx-8 -mt-8 p-8 border-b border-white/20 z-10">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
                       <Lightbulb className="w-6 h-6" />
@@ -389,7 +469,7 @@ export function IdeaManager() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
                     <Input 
@@ -459,6 +539,182 @@ export function IdeaManager() {
                     </Button>
                   </div>
                 </form>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Detail / Edit Modal */}
+      <AnimatePresence>
+        {isDetailOpen && selectedIdea && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+              onClick={() => setIsDetailOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto"
+            >
+              <GlassCard className="p-8 shadow-2xl border-white/20">
+                <div className="flex justify-between items-center mb-8 sticky top-0 bg-white/10 backdrop-blur-lg -mx-8 -mt-8 p-8 border-b border-white/20 z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
+                      <Lightbulb className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">
+                        {isEditing ? 'Edit Idea' : 'Idea Vision'}
+                      </h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        {isEditing ? 'Refine your spark into a flame' : 'The architecture of your thought'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!isEditing && (
+                      <button 
+                        onClick={() => setIsEditing(true)}
+                        className="p-2 text-bca-blue hover:bg-bca-blue/10 rounded-full transition-colors"
+                        title="Edit Idea"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                    )}
+                    <button onClick={() => setIsDetailOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  {isEditing ? (
+                    <form onSubmit={handleUpdate} className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
+                        <Input 
+                          placeholder="What's the spark?" 
+                          className="h-12 text-base font-medium"
+                          value={editFormData.title}
+                          onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Description / Context</label>
+                        <TextArea 
+                          placeholder="Flesh out the idea briefly..." 
+                          className="min-h-[120px] text-sm py-4"
+                          value={editFormData.description}
+                          onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity Level</label>
+                          <Select 
+                            value={editFormData.maturity}
+                            onChange={e => setEditFormData({ ...editFormData, maturity: e.target.value as Maturity })}
+                            className="h-12"
+                          >
+                            <option value="Thin">Thin (Surface Level)</option>
+                            <option value="Mature">Mature (Ready)</option>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Engagement</label>
+                          <Select 
+                            value={editFormData.next_action}
+                            onChange={e => setEditFormData({ ...editFormData, next_action: e.target.value as NextAction })}
+                            className="h-12"
+                          >
+                            <option value="Research">Research (Study)</option>
+                            <option value="Plan">Plan (Blueprint)</option>
+                            <option value="Execute Now">Execute Now (Action)</option>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recall Reminder (Optional)</label>
+                        <div className="relative">
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <Input 
+                            type="date" 
+                            className="h-12 pl-12"
+                            value={editFormData.remind_at}
+                            onChange={e => setEditFormData({ ...editFormData, remind_at: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-4 flex gap-4">
+                        <Button type="button" variant="secondary" onClick={() => setIsEditing(false)} className="flex-1 h-12 uppercase font-black text-[11px] tracking-widest border-slate-200">
+                          Cancel
+                        </Button>
+                        <Button type="submit" className="flex-2 h-12 uppercase font-black text-[11px] tracking-widest shadow-xl shadow-bca-blue/20">
+                          Save Changes
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-8 pb-4">
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
+                         <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight">{selectedIdea.title}</h2>
+                      </div>
+
+                      <div className="space-y-1">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insights & Context</label>
+                         <p className="text-slate-600 leading-relaxed whitespace-pre-wrap">{selectedIdea.description || 'No detailed context provided for this spark.'}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-8">
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity</label>
+                           <div className="flex items-center gap-2 mt-1">
+                              <span className={cn(
+                                "px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter",
+                                selectedIdea.maturity === 'Mature' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {selectedIdea.maturity}
+                              </span>
+                           </div>
+                        </div>
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Action</label>
+                           <div className="flex items-center gap-2 mt-1 px-3 py-1 bg-slate-50 border border-slate-100 rounded-full w-fit">
+                              {getActionIcon(selectedIdea.next_action)}
+                              <span className="text-xs font-black text-slate-700 uppercase tracking-tighter">{selectedIdea.next_action}</span>
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 mt-4">
+                        <div className="flex flex-col">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Captured On</span>
+                           <span className="text-xs font-bold text-slate-700">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
+                        </div>
+                        {selectedIdea.remind_at && (
+                          <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scheduled Recall</span>
+                            <div className="flex items-center gap-1.5 text-bca-blue">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span className="text-xs font-black uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </GlassCard>
             </motion.div>
           </div>
