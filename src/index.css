@@ -184,43 +184,101 @@ body {
 /* SweetAlert2 Mobile Fixes */
 .swal2-popup {
   border-radius: 24px !important;
-  padding: 1.5rem !important;
-  max-width: 95vw !important;
-  max-height: 90vh !important;
+  padding: 1rem !important;
+  width: 95vw !important;
+  max-width: 480px !important;
+  max-height: 95vh !important;
   font-family: var(--font-sans) !important;
+  box-sizing: border-box !important;
+}
+
+@media (min-width: 640px) {
+  .swal2-popup {
+    padding: 2rem !important;
+  }
 }
 
 .swal2-html-container {
-  max-height: 50vh !important;
+  max-height: 60vh !important;
   overflow-y: auto !important;
-  margin: 1.5rem 0.5rem !important;
-  padding: 0.25rem !important;
+  overflow-x: hidden !important;
+  margin: 1rem 0 !important;
+  padding: 0.5rem 0.5rem !important;
   scrollbar-width: thin;
-  scrollbar-color: #003399 transparent;
+  scrollbar-color: #003399 #f1f5f9;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: block !important;
+}
+
+/* Ensure no elements inside the swal container can cause horizontal scroll */
+.swal2-html-container > div {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
 }
 
 .swal2-title {
-  font-size: 1.25rem !important;
+  font-size: 1.125rem !important;
   font-weight: 800 !important;
   text-transform: uppercase !important;
   letter-spacing: -0.025em !important;
   color: #1a1a1a !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+@media (min-width: 640px) {
+  .swal2-title {
+    font-size: 1.5rem !important;
+  }
 }
 
 .swal2-actions {
   width: 100% !important;
-  margin-top: 1rem !important;
+  margin-top: 0.5rem !important;
+  gap: 0.5rem !important;
 }
 
 .swal2-confirm, .swal2-deny, .swal2-cancel {
+  margin: 0 !important;
+  flex: 1 !important;
   border-radius: 12px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  font-size: 0.75rem !important;
-  padding: 0.75rem 1.5rem !important;
+  font-size: 0.7rem !important;
+  padding: 0.75rem 1rem !important;
+  height: 48px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (min-width: 640px) {
+  .swal2-confirm, .swal2-deny, .swal2-cancel {
+    font-size: 0.75rem !important;
+    padding: 0.75rem 1.5rem !important;
+  }
 }
 
 .swal2-confirm {
   background-color: #003399 !important;
+  flex: 2 !important;
+}
+
+/* Fix for internal swal inputs to not cause overflow */
+.swal2-input, .swal2-textarea, .swal2-select {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0.25rem 0 !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+}
+
+.swal2-input:focus, .swal2-textarea:focus, .swal2-select:focus {
+  border-color: #003399 !important;
+  ring: 2px rgba(0, 51, 153, 0.1) !important;
 }
