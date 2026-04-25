@@ -260,7 +260,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         <div class="text-sm text-slate-500 mb-2">Select target date for duplication</div>
       `,
       input: 'date',
-      inputValue: todo.date,
+      inputValue: format(startOfToday(), 'yyyy-MM-dd'),
       showCancelButton: true,
       confirmButtonText: 'Duplicate',
       confirmButtonColor: '#003399',
