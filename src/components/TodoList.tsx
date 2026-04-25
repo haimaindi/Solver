@@ -264,10 +264,10 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
       showCancelButton: true,
       confirmButtonText: 'Duplicate',
       confirmButtonColor: '#003399',
+      width: '360px',
       customClass: {
-        popup: 'swal2-popup shadow-2xl',
-        title: 'swal2-title pt-6',
-        htmlContainer: 'swal2-html-container',
+        popup: 'rounded-3xl border-none shadow-2xl',
+        title: 'text-xl font-black text-slate-800 pt-6',
         input: 'max-w-[240px] mx-auto rounded-xl border-slate-200 focus:ring-bca-blue text-center font-bold h-12 flex justify-center',
         confirmButton: 'rounded-xl px-6 py-2.5 font-bold uppercase tracking-wider text-xs',
         cancelButton: 'rounded-xl px-6 py-2.5 font-bold uppercase tracking-wider text-xs'

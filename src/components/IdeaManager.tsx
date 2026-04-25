@@ -64,52 +64,54 @@ export function IdeaManager() {
 
   const handleAddIdea = async () => {
     const { value: formValues } = await Swal.fire({
-      title: 'New Idea Spark',
+      title: 'NEW IDEA SPARK',
       html: `
-        <div class="space-y-4 text-left w-full max-w-full">
-          <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Idea Heading</label>
-            <input id="swal-title" class="swal2-input w-full" placeholder="What's the spark?">
+        <div class="text-left space-y-5 px-1">
+          <div class="space-y-2">
+            <input id="swal-title" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-sm font-bold placeholder:text-slate-300 transition-all" placeholder="What's the spark?">
           </div>
-          <div class="space-y-1">
+          <div class="space-y-2">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description / Context</label>
-            <textarea id="swal-description" class="swal2-textarea w-full" placeholder="Flesh out the idea briefly..."></textarea>
+            <textarea id="swal-description" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-xs sm:text-sm min-h-[120px] placeholder:text-slate-300 transition-all resize-none" placeholder="Flesh out the idea briefly..."></textarea>
           </div>
-          <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1 space-y-1">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Maturity</label>
-              <select id="swal-maturity" class="swal2-select w-full">
+              <select id="swal-maturity" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-xs font-bold bg-white appearance-none transition-all">
                 <option value="Thin">Thin (Draft)</option>
                 <option value="Mature">Mature (Solid)</option>
               </select>
             </div>
-            <div class="flex-1 space-y-1">
+            <div class="space-y-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Next Action</label>
-              <select id="swal-action" class="swal2-select w-full">
+              <select id="swal-action" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-xs font-bold bg-white appearance-none transition-all">
                 <option value="Research">Research (Study)</option>
                 <option value="Plan">Plan (Blueprint)</option>
                 <option value="Execute Now">Execute Now (Action)</option>
               </select>
             </div>
           </div>
-          <div class="space-y-1">
+          <div class="space-y-2">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Recall Reminder (Optional)</label>
-            <input id="swal-remind" type="date" class="swal2-input w-full">
+            <input id="swal-remind" type="date" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-sm font-bold transition-all">
           </div>
         </div>
       `,
       focusConfirm: false,
       showCancelButton: true,
-      showDenyButton: false,
-      confirmButtonText: 'Document Spark',
-      cancelButtonText: 'Discard',
+      confirmButtonText: 'RECORD',
+      cancelButtonText: 'DISCARD',
       confirmButtonColor: '#003399',
+      cancelButtonColor: '#6b7280',
+      width: 'min(520px, 95vw)',
+      padding: '3rem 2rem',
       customClass: {
-        popup: 'swal2-popup shadow-2xl',
-        title: 'swal2-title pt-2',
-        htmlContainer: 'swal2-html-container',
-        confirmButton: 'shadow-lg shadow-bca-blue/20',
-        cancelButton: 'text-slate-500 bg-slate-100 hover:bg-slate-200'
+        popup: 'rounded-[40px] border-none shadow-2xl overflow-hidden',
+        title: 'text-2xl font-black text-slate-900 pb-4 uppercase tracking-tighter',
+        htmlContainer: 'text-left overflow-visible p-0 mt-4',
+        confirmButton: 'rounded-2xl px-10 py-4 font-black uppercase tracking-widest text-[11px] h-14 shadow-xl shadow-bca-blue/20 m-2',
+        cancelButton: 'rounded-2xl px-10 py-4 font-black uppercase tracking-widest text-[11px] h-14 bg-slate-500 shadow-xl shadow-slate-200 m-2',
+        actions: 'flex gap-4 w-full justify-center pt-4'
       },
       preConfirm: () => {
         const title = (document.getElementById('swal-title') as HTMLInputElement).value;
@@ -152,8 +154,7 @@ export function IdeaManager() {
       } else {
         setIdeas([data, ...ideas]);
         Swal.fire({
-          title: 'Idea Captured',
-          text: 'Brilliance documented.',
+          title: 'Idea Recorded',
           icon: 'success',
           toast: true,
           position: 'top-end',
@@ -166,52 +167,54 @@ export function IdeaManager() {
 
   const handleEditIdea = async (idea: Idea) => {
     const { value: formValues } = await Swal.fire({
-      title: 'Refine Idea Spark',
+      title: 'REFINE IDEA SPARK',
       html: `
-        <div class="space-y-4 text-left w-full max-w-full">
-          <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Idea Heading</label>
-            <input id="swal-title" class="swal2-input w-full" placeholder="What's the spark?" value="${idea.title.replace(/"/g, '&quot;')}">
+        <div class="text-left space-y-5 px-1">
+          <div class="space-y-2">
+            <input id="swal-title" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-sm font-bold placeholder:text-slate-300 transition-all" placeholder="What's the spark?" value="${idea.title.replace(/"/g, '&quot;')}">
           </div>
-          <div class="space-y-1">
+          <div class="space-y-2">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Description / Context</label>
-            <textarea id="swal-description" class="swal2-textarea w-full" placeholder="Flesh out the idea briefly...">${(idea.description || '').replace(/"/g, '&quot;')}</textarea>
+            <textarea id="swal-description" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-xs sm:text-sm min-h-[120px] placeholder:text-slate-300 transition-all resize-none" placeholder="Flesh out the idea briefly...">${(idea.description || '').replace(/"/g, '&quot;')}</textarea>
           </div>
-          <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1 space-y-1">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Maturity</label>
-              <select id="swal-maturity" class="swal2-select w-full">
+              <select id="swal-maturity" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-xs font-bold bg-white appearance-none transition-all">
                 <option value="Thin" ${idea.maturity === 'Thin' ? 'selected' : ''}>Thin (Draft)</option>
                 <option value="Mature" ${idea.maturity === 'Mature' ? 'selected' : ''}>Mature (Solid)</option>
               </select>
             </div>
-            <div class="flex-1 space-y-1">
+            <div class="space-y-2">
               <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Next Action</label>
-              <select id="swal-action" class="swal2-select w-full">
+              <select id="swal-action" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-xs font-bold bg-white appearance-none transition-all">
                 <option value="Research" ${idea.next_action === 'Research' ? 'selected' : ''}>Research (Study)</option>
                 <option value="Plan" ${idea.next_action === 'Plan' ? 'selected' : ''}>Plan (Blueprint)</option>
                 <option value="Execute Now" ${idea.next_action === 'Execute Now' ? 'selected' : ''}>Execute Now (Action)</option>
               </select>
             </div>
           </div>
-          <div class="space-y-1">
+          <div class="space-y-2">
             <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Recall Reminder (Optional)</label>
-            <input id="swal-remind" type="date" class="swal2-input w-full" value="${idea.remind_at || ''}">
+            <input id="swal-remind" type="date" class="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 focus:border-bca-blue focus:outline-none text-sm font-bold transition-all" value="${idea.remind_at || ''}">
           </div>
         </div>
       `,
       focusConfirm: false,
       showCancelButton: true,
-      showDenyButton: false,
-      confirmButtonText: 'Save Refinement',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: 'RECORD',
+      cancelButtonText: 'DISCARD',
       confirmButtonColor: '#003399',
+      cancelButtonColor: '#6b7280',
+      width: 'min(520px, 95vw)',
+      padding: '3rem 2rem',
       customClass: {
-        popup: 'swal2-popup shadow-2xl',
-        title: 'swal2-title pt-2',
-        htmlContainer: 'swal2-html-container',
-        confirmButton: 'shadow-lg shadow-bca-blue/20',
-        cancelButton: 'text-slate-500 bg-slate-100 hover:bg-slate-200'
+        popup: 'rounded-[40px] border-none shadow-2xl overflow-hidden',
+        title: 'text-2xl font-black text-slate-900 pb-4 uppercase tracking-tighter',
+        htmlContainer: 'text-left overflow-visible p-0 mt-4',
+        confirmButton: 'rounded-2xl px-10 py-4 font-black uppercase tracking-widest text-[11px] h-14 shadow-xl shadow-bca-blue/20 m-2',
+        cancelButton: 'rounded-2xl px-10 py-4 font-black uppercase tracking-widest text-[11px] h-14 bg-slate-500 shadow-xl shadow-slate-200 m-2',
+        actions: 'flex gap-4 w-full justify-center pt-4'
       },
       preConfirm: () => {
         const title = (document.getElementById('swal-title') as HTMLInputElement).value;
@@ -252,7 +255,7 @@ export function IdeaManager() {
         setIdeas(ideas.map(i => i.id === idea.id ? data : i));
         if (selectedIdea?.id === idea.id) setSelectedIdea(data);
         Swal.fire({
-          title: 'Refinement Saved',
+          title: 'Refinement Recorded',
           icon: 'success',
           toast: true,
           position: 'top-end',
