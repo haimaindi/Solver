@@ -51,7 +51,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "px-4 py-2 rounded-lg font-semibold text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
+        "px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none",
         variants[variant],
         className
       )}
@@ -66,7 +66,7 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   return (
     <input
       className={cn(
-        "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all text-sm",
+        "w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all text-xs sm:text-sm",
         className
       )}
       {...props}
@@ -78,7 +78,7 @@ export function TextArea({ className, ...props }: React.TextareaHTMLAttributes<H
   return (
     <textarea
       className={cn(
-        "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all min-h-[80px] text-sm",
+        "w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all min-h-[80px] text-xs sm:text-sm",
         className
       )}
       {...props}
@@ -90,7 +90,7 @@ export function Select({ className, children, ...props }: React.SelectHTMLAttrib
   return (
     <select
       className={cn(
-        "w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all text-sm appearance-none",
+        "w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-bca-blue/10 focus:border-bca-blue transition-all text-xs sm:text-sm appearance-none",
         className
       )}
       {...props}

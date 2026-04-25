@@ -180,3 +180,47 @@ body {
   overscroll-behavior-y: contain;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* SweetAlert2 Mobile Fixes */
+.swal2-popup {
+  border-radius: 24px !important;
+  padding: 1.5rem !important;
+  max-width: 95vw !important;
+  max-height: 90vh !important;
+  font-family: var(--font-sans) !important;
+}
+
+.swal2-html-container {
+  max-height: 50vh !important;
+  overflow-y: auto !important;
+  margin: 1.5rem 0.5rem !important;
+  padding: 0.25rem !important;
+  scrollbar-width: thin;
+  scrollbar-color: #003399 transparent;
+}
+
+.swal2-title {
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.025em !important;
+  color: #1a1a1a !important;
+}
+
+.swal2-actions {
+  width: 100% !important;
+  margin-top: 1rem !important;
+}
+
+.swal2-confirm, .swal2-deny, .swal2-cancel {
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 0.75rem !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+.swal2-confirm {
+  background-color: #003399 !important;
+}
