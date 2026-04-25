@@ -34,7 +34,12 @@ const HABIT_COLORS = [
   { name: 'Pink', value: '#ec4899' }
 ];
 
-export function HabitTracker() {
+interface HabitTrackerProps {
+  prefillHabitId?: string | null;
+  onPrefillHandled?: () => void;
+}
+
+export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerProps) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -52,6 +57,16 @@ export function HabitTracker() {
   useEffect(() => {
     fetchData();
   }, [showArchived]);
+
+  useEffect(() => {
+    if (prefillHabitId && habits.length > 0) {
+      const habit = habits.find(h => h.id === prefillHabitId);
+      if (habit) {
+        setSelectedHabit(habit);
+        onPrefillHandled?.();
+      }
+    }
+  }, [prefillHabitId, habits]);
 
   const fetchData = async () => {
     const currentUser = localStorage.getItem('user_id');

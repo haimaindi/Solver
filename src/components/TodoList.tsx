@@ -33,10 +33,11 @@ import { cn } from '@/src/lib/utils';
 
 interface TodoListProps {
   prefillData?: { task: string; description: string; date: string } | null;
+  prefillTodoId?: string | null;
   onPrefillHandled?: () => void;
 }
 
-export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
+export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoListProps) {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
   const [selectedDateStr, setSelectedDateStr] = useState(format(startOfToday(), 'yyyy-MM-dd'));
@@ -56,6 +57,18 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
   useEffect(() => {
     fetchTodos();
   }, [showArchived]);
+
+  useEffect(() => {
+    if (prefillTodoId && todos.length > 0) {
+      const todo = todos.find(t => t.id === prefillTodoId);
+      if (todo) {
+        setSelectedDateStr(todo.date);
+        setViewingTodo(todo);
+        setViewMode('detail');
+        onPrefillHandled?.();
+      }
+    }
+  }, [prefillTodoId, todos]);
 
   useEffect(() => {
     if (prefillData) {
@@ -776,7 +789,14 @@ export function TodoList({ prefillData, onPrefillHandled }: TodoListProps) {
                                         )}
                                         <div className="ml-auto flex items-center gap-1.5">
                                            <button 
-                                              onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
+                                              onClick={(e) => { e.stopPropagation(); copyTodo(todo); }}
+                                               className="p-1 text-slate-400 hover:text-bca-blue hover:bg-slate-50 rounded-lg transition-all"
+                                               title="Duplicate"
+                                            >
+                                               <Copy className="w-3.5 h-3.5" />
+                                            </button>
+                                            <button 
+                                               onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
                                               className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                               title="Edit"
                                            >
