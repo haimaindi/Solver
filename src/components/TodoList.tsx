@@ -608,8 +608,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                              onClick={handleCreateTodo} 
                              className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 text-lg font-bold"
                          >
-                             <CheckCircle2 className="w-6 h-6" />
-                             <span>{editingTodoId ? 'Save Changes' : 'Create Task'}</span>
+                             <span>{editingTodoId ? 'Save' : 'Create'}</span>
                          </Button>
                          <Button 
                             variant="ghost" 
