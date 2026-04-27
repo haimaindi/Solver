@@ -58,7 +58,7 @@ const MODE_FIELDS: Record<Mode, { id: string; label: string; placeholder: string
     { id: 'nowWhat', label: 'Now What?', placeholder: 'What are you going to do next? How will you improve?' }
   ],
   '4L': [
-    { id: 'experience', label: 'Description/Experience', placeholder: 'Describe the event or experience.' },
+    { id: 'experience', label: 'Description / Experience', placeholder: 'Describe the event or experience.' },
     { id: 'liked', label: 'Liked / Grateful for', placeholder: 'What did you like about the experience?' },
     { id: 'learned', label: 'Learned', placeholder: 'What did you learn from this?' },
     { id: 'lacked', label: 'Lacked', placeholder: 'What was missing or what hindered you?' },

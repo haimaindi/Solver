@@ -2059,7 +2059,7 @@ export default function App() {
                 </GlassCard>
 
                 {/* Tab Navigation */}
-                <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/50 rounded-2xl w-fit">
+                <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/50 rounded-2xl w-fit mx-auto shadow-inner border border-slate-200/50">
                   <button 
                     onClick={() => setActiveDetailTab('root-cause')}
                     className={cn(
