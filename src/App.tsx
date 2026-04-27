@@ -35,10 +35,11 @@ import {
   CheckCircle,
   Circle
 } from 'lucide-react';
-import { Problem, Status, RootCause, ActionPlan, Reflection, Habit, HabitLog, Todo, supabase } from '@/src/lib/supabase';
+import { Problem, Status, RootCause, ActionPlan, Reflection, Habit, HabitLog, Todo, OwnedResource, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
 import { Fishbone } from './components/Fishbone';
 import { ActionPlanManager } from './components/ActionPlan';
+import { OwnedResources } from './components/OwnedResources';
 import { ReflectionManager } from './components/Reflection';
 import { HabitTracker } from './components/HabitTracker';
 import { TodoList } from './components/TodoList';
@@ -178,6 +179,8 @@ export default function App() {
   const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
   const [causes, setCauses] = useState<RootCause[]>([]);
   const [plans, setPlans] = useState<ActionPlan[]>([]);
+  const [resources, setResources] = useState<OwnedResource[]>([]);
+  const [activeDetailTab, setActiveDetailTab] = useState<'root-cause' | 'resources' | 'action-plan'>('root-cause');
   const [dashboardPlans, setDashboardPlans] = useState<(ActionPlan & { problem_title?: string })[]>([]);
   const [todayTodos, setTodayTodos] = useState<Todo[]>([]);
   const [todayHabits, setTodayHabits] = useState<Habit[]>([]);
@@ -532,13 +535,66 @@ export default function App() {
   };
 
   const fetchDetails = async (problemId: string) => {
-    const [causesRes, plansRes] = await Promise.all([
+    const [causesRes, plansRes, resourcesRes] = await Promise.all([
       supabase.from('root_causes').select('*').eq('problem_id', problemId).order('created_at', { ascending: true }),
-      supabase.from('action_plans').select('*').eq('problem_id', problemId).order('created_at', { ascending: true })
+      supabase.from('action_plans').select('*').eq('problem_id', problemId).order('created_at', { ascending: true }),
+      supabase.from('owned_resources').select('*').eq('problem_id', problemId).order('created_at', { ascending: true })
     ]);
 
     if (causesRes.data) setCauses(causesRes.data);
     if (plansRes.data) setPlans(plansRes.data);
+    if (resourcesRes.data) setResources(resourcesRes.data);
+  };
+
+  const handleAddResource = async (resource: Partial<OwnedResource>) => {
+    if (!selectedProblem) return;
+    const { data, error } = await supabase
+      .from('owned_resources')
+      .insert([{ ...resource, problem_id: selectedProblem.id }])
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error adding resource:', error);
+      Swal.fire('Error', 'Failed to add resource', 'error');
+      return;
+    }
+    
+    if (data) {
+      setResources([...resources, data]);
+    }
+  };
+
+  const handleDeleteResource = async (id: string) => {
+    const { error } = await supabase
+      .from('owned_resources')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      Swal.fire('Error', 'Failed to delete resource', 'error');
+      return;
+    }
+    
+    setResources(resources.filter(r => r.id !== id));
+  };
+
+  const handleUpdateResource = async (id: string, updates: Partial<OwnedResource>) => {
+    const { data, error } = await supabase
+      .from('owned_resources')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      Swal.fire('Error', 'Failed to update resource', 'error');
+      return;
+    }
+    
+    if (data) {
+      setResources(resources.map(r => r.id === id ? data : r));
+    }
   };
 
   // Form states for new problem
@@ -2002,10 +2058,41 @@ export default function App() {
                   </div>
                 </GlassCard>
 
-                {/* Section 2: Middle - 2 Columns (Analysis & Action Plan) */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                  <GlassCard className="p-4 md:p-6 min-h-[500px] overflow-hidden">
-                    <div className="w-full">
+                {/* Tab Navigation */}
+                <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/50 rounded-2xl w-fit">
+                  <button 
+                    onClick={() => setActiveDetailTab('root-cause')}
+                    className={cn(
+                      "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
+                      activeDetailTab === 'root-cause' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                    )}
+                  >
+                    Root Cause Analysis
+                  </button>
+                  <button 
+                    onClick={() => setActiveDetailTab('resources')}
+                    className={cn(
+                      "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
+                      activeDetailTab === 'resources' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                    )}
+                  >
+                    Owned Resources
+                  </button>
+                  <button 
+                    onClick={() => setActiveDetailTab('action-plan')}
+                    className={cn(
+                      "px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all",
+                      activeDetailTab === 'action-plan' ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                    )}
+                  >
+                    Action Plan
+                  </button>
+                </div>
+
+                {/* Section 2: Tabbed Content */}
+                <div className="w-full">
+                  {activeDetailTab === 'root-cause' && (
+                    <GlassCard className="p-4 md:p-6 min-h-[500px] overflow-hidden">
                       <div className="w-full">
                         <Fishbone 
                           causes={causes}
@@ -2019,18 +2106,31 @@ export default function App() {
                           }}
                         />
                       </div>
-                    </div>
-                  </GlassCard>
+                    </GlassCard>
+                  )}
 
-                  <GlassCard className="p-4 md:p-6 min-h-[500px]">
-                    <ActionPlanManager 
-                      plans={plans}
-                      onAdd={handleAddPlan}
-                      onDelete={handleDeletePlan}
-                      onUpdate={handleUpdatePlan}
-                      onAddToTodo={handleActionPlanToTodo}
-                    />
-                  </GlassCard>
+                  {activeDetailTab === 'resources' && (
+                    <GlassCard className="p-4 md:p-6 min-h-[500px]">
+                      <OwnedResources 
+                        resources={resources}
+                        onAdd={handleAddResource}
+                        onDelete={handleDeleteResource}
+                        onUpdate={handleUpdateResource}
+                      />
+                    </GlassCard>
+                  )}
+
+                  {activeDetailTab === 'action-plan' && (
+                    <GlassCard className="p-4 md:p-6 min-h-[500px]">
+                      <ActionPlanManager 
+                        plans={plans}
+                        onAdd={handleAddPlan}
+                        onDelete={handleDeletePlan}
+                        onUpdate={handleUpdatePlan}
+                        onAddToTodo={handleActionPlanToTodo}
+                      />
+                    </GlassCard>
+                  )}
                 </div>
 
                 {/* Section 3: Bottom - Full Width (Outcome) */}
@@ -2094,6 +2194,7 @@ export default function App() {
                 problem={selectedProblem} 
                 causes={causes} 
                 plans={plans} 
+                resources={resources}
               />
             </motion.div>
           )}

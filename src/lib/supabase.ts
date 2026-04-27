@@ -123,6 +123,16 @@ export interface Todo {
 
 export type Maturity = 'Thin' | 'Mature';
 export type NextAction = 'Execute Now' | 'Research' | 'Plan';
+export type ResourceType = 'Skills' | 'Relations' | 'Financial' | 'Knowledge' | 'Religion' | 'Others';
+
+export interface OwnedResource {
+  id: string;
+  problem_id: string;
+  name: string;
+  type: ResourceType;
+  description: string;
+  created_at: string;
+}
 
 export interface Idea {
   id: string;

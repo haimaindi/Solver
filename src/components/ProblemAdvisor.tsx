@@ -10,7 +10,7 @@ import {
   Target,
   Zap
 } from 'lucide-react';
-import { Problem, RootCause, ActionPlan } from '@/src/lib/supabase';
+import { Problem, RootCause, ActionPlan, OwnedResource } from '@/src/lib/supabase';
 import { GlassCard, Button } from './UI';
 import Swal from 'sweetalert2';
 
@@ -18,9 +18,10 @@ interface ProblemAdvisorProps {
   problem: Problem;
   causes: RootCause[];
   plans: ActionPlan[];
+  resources: OwnedResource[];
 }
 
-export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) {
+export function ProblemAdvisor({ problem, causes, plans, resources }: ProblemAdvisorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -36,7 +37,6 @@ export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) 
     // 2. Root Cause Analysis (Hierarchical)
     text += `[ ANALISIS AKAR PENYEBAB (FISHBONE) ]\n`;
     if (causes.length > 0) {
-      // Simple list for now, as root causes are hierarchical via parent_id
       causes.forEach(c => {
         text += `- ${c.cause}${c.is_highlighted ? ' (ROOT CAUSE)' : ''}\n`;
       });
@@ -45,7 +45,18 @@ export function ProblemAdvisor({ problem, causes, plans }: ProblemAdvisorProps) 
     }
     text += `\n`;
 
-    // 3. Action Plan
+    // 3. Owned Resources
+    text += `[ SUMBER DAYA YANG DIMILIKI ]\n`;
+    if (resources.length > 0) {
+      resources.forEach(r => {
+        text += `- ${r.name} (${r.type}): ${r.description || '-'}\n`;
+      });
+    } else {
+      text += `(Belum ada sumber daya terdata)\n`;
+    }
+    text += `\n`;
+
+    // 4. Action Plan
     text += `[ RENCANA AKSI ]\n`;
     if (plans.length > 0) {
       plans.forEach((p, i) => {

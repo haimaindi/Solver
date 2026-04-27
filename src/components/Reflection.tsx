@@ -59,7 +59,7 @@ const MODE_FIELDS: Record<Mode, { id: string; label: string; placeholder: string
   ],
   '4L': [
     { id: 'experience', label: 'Description/Experience', placeholder: 'Describe the event or experience.' },
-    { id: 'liked', label: 'Liked', placeholder: 'What did you like about the experience?' },
+    { id: 'liked', label: 'Liked / Grateful for', placeholder: 'What did you like about the experience?' },
     { id: 'learned', label: 'Learned', placeholder: 'What did you learn from this?' },
     { id: 'lacked', label: 'Lacked', placeholder: 'What was missing or what hindered you?' },
     { id: 'longed', label: 'Longed for', placeholder: 'What did you wish for or hope to happen?' },
