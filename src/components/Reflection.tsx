@@ -321,6 +321,7 @@ export function ReflectionManager() {
         text: `Reflection ${editingId ? 'updated' : 'saved'} successfully`,
         icon: 'success',
         toast: true,
+        backdrop: false,
         position: 'top-end',
         showConfirmButton: false,
         timer: 3000

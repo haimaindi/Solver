@@ -85,6 +85,7 @@ export function ReflectionAdvisor({ reflection }: ReflectionAdvisorProps) {
         timer: 2000,
         showConfirmButton: false,
         toast: true,
+        backdrop: false,
         position: 'top-end'
       });
 

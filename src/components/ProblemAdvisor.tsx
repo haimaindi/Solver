@@ -89,6 +89,7 @@ export function ProblemAdvisor({ problem, causes, plans, resources }: ProblemAdv
         timer: 2000,
         showConfirmButton: false,
         toast: true,
+        backdrop: false,
         position: 'top-end'
       });
 

@@ -153,7 +153,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         setEditingTodoId(null);
         resetForm();
         setIsFormModalOpen(false);
-        Swal.fire({ title: 'Task Updated', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        Swal.fire({ title: 'Task Updated', icon: 'success', toast: true, backdrop: false, position: 'top-end', showConfirmButton: false, timer: 1500 });
       }
     } else {
       const { data, error } = await supabase.from('todos').insert([newTodo]).select().single();
@@ -161,7 +161,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         setTodos([...todos, data]);
         resetForm();
         setIsFormModalOpen(false);
-        Swal.fire({ title: 'Task Added', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        Swal.fire({ title: 'Task Added', icon: 'success', toast: true, backdrop: false, position: 'top-end', showConfirmButton: false, timer: 1500 });
       }
     }
   };
@@ -296,6 +296,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
           title: 'Task Copied',
           icon: 'success',
           toast: true,
+          backdrop: false,
           position: 'top-end',
           showConfirmButton: false,
           timer: 1500
@@ -359,7 +360,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
     if (error) {
        console.error('Drag update error:', error);
        fetchTodos(); // Rollback if error
-       Swal.fire({ title: 'Update Failed', text: 'Error syncing drag action', icon: 'error', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+       Swal.fire({ title: 'Update Failed', text: 'Error syncing drag action', icon: 'error', toast: true, backdrop: false, position: 'top-end', showConfirmButton: false, timer: 1500 });
     } else {
       // Drag & Drop successful - no Swal as requested for robustness
     }

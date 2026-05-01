@@ -411,6 +411,7 @@ export default function App() {
       text: 'Welcome back to Solver',
       icon: 'success',
       toast: true,
+      backdrop: false,
       position: 'top-end',
       showConfirmButton: false,
       timer: 3000
@@ -1061,7 +1062,7 @@ export default function App() {
             <button 
               onClick={() => setView('dashboard')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'dashboard' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1071,7 +1072,7 @@ export default function App() {
             <button 
               onClick={() => setView('list')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'list' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1081,7 +1082,7 @@ export default function App() {
             <button 
               onClick={() => setView('ideas')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'ideas' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1091,7 +1092,7 @@ export default function App() {
             <button 
               onClick={() => setView('goals')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'goals' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1101,7 +1102,7 @@ export default function App() {
             <button 
               onClick={() => setView('todos')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'todos' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1111,7 +1112,7 @@ export default function App() {
             <button 
               onClick={() => setView('habits')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'habits' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1121,7 +1122,7 @@ export default function App() {
             <button 
               onClick={() => setView('reflection')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'reflection' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1131,7 +1132,7 @@ export default function App() {
             <button 
               onClick={() => setView('supplement')}
               className={cn(
-                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                 view === 'supplement' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
               )}
             >
@@ -1142,7 +1143,7 @@ export default function App() {
               <button 
                 onClick={() => setView('admin')}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                  "px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-[13px] font-bold transition-all flex items-center gap-1.5 xl:gap-2 whitespace-nowrap shrink-0",
                   view === 'admin' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
                 )}
               >

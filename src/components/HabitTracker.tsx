@@ -94,6 +94,7 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
         text: `Habit ${!isCurrentlyArchived ? 'archived' : 'unarchived'}`,
         icon: 'success',
         toast: true,
+        backdrop: false,
         position: 'top-end',
         showConfirmButton: false,
         timer: 1500

@@ -157,6 +157,7 @@ export function IdeaManager() {
           title: 'Idea Recorded',
           icon: 'success',
           toast: true,
+          backdrop: false,
           position: 'top-end',
           showConfirmButton: false,
           timer: 2000
@@ -258,6 +259,7 @@ export function IdeaManager() {
           title: 'Refinement Recorded',
           icon: 'success',
           toast: true,
+          backdrop: false,
           position: 'top-end',
           showConfirmButton: false,
           timer: 2000
