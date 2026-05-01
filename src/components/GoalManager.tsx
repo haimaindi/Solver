@@ -48,13 +48,13 @@ export function GoalManager() {
 
   const fetchGoals = async () => {
     setIsLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const userId = localStorage.getItem('user_id');
+    if (!userId || userId === 'unknown') return;
 
     const { data: fetchedGoals, error } = await supabase
       .from('goals')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('is_archived', showArchived)
       .order('created_at', { ascending: false });
 
@@ -92,14 +92,13 @@ export function GoalManager() {
     if (!newGoal.title) return;
 
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-      if (!user) throw new Error('No valid session. Please log in again.');
+      const userId = localStorage.getItem('user_id');
+      if (!userId || userId === 'unknown') throw new Error('No valid session. Please log in again.');
 
       const { data, error } = await supabase
         .from('goals')
         .insert([{
-          user_id: user.id,
+          user_id: userId,
           title: newGoal.title,
           category: newGoal.category,
           description: newGoal.description || null,
@@ -279,7 +278,7 @@ export function GoalManager() {
               </div>
 
               <div className="max-w-3xl">
-                <form id="addGoalForm" className="space-y-6">
+                <form id="addGoalForm" onSubmit={handleAddGoal} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-slate-700">What do you want to achieve?</label>
                     <Input 
@@ -326,8 +325,7 @@ export function GoalManager() {
 
                   <div className="flex justify-end pt-4">
                     <Button 
-                      type="button" 
-                      onClick={handleAddGoal}
+                      type="submit" 
                       disabled={!newGoal.title}
                       className="h-11 px-8 rounded-xl min-w-[200px]"
                     >

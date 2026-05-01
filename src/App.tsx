@@ -330,8 +330,8 @@ export default function App() {
   const fetchWorldTime = async (): Promise<Date> => {
     // List of reliable time APIs for fallback
     const timeApis = [
-      'https://worldtimeapi.org/api/timezone/Etc/UTC',
       'https://timeapi.io/api/Time/current/zone?timeZone=UTC',
+      'https://worldtimeapi.org/api/timezone/Etc/UTC',
       'https://showcase.api.linx.twenty57.net:8080/UnixTime/unixtimestamp?format=json'
     ];
 
@@ -1417,8 +1417,8 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6">Problem Distribution by Category</h3>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={0} debounce={50}>
+                  <div className="h-[300px] w-full min-w-[200px]">
+                    <ResponsiveContainer width="99%" height={300}>
                       <BarChart data={categories.map(cat => ({
                         name: cat,
                         count: problems.filter(p => p.category === cat).length
@@ -1437,8 +1437,8 @@ export default function App() {
 
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-bold text-slate-900 mb-6">Status Breakdown</h3>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%" minHeight={300} minWidth={0} debounce={50}>
+                  <div className="h-[300px] w-full min-w-[200px]">
+                    <ResponsiveContainer width="99%" height={300}>
                       <PieChart>
                         <Pie
                           data={[
