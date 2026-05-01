@@ -11,6 +11,8 @@ import {
   X,
   Trophy,
   Flag,
+  FlagIcon,
+  Pencil,
   ArrowRight,
   ArrowLeft,
   Archive
@@ -29,6 +31,7 @@ export function GoalManager() {
   const [milestones, setMilestones] = useState<Record<string, Milestone[]>>({});
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | Partial<Milestone> | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,29 +97,54 @@ export function GoalManager() {
       const userId = localStorage.getItem('user_id');
       if (!userId || userId === 'unknown') throw new Error('No valid session. Please log in again.');
 
-      const { data, error } = await supabase
-        .from('goals')
-        .insert([{
-          user_id: userId,
-          title: newGoal.title,
-          category: newGoal.category,
-          description: newGoal.description || null,
-          target_date: newGoal.target_date || null
-        }])
-        .select()
-        .single();
+      let query;
+      if (editingGoalId) {
+        query = supabase
+          .from('goals')
+          .update({
+            title: newGoal.title,
+            category: newGoal.category,
+            description: newGoal.description || null,
+            target_date: newGoal.target_date || null
+          })
+          .eq('id', editingGoalId)
+          .select()
+          .single();
+      } else {
+        query = supabase
+          .from('goals')
+          .insert([{
+            user_id: userId,
+            title: newGoal.title,
+            category: newGoal.category,
+            description: newGoal.description || null,
+            target_date: newGoal.target_date || null
+          }])
+          .select()
+          .single();
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
       if (data) {
-        setGoals([data, ...goals]);
-        setMilestones({ ...milestones, [data.id]: [] });
+        if (editingGoalId) {
+          setGoals(goals.map(g => g.id === editingGoalId ? data : g));
+          if (selectedGoal?.id === editingGoalId) setSelectedGoal(data);
+        } else {
+          setGoals([data, ...goals]);
+          setMilestones({ ...milestones, [data.id]: [] });
+          setSelectedGoal(data);
+        }
+        
         setIsAdding(false);
-        setSelectedGoal(data);
+        setEditingGoalId(null);
         setNewGoal({ title: '', category: 'Career', description: '', target_date: '' });
+        
         Swal.fire({
-          title: 'Goal Set!',
-          text: "Every big journey begins with a small step.",
+          title: editingGoalId ? 'Goal Updated!' : 'Goal Set!',
+          text: editingGoalId ? '' : "Every big journey begins with a small step.",
           icon: 'success',
           toast: true,
           position: 'top-end',
@@ -125,9 +153,21 @@ export function GoalManager() {
         });
       }
     } catch (err: any) {
-      console.error('Goal creation failed:', err);
-      Swal.fire('Error', err.message || 'Failed to add goal', 'error');
+      console.error('Goal save failed:', err);
+      Swal.fire('Error', err.message || 'Failed to save goal', 'error');
     }
+  };
+
+  const openEditGoalModal = (goal: Goal, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setNewGoal({
+      title: goal.title,
+      category: goal.category,
+      description: goal.description || '',
+      target_date: goal.target_date || ''
+    });
+    setEditingGoalId(goal.id);
+    setIsAdding(true);
   };
 
   const handleDeleteGoal = async (id: string) => {
@@ -394,12 +434,20 @@ export function GoalManager() {
                     <span className="px-3 py-1 bg-white border border-slate-100 rounded-full text-[10px] sm:text-xs font-black text-slate-600 uppercase tracking-tighter shadow-sm">
                       {goal.category}
                     </span>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
-                      className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={(e) => openEditGoalModal(goal, e)}
+                        className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   
                   <h3 className="text-lg font-black text-slate-900 leading-tight mb-2 uppercase tracking-tighter line-clamp-2">
@@ -444,13 +492,34 @@ export function GoalManager() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="mt-8 pt-8 border-t-2 border-slate-200/50"
+            className="space-y-6"
           >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" onClick={() => setSelectedGoal(null)} className="p-2 hover:bg-slate-200">
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight">Goal Workspace</h2>
+                  <p className="text-sm text-slate-500">Plan and track your milestones.</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
               <div className="w-full lg:w-1/3 flex flex-col gap-6">
                 <GlassCard className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 border-white/50">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 mb-6 shadow-inner border border-indigo-100">
-                    <Target className="w-6 h-6" />
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 shadow-inner border border-indigo-100">
+                      <Target className="w-6 h-6" />
+                    </div>
+                    <button 
+                      onClick={(e) => openEditGoalModal(selectedGoal, e)}
+                      className="p-2 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"
+                      title="Edit Goal"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4 leading-tight">
                     {selectedGoal.title}
@@ -467,10 +536,6 @@ export function GoalManager() {
                       </span>
                     </div>
                   </div>
-                  
-                  <Button variant="ghost" onClick={() => setSelectedGoal(null)} className="w-full mt-6 flex gap-2 border border-slate-200 hover:bg-slate-100">
-                    <ArrowLeft className="w-4 h-4" /> Go Back
-                  </Button>
                 </GlassCard>
               </div>
 
@@ -497,82 +562,164 @@ export function GoalManager() {
                       </div>
                     )}
                     
-                    <div className="relative">
-                      {milestones[selectedGoal.id]?.length > 0 && (
-                        <div className="absolute left-[39px] top-6 bottom-4 w-0.5 bg-slate-200" />
-                      )}
-                      <div className="space-y-4">
-                        {milestones[selectedGoal.id]?.map((milestone, i) => {
-                          const todayStr = new Date().toISOString().split('T')[0];
-                          const isOverdue = !milestone.is_completed && milestone.target_date && milestone.target_date < todayStr;
-                          
-                          return (
-                            <motion.div 
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.05 }}
-                              key={milestone.id}
-                              onClick={() => setEditingMilestone(milestone)}
-                              className={cn(
-                                "flex items-start gap-5 p-4 lg:p-5 rounded-2xl border transition-all cursor-pointer group relative bg-white",
-                                milestone.is_completed ? "border-emerald-100 shadow-sm" : isOverdue ? "border-rose-300 shadow-md bg-rose-50/30 ring-1 ring-rose-100" : "border-slate-200 hover:border-bca-blue/30 hover:shadow-md"
-                              )}
-                            >
-                              <div className="relative z-10 pt-1 shrink-0 bg-white group-hover:bg-transparent rounded-full px-1">
-                                <button 
-                                  onClick={(e) => handleToggleMilestone(milestone, e)}
-                                  className={cn(
-                                    "w-8 h-8 flex items-center justify-center rounded-full transition-all border-2",
-                                    milestone.is_completed 
-                                      ? "text-white bg-emerald-500 border-emerald-500" 
-                                      : isOverdue 
-                                        ? "text-rose-500 border-rose-300 bg-white hover:bg-rose-50"
-                                        : "text-slate-300 border-slate-200 bg-white hover:text-bca-blue hover:border-bca-blue/30"
-                                  )}
-                                >
-                                  {milestone.is_completed && <CheckCircle2 className="w-5 h-5 text-white" />}
-                                </button>
-                              </div>
-                              
-                              <div className="flex-1 min-w-0 pr-8">
-                                <p className={cn(
-                                  "text-sm sm:text-base font-bold transition-colors leading-tight mb-1",
-                                  milestone.is_completed ? "text-slate-400 line-through" : isOverdue ? "text-rose-700" : "text-slate-800"
-                                )}>
-                                  {milestone.title}
-                                </p>
-                                
-                                {milestone.description && (
-                                  <p className={cn(
-                                    "text-xs font-medium line-clamp-2 mt-1",
-                                    milestone.is_completed ? "text-slate-400/70" : isOverdue ? "text-rose-600/80" : "text-slate-500"
-                                  )}>
-                                    {milestone.description}
-                                  </p>
-                                )}
-                                
-                                {milestone.target_date && (
-                                  <div className={cn(
-                                    "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest mt-3",
-                                    milestone.is_completed ? "text-emerald-500" : isOverdue ? "text-rose-500" : "text-bca-blue"
-                                  )}>
-                                    <Calendar className="w-3 h-3" />
-                                    {format(parseISO(milestone.target_date), 'MMM dd, yyyy')}
-                                    {isOverdue && <span className="ml-2 px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded-md">Overdue</span>}
-                                  </div>
-                                )}
-                              </div>
+                    <div className="relative pt-4 w-full">
+                      {(() => {
+                         const mArray = milestones[selectedGoal.id] || [];
+                         if (mArray.length === 0) return null;
+                         
+                         const sortedMilestones = [...mArray].sort((a, b) => {
+                            if (!a.target_date && !b.target_date) return (a.order_index || 0) - (b.order_index || 0);
+                            if (!a.target_date) return 1;
+                            if (!b.target_date) return -1;
+                            return new Date(a.target_date).getTime() - new Date(b.target_date).getTime();
+                         });
 
-                              <button 
-                                onClick={(e) => handleDeleteMilestone(milestone, e)}
-                                className="absolute right-4 top-4 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                         const allNodes = [...sortedMilestones, { isFinish: true, id: 'finish_node', title: 'Goal Completed', description: selectedGoal.title, target_date: selectedGoal.target_date }];
+
+                         const rows = [];
+                         for (let i = 0; i < allNodes.length; i += 2) {
+                           rows.push(allNodes.slice(i, i + 2));
+                         }
+
+                         const renderNode = (node: any, i: number) => {
+                            if (node.isFinish) {
+                               return (
+                                  <motion.div 
+                                     initial={{ opacity: 0, scale: 0.9 }}
+                                     animate={{ opacity: 1, scale: 1 }}
+                                     key="finish"
+                                     onClick={(e) => openEditGoalModal(selectedGoal, e)}
+                                     className="flex items-center gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 relative shadow-sm cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+                                  >
+                                    <div className="relative z-10 shrink-0 bg-transparent rounded-full sm:px-1">
+                                       <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-indigo-500 text-white shadow-md">
+                                           <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
+                                       </div>
+                                    </div>
+                                    <div className="flex-1 min-w-0 pr-2">
+                                       <p className="text-sm sm:text-base font-black text-indigo-900 leading-tight mb-1 uppercase tracking-tighter">Target: {node.description}</p>
+                                       {node.target_date && (
+                                          <p className="text-[10px] font-bold text-indigo-700 mt-1 flex items-center gap-1.5 uppercase tracking-widest"><Calendar className="w-3 h-3"/> {format(parseISO(node.target_date), 'MMM dd, yyyy')}</p>
+                                       )}
+                                    </div>
+                                  </motion.div>
+                               );
+                            }
+
+                            const milestone = node as Milestone;
+                            const todayStr = new Date().toISOString().split('T')[0];
+                            const isOverdue = !milestone.is_completed && milestone.target_date && milestone.target_date < todayStr;
+                            
+                            return (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05 }}
+                                key={milestone.id}
+                                onClick={() => setEditingMilestone(milestone)}
+                                className={cn(
+                                  "flex items-start gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border transition-all cursor-pointer group relative bg-white h-full",
+                                  milestone.is_completed ? "border-emerald-100 shadow-sm" : isOverdue ? "border-rose-300 shadow-md bg-rose-50/30 ring-1 ring-rose-100" : "border-slate-200 hover:border-bca-blue/30 hover:shadow-md"
+                                )}
                               >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
+                                <div className="relative z-10 shrink-0 bg-white group-hover:bg-transparent rounded-full sm:px-1">
+                                  <button 
+                                    onClick={(e) => handleToggleMilestone(milestone, e)}
+                                    className={cn(
+                                      "w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full transition-all border-2",
+                                      milestone.is_completed 
+                                        ? "text-white bg-emerald-500 border-emerald-500" 
+                                        : isOverdue 
+                                          ? "text-rose-500 border-rose-300 bg-white hover:bg-rose-50"
+                                          : "text-slate-300 border-slate-200 bg-white hover:text-bca-blue hover:border-bca-blue/30"
+                                    )}
+                                  >
+                                    {milestone.is_completed && <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
+                                  </button>
+                                </div>
+                                
+                                <div className="flex-1 min-w-0 pr-6 sm:pr-8">
+                                  <p className={cn(
+                                    "text-sm sm:text-base font-bold transition-colors leading-tight mb-1",
+                                    milestone.is_completed ? "text-slate-400 line-through" : isOverdue ? "text-rose-700" : "text-slate-800"
+                                  )}>
+                                    {milestone.title}
+                                  </p>
+                                  
+                                  {milestone.description && (
+                                    <p className={cn(
+                                      "text-xs font-medium line-clamp-2 mt-1",
+                                      milestone.is_completed ? "text-slate-400/70" : isOverdue ? "text-rose-600/80" : "text-slate-500"
+                                    )}>
+                                      {milestone.description}
+                                    </p>
+                                  )}
+                                  
+                                  {milestone.target_date && (
+                                    <div className={cn(
+                                      "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest mt-2 sm:mt-3",
+                                      milestone.is_completed ? "text-emerald-500" : isOverdue ? "text-rose-500" : "text-bca-blue"
+                                    )}>
+                                      <Calendar className="w-3 h-3" />
+                                      {format(parseISO(milestone.target_date), 'MMM dd, yyyy')}
+                                      {isOverdue && <span className="ml-2 px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded-md">Overdue</span>}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <button 
+                                  onClick={(e) => handleDeleteMilestone(milestone, e)}
+                                  className="absolute right-2 top-2 sm:right-4 sm:top-4 p-1.5 sm:p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </motion.div>
+                            );
+                         };
+
+                         return (
+                           <>
+                             {/* Mobile Vertical View (< sm) */}
+                             <div className="sm:hidden relative">
+                               <div className="absolute left-[34px] xl:left-[39px] top-6 bottom-4 w-0.5 bg-slate-200 z-0" />
+                               <div className="space-y-4">
+                                 {allNodes.map((node, i) => renderNode(node, i))}
+                               </div>
+                             </div>
+
+                             {/* Desktop Snake View (>= sm) */}
+                             <div className="hidden sm:flex flex-col space-y-8 relative z-10 w-full">
+                               {rows.map((row, rIdx) => {
+                                 const isEven = rIdx % 2 === 0;
+                                 return (
+                                   <div key={rIdx} className={cn("flex w-full relative", isEven ? "flex-row" : "flex-row-reverse")}>
+                                     {row.map((node, cIdx) => (
+                                        <div key={node.id} className="w-1/2 px-2 lg:px-4 relative flex-none">
+                                           {renderNode(node, rIdx * 2 + cIdx)}
+                                        </div>
+                                     ))}
+                                     
+                                     {/* Horizontal Line within row */}
+                                     {row.length > 1 && (
+                                       <div className="absolute top-[50%] left-[25%] right-[25%] h-0 border-t-2 border-dashed border-slate-300 z-[-1]" />
+                                     )}
+
+                                     {/* Vertical Line to next row */}
+                                     {rIdx < rows.length - 1 && (
+                                       <div 
+                                         className={cn(
+                                           "absolute top-[50%] h-[calc(100%+2rem)] w-0 border-r-2 border-dashed border-slate-300 z-[-1]",
+                                           isEven ? "right-[25%]" : "left-[25%]"
+                                         )} 
+                                       />
+                                     )}
+                                   </div>
+                                 )
+                               })}
+                             </div>
+                           </>
+                         );
+                      })()}
                     </div>
                   </div>
 
