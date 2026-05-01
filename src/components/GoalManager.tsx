@@ -226,6 +226,91 @@ export function GoalManager() {
     return Math.round((completed / ms.length) * 100);
   };
 
+  if (showAddModal) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="max-w-3xl mx-auto pb-32 pt-4"
+      >
+        <GlassCard className="flex flex-col h-full shadow-2xl border-white/20 overflow-hidden p-0">
+          <div className="flex justify-between items-center p-6 sm:p-8 border-b border-slate-100 bg-white rounded-t-2xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-bca-blue/10 rounded-2xl flex items-center justify-center text-bca-blue">
+                <Flag className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tighter">Declare a New Goal</h3>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Set your next major target</p>
+              </div>
+            </div>
+            <button onClick={() => setShowAddModal(false)} className="p-3 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="p-6 sm:p-8 bg-slate-50">
+            <form id="addGoalForm" onSubmit={handleAddGoal} className="space-y-8">
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">What do you want to achieve?</label>
+                <Input 
+                  placeholder="e.g., Become a Senior Developer" 
+                  className="h-14 sm:h-16 text-base sm:text-lg font-bold bg-white"
+                  value={newGoal.title}
+                  onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Category</label>
+                  <Select 
+                    value={newGoal.category}
+                    onChange={e => setNewGoal({ ...newGoal, category: e.target.value })}
+                    className="h-14 text-sm font-bold bg-white border-slate-200"
+                  >
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </Select>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Date (Optional)</label>
+                  <Input 
+                    type="date" 
+                    className="h-14 text-sm font-bold text-slate-700 bg-white"
+                    value={newGoal.target_date}
+                    onChange={e => setNewGoal({ ...newGoal, target_date: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Why is this important? (Context)</label>
+                <TextArea 
+                  placeholder="Describe why this matters to you and what it looks like..." 
+                  className="min-h-[160px] text-sm py-5 bg-white"
+                  value={newGoal.description}
+                  onChange={e => setNewGoal({ ...newGoal, description: e.target.value })}
+                />
+              </div>
+            </form>
+          </div>
+
+          <div className="p-6 bg-white border-t border-slate-100 flex gap-4 rounded-b-2xl">
+            <Button type="button" variant="ghost" onClick={() => setShowAddModal(false)} className="flex-1 h-14 uppercase font-black tracking-widest text-[12px]">
+              Cancel
+            </Button>
+            <Button type="submit" form="addGoalForm" className="flex-[2] h-14 uppercase font-black tracking-widest text-[12px] shadow-lg shadow-bca-blue/20">
+              Set This Goal
+            </Button>
+          </div>
+        </GlassCard>
+      </motion.div>
+    );
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8 pb-32">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -430,100 +515,7 @@ export function GoalManager() {
         )}
       </AnimatePresence>
 
-      {/* Add Modal */}
-      <AnimatePresence>
-        {showAddModal && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 sm:p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-              onClick={() => setShowAddModal(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl max-h-[95vh] flex flex-col"
-            >
-              <GlassCard className="flex flex-col h-full shadow-2xl border-white/20 overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-8 border-b border-slate-100 bg-white/50 backdrop-blur-md">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-bca-blue/10 rounded-xl flex items-center justify-center text-bca-blue">
-                      <Flag className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Declare a New Goal</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Set your next major target</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
-                  <form id="addGoalForm" onSubmit={handleAddGoal} className="space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">What do you want to achieve?</label>
-                      <Input 
-                        placeholder="e.g., Become a Senior Developer" 
-                        className="h-12 sm:h-14 text-sm sm:text-base font-bold"
-                        value={newGoal.title}
-                        onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
-                        required
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Category</label>
-                        <Select 
-                          value={newGoal.category}
-                          onChange={e => setNewGoal({ ...newGoal, category: e.target.value })}
-                          className="h-12 text-sm font-bold bg-slate-50 border-slate-200"
-                        >
-                          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Date (Optional)</label>
-                        <Input 
-                          type="date" 
-                          className="h-12 text-sm font-bold text-slate-700"
-                          value={newGoal.target_date}
-                          onChange={e => setNewGoal({ ...newGoal, target_date: e.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Why is this important? (Context)</label>
-                      <TextArea 
-                        placeholder="Describe why this matters to you and what it looks like..." 
-                        className="min-h-[120px] text-sm py-4 bg-slate-50"
-                        value={newGoal.description}
-                        onChange={e => setNewGoal({ ...newGoal, description: e.target.value })}
-                      />
-                    </div>
-                  </form>
-                </div>
-
-                <div className="p-4 sm:p-6 bg-slate-50/80 border-t border-slate-100 flex gap-3">
-                  <Button type="button" variant="ghost" onClick={() => setShowAddModal(false)} className="flex-1 h-12 uppercase font-black tracking-widest text-[11px]">
-                    Cancel
-                  </Button>
-                  <Button type="submit" form="addGoalForm" className="flex-[2] h-12 uppercase font-black tracking-widest text-[11px] shadow-lg shadow-bca-blue/20">
-                    Set This Goal
-                  </Button>
-                </div>
-              </GlassCard>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Removed Add Modal */}
     </div>
   );
 }
