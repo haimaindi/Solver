@@ -11,7 +11,9 @@ import {
   X,
   Trophy,
   Flag,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft,
+  Archive
 } from 'lucide-react';
 import { supabase, Goal, Milestone } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Select } from './UI';
@@ -26,7 +28,10 @@ export function GoalManager() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [milestones, setMilestones] = useState<Record<string, Milestone[]>>({});
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Form State
@@ -39,7 +44,7 @@ export function GoalManager() {
 
   useEffect(() => {
     fetchGoals();
-  }, []);
+  }, [showArchived]);
 
   const fetchGoals = async () => {
     setIsLoading(true);
@@ -50,7 +55,7 @@ export function GoalManager() {
       .from('goals')
       .select('*')
       .eq('user_id', user.id)
-      .eq('is_archived', false)
+      .eq('is_archived', showArchived)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -82,8 +87,8 @@ export function GoalManager() {
     setIsLoading(false);
   };
 
-  const handleAddGoal = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddGoal = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!newGoal.title) return;
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -109,7 +114,7 @@ export function GoalManager() {
     if (data) {
       setGoals([data, ...goals]);
       setMilestones({ ...milestones, [data.id]: [] });
-      setShowAddModal(false);
+      setIsAdding(false);
       setNewGoal({ title: '', category: 'Career', description: '', target_date: '' });
       Swal.fire({
         title: 'Goal Set!',
@@ -157,35 +162,28 @@ export function GoalManager() {
     }
   };
 
-  const handleAddMilestone = async () => {
-    if (!selectedGoal) return;
-    const { value: title } = await Swal.fire({
-      title: 'New Milestone',
-      input: 'text',
-      inputPlaceholder: 'What is the next microachievement?',
-      showCancelButton: true,
-      confirmButtonText: 'Add',
-      confirmButtonColor: '#003399',
-    });
+  const handleAddMilestone = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (!selectedGoal || !newMilestoneTitle.trim()) return;
 
-    if (title) {
-      const currentMilestones = milestones[selectedGoal.id] || [];
-      const { data, error } = await supabase
-        .from('milestones')
-        .insert([{
-          goal_id: selectedGoal.id,
-          title,
-          order_index: currentMilestones.length
-        }])
-        .select()
-        .single();
+    const currentMilestones = milestones[selectedGoal.id] || [];
+    const { data, error } = await supabase
+      .from('milestones')
+      .insert([{
+        goal_id: selectedGoal.id,
+        title: newMilestoneTitle.trim(),
+        order_index: currentMilestones.length
+      }])
+      .select()
+      .single();
 
-      if (!error && data) {
-        setMilestones({
-          ...milestones,
-          [selectedGoal.id]: [...currentMilestones, data]
-        });
-      }
+    if (!error && data) {
+      setMilestones({
+        ...milestones,
+        [selectedGoal.id]: [...currentMilestones, data]
+      });
+      setIsAddingMilestone(false);
+      setNewMilestoneTitle('');
     }
   };
 
@@ -226,120 +224,139 @@ export function GoalManager() {
     return Math.round((completed / ms.length) * 100);
   };
 
-  if (showAddModal) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="max-w-3xl mx-auto pb-32 pt-4"
-      >
-        <GlassCard className="flex flex-col h-full shadow-2xl border-white/20 overflow-hidden p-0">
-          <div className="flex justify-between items-center p-6 sm:p-8 border-b border-slate-100 bg-white rounded-t-2xl">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-bca-blue/10 rounded-2xl flex items-center justify-center text-bca-blue">
-                <Flag className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tighter">Declare a New Goal</h3>
-                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Set your next major target</p>
-              </div>
-            </div>
-            <button onClick={() => setShowAddModal(false)} className="p-3 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <div className="p-6 sm:p-8 bg-slate-50">
-            <form id="addGoalForm" onSubmit={handleAddGoal} className="space-y-8">
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">What do you want to achieve?</label>
-                <Input 
-                  placeholder="e.g., Become a Senior Developer" 
-                  className="h-14 sm:h-16 text-base sm:text-lg font-bold bg-white"
-                  value={newGoal.title}
-                  onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Category</label>
-                  <Select 
-                    value={newGoal.category}
-                    onChange={e => setNewGoal({ ...newGoal, category: e.target.value })}
-                    className="h-14 text-sm font-bold bg-white border-slate-200"
-                  >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </Select>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Target Date (Optional)</label>
-                  <Input 
-                    type="date" 
-                    className="h-14 text-sm font-bold text-slate-700 bg-white"
-                    value={newGoal.target_date}
-                    onChange={e => setNewGoal({ ...newGoal, target_date: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">Why is this important? (Context)</label>
-                <TextArea 
-                  placeholder="Describe why this matters to you and what it looks like..." 
-                  className="min-h-[160px] text-sm py-5 bg-white"
-                  value={newGoal.description}
-                  onChange={e => setNewGoal({ ...newGoal, description: e.target.value })}
-                />
-              </div>
-            </form>
-          </div>
-
-          <div className="p-6 bg-white border-t border-slate-100 flex gap-4 rounded-b-2xl">
-            <Button type="button" variant="ghost" onClick={() => setShowAddModal(false)} className="flex-1 h-14 uppercase font-black tracking-widest text-[12px]">
-              Cancel
-            </Button>
-            <Button type="submit" form="addGoalForm" className="flex-[2] h-14 uppercase font-black tracking-widest text-[12px] shadow-lg shadow-bca-blue/20">
-              Set This Goal
-            </Button>
-          </div>
-        </GlassCard>
-      </motion.div>
-    );
-  }
-
   return (
-    <div className="space-y-6 sm:space-y-8 pb-32">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter uppercase mb-1 sm:mb-2 flex items-center gap-3">
-            <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-amber-500" />
-            Goal Hub
-          </h1>
-          <p className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-widest">Map your dreams into achievable milestones</p>
+    <div className="space-y-6 pb-32">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="text-left md:text-left">
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+            {showArchived ? 'Archived Goals' : 'Goals'}
+          </h2>
+          <p className="text-slate-500 mt-1">Map your dreams into achievable milestones.</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="h-11 px-6 flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          <span>New Goal</span>
-        </Button>
+        {!isAdding && (
+          <div className="flex justify-end items-center gap-2">
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className={cn(
+                "p-3 rounded-xl transition-colors shadow-sm",
+                showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              )}
+              title={showArchived ? "Show Active Goals" : "Show Archived Goals"}
+            >
+              <Archive className="w-5 h-5" />
+            </button>
+            {!showArchived && (
+              <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
+                <Plus className="w-4 h-4" />
+                <span>New Goal</span>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-sm">Loading Goals...</div>
-      ) : goals.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-            <Target className="w-8 h-8 text-slate-300" />
-          </div>
-          <p className="text-slate-500 font-bold text-sm">No active goals found.</p>
-          <p className="text-slate-400 text-xs mt-1">What's the next big thing you want to achieve?</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {goals.map(goal => {
+      <AnimatePresence mode="wait">
+        {isAdding && (
+          <motion.div
+            key="add"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <GlassCard className="p-8 space-y-8">
+              <div className="flex flex-col gap-6 border-b border-slate-100 pb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Button variant="ghost" onClick={() => setIsAdding(false)} className="p-2">
+                      <ArrowLeft className="w-5 h-5" />
+                    </Button>
+                    <h3 className="text-xl font-bold text-slate-900">Create New Goal</h3>
+                  </div>
+                </div>
+              </div>
+
+              <div className="max-w-3xl">
+                <form id="addGoalForm" className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">What do you want to achieve?</label>
+                    <Input 
+                      placeholder="e.g., Become a Senior Developer" 
+                      className="h-12 w-full"
+                      value={newGoal.title}
+                      onChange={e => setNewGoal({ ...newGoal, title: e.target.value })}
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">Category</label>
+                      <Select 
+                        value={newGoal.category}
+                        onChange={e => setNewGoal({ ...newGoal, category: e.target.value })}
+                        className="h-12 w-full"
+                      >
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700">Target Date (Optional)</label>
+                      <Input 
+                        type="date" 
+                        className="h-12 w-full text-slate-700"
+                        value={newGoal.target_date}
+                        onChange={e => setNewGoal({ ...newGoal, target_date: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">Why is this important? (Context)</label>
+                    <TextArea 
+                      placeholder="Describe why this matters to you and what it looks like..." 
+                      className="min-h-[120px] w-full"
+                      value={newGoal.description}
+                      onChange={e => setNewGoal({ ...newGoal, description: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button 
+                      type="button" 
+                      onClick={handleAddGoal}
+                      disabled={!newGoal.title}
+                      className="h-11 px-8 rounded-xl min-w-[200px]"
+                    >
+                      Save Goal
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!isAdding && (
+        <>
+          {isLoading ? (
+            <div className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-sm">Loading Goals...</div>
+          ) : goals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-32 text-center">
+              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-slate-50 rounded-full">
+                <Target className="w-8 h-8 text-slate-300" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                No {showArchived ? 'archived ' : ''}goals yet
+              </h3>
+              <p className="text-slate-500 max-w-sm">
+                What's the next big thing you want to achieve?
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {goals.map(goal => {
             const progress = getProgress(goal.id);
             const ms = milestones[goal.id] || [];
             
@@ -396,6 +413,8 @@ export function GoalManager() {
           })}
         </div>
       )}
+      </>
+      )}
 
       {/* Selected Goal Details Mode */}
       <AnimatePresence>
@@ -444,13 +463,40 @@ export function GoalManager() {
                       </h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Break it down to make it happen</p>
                     </div>
-                    <Button onClick={handleAddMilestone} className="h-10 px-4 flex items-center gap-2">
-                      <Plus className="w-4 h-4" /> Add
-                    </Button>
+                    {!isAddingMilestone && (
+                      <Button onClick={() => setIsAddingMilestone(true)} className="h-10 px-4 flex items-center gap-2">
+                        <Plus className="w-4 h-4" /> Add
+                      </Button>
+                    )}
                   </div>
 
                   <div className="space-y-3">
-                    {!(milestones[selectedGoal.id] && milestones[selectedGoal.id].length > 0) && (
+                    {isAddingMilestone && (
+                      <motion.form 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onSubmit={handleAddMilestone} 
+                        className="flex flex-col sm:flex-row gap-3 mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-100"
+                      >
+                        <Input 
+                          autoFocus
+                          placeholder="What is the next microachievement?"
+                          value={newMilestoneTitle}
+                          onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                          className="flex-1 h-11 bg-white"
+                        />
+                        <div className="flex gap-2">
+                          <Button type="button" variant="ghost" onClick={() => { setIsAddingMilestone(false); setNewMilestoneTitle(''); }} className="px-4 h-11">
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={!newMilestoneTitle.trim()} className="px-6 h-11">
+                            Save
+                          </Button>
+                        </div>
+                      </motion.form>
+                    )}
+
+                    {!(milestones[selectedGoal.id] && milestones[selectedGoal.id].length > 0) && !isAddingMilestone && (
                       <div className="text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-slate-500 font-bold text-sm">No milestones mapped.</p>
                         <p className="text-slate-400 text-xs mt-1">What's the very first microachievement?</p>
