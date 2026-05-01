@@ -1046,7 +1046,7 @@ export default function App() {
         <div 
           className="flex items-center gap-3 cursor-pointer group" 
           onClick={() => {
-            if (window.innerWidth < 768) setIsSidebarOpen(true);
+            if (window.innerWidth < 1024) setIsSidebarOpen(true);
             else setView('dashboard');
           }}
         >
@@ -1056,8 +1056,8 @@ export default function App() {
           <h1 className="text-2xl font-extrabold tracking-tighter text-bca-blue uppercase">Solver</h1>
         </div>
 
-        <div className="absolute left-0 right-0 flex justify-center pointer-events-none">
-          <div className="hidden md:flex items-center gap-2 pointer-events-auto">
+        <div className="flex-1 px-4 2xl:px-8 flex justify-center overflow-hidden">
+          <div className="hidden lg:flex items-center gap-1 overflow-x-auto no-scrollbar mask-edges">
             <button 
               onClick={() => setView('dashboard')}
               className={cn(
@@ -1188,14 +1188,14 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] md:hidden"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] lg:hidden"
             />
             <motion.div 
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] md:hidden shadow-2xl flex flex-col"
+              className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] lg:hidden shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center overflow-hidden p-1 border border-slate-100">
