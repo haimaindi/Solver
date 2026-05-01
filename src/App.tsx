@@ -33,7 +33,8 @@ import {
   Calendar,
   Lightbulb,
   CheckCircle,
-  Circle
+  Circle,
+  Trophy
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, Reflection, Habit, HabitLog, Todo, OwnedResource, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
@@ -47,6 +48,7 @@ import { Supplement } from './components/Supplement';
 import { AdminManager } from './components/AdminManager';
 import { ProblemAdvisor } from './components/ProblemAdvisor';
 import { IdeaManager } from './components/IdeaManager';
+import { GoalManager } from './components/GoalManager';
 import { cn } from '@/src/lib/utils';
 import { differenceInDays, parseISO, format, addDays, isWithinInterval } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -171,7 +173,7 @@ function AuthGate({ isAuthenticated, onLogin, children }: { isAuthenticated: boo
 }
 
 export default function App() {
-  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'ideas' | 'supplement' | 'reflection' | 'habits' | 'todos' | 'admin'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'list' | 'detail' | 'create' | 'edit' | 'ideas' | 'supplement' | 'reflection' | 'habits' | 'todos' | 'admin' | 'goals'>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -1087,6 +1089,16 @@ export default function App() {
               Idea
             </button>
             <button 
+              onClick={() => setView('goals')}
+              className={cn(
+                "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
+                view === 'goals' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <Trophy className="w-4 h-4" />
+              Goal
+            </button>
+            <button 
               onClick={() => setView('todos')}
               className={cn(
                 "px-4 py-2 rounded-lg text-[13px] font-bold transition-all flex items-center gap-2",
@@ -1222,6 +1234,16 @@ export default function App() {
                 >
                   <Lightbulb className="w-5 h-5" />
                   Idea
+                </button>
+                <button 
+                  onClick={() => { setView('goals'); setIsSidebarOpen(false); }}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-3",
+                    view === 'goals' ? "bg-bca-blue/5 text-bca-blue" : "text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <Trophy className="w-5 h-5" />
+                  Goal
                 </button>
                 <button 
                   onClick={() => { setView('todos'); setIsSidebarOpen(false); }}
@@ -1775,6 +1797,17 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
             >
               <AdminManager />
+            </motion.div>
+          )}
+
+          {view === 'goals' && (
+            <motion.div 
+              key="goals"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <GoalManager />
             </motion.div>
           )}
 

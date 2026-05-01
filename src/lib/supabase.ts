@@ -134,6 +134,29 @@ export interface OwnedResource {
   created_at: string;
 }
 
+export type GoalStatus = 'In Progress' | 'Achieved' | 'Dropped';
+
+export interface Goal {
+  id: string;
+  user_id: string;
+  title: string;
+  category: string;
+  description: string;
+  target_date: string | null;
+  status: GoalStatus;
+  created_at: string;
+  is_archived: boolean;
+}
+
+export interface Milestone {
+  id: string;
+  goal_id: string;
+  title: string;
+  is_completed: boolean;
+  order_index: number;
+  created_at: string;
+}
+
 export interface Idea {
   id: string;
   user_id: string;
