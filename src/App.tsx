@@ -193,6 +193,8 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [showArchivedProblems, setShowArchivedProblems] = useState(false);
   const [showSharedProblems, setShowSharedProblems] = useState(false);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [sharingResourceLabel, setSharingResourceLabel] = useState<string>('');
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [sessionData, setSessionData] = useState<any>(null);
@@ -473,27 +475,47 @@ export default function App() {
     if (!isAuthenticated || !currentUser || currentUser === 'unknown') return;
 
     if (showSharedProblems) {
-      const { data: sharedKeys } = await supabase
-        .from('module_shares')
-        .select('shared_by')
+      const { data: sharedEntries } = await supabase
+        .from('resource_shares')
+        .select('shared_by, resource_id')
         .eq('module_name', 'problems')
         .eq('shared_with_solver_id', solverId);
       
-      if (!sharedKeys || sharedKeys.length === 0) {
+      if (!sharedEntries || sharedEntries.length === 0) {
         setProblems([]);
         return;
       }
       
-      const ownerIds = sharedKeys.map(s => s.shared_by);
-      const { data, error } = await supabase
-        .from('problems')
-        .select('*')
-        .in('user_id', ownerIds)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
-        
-      if (data) setProblems(data);
-      if (error) console.error('Error fetching shared problems:', error);
+      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
+
+      let data: Problem[] = [];
+      
+      // Fetch module-wide shared
+      if (moduleWideOwnerIds.length > 0) {
+        const { data: moduleData } = await supabase
+          .from('problems')
+          .select('*')
+          .in('user_id', moduleWideOwnerIds)
+          .eq('is_archived', false);
+        if (moduleData) data = [...data, ...moduleData];
+      }
+
+      // Fetch specific shared
+      if (specificResourceIds.length > 0) {
+        const { data: specificData } = await supabase
+          .from('problems')
+          .select('*')
+          .in('id', specificResourceIds)
+          .eq('is_archived', false);
+        if (specificData) {
+          const existingIds = new Set(data.map(p => p.id));
+          const uniqueSpecific = specificData.filter(p => !existingIds.has(p.id));
+          data = [...data, ...uniqueSpecific];
+        }
+      }
+
+      setProblems(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       return;
     }
 
@@ -1002,10 +1024,22 @@ export default function App() {
   return (
     <AuthGate isAuthenticated={isAuthenticated} onLogin={handleLogin}>
       {/* Access Manager Modal for Problems */}
+      {/* Access Manager Modal */}
       <AccessManagerModal 
         isOpen={isAccessModalOpen} 
         onClose={() => setIsAccessModalOpen(false)} 
         moduleName="problems" 
+        resourceId={null}
+      />
+      <AccessManagerModal 
+        isOpen={!!sharingResourceId}
+        onClose={() => {
+          setSharingResourceId(null);
+          setSharingResourceLabel('');
+        }}
+        moduleName="problems"
+        resourceId={sharingResourceId}
+        resourceLabel={sharingResourceLabel}
       />
 
       {/* Profile Modal */}
@@ -1797,6 +1831,17 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         {problem.user_id === localStorage.getItem('user_id') && (
                           <>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSharingResourceId(problem.id);
+                                setSharingResourceLabel(problem.title);
+                              }}
+                              className="p-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-md transition-all"
+                              title="Share Problem"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();

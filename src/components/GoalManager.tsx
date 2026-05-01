@@ -39,6 +39,8 @@ export function GoalManager() {
   const [showArchived, setShowArchived] = useState(false);
   const [showShared, setShowShared] = useState(false);
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [sharingResourceLabel, setSharingResourceLabel] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Form State
@@ -60,48 +62,69 @@ export function GoalManager() {
     if (!userId || userId === 'unknown') return;
 
     if (showShared) {
-      const { data: sharedKeys } = await supabase
-        .from('module_shares')
-        .select('shared_by')
+      const { data: sharedEntries } = await supabase
+        .from('resource_shares')
+        .select('shared_by, resource_id')
         .eq('module_name', 'goals')
         .eq('shared_with_solver_id', solverId);
       
-      if (!sharedKeys || sharedKeys.length === 0) {
+      if (!sharedEntries || sharedEntries.length === 0) {
         setGoals([]);
         setMilestones({});
         setIsLoading(false);
         return;
       }
       
-      const ownerIds = sharedKeys.map(s => s.shared_by);
-      const { data: fetchedGoals, error } = await supabase
-        .from('goals')
-        .select('*')
-        .in('user_id', ownerIds)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
+      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
 
-      if (fetchedGoals) {
-        setGoals(fetchedGoals);
-        const goalIds = fetchedGoals.map(g => g.id);
-        if (goalIds.length > 0) {
-          const { data: mData } = await supabase
-            .from('milestones')
-            .select('*')
-            .in('goal_id', goalIds)
-            .order('order_index', { ascending: true });
-          
-          if (mData) {
-            const mapped: Record<string, Milestone[]> = {};
-            mData.forEach(m => {
-              if (!mapped[m.goal_id]) mapped[m.goal_id] = [];
-              mapped[m.goal_id].push(m);
-            });
-            setMilestones(mapped);
-          }
-        } else {
-          setMilestones({});
+      let data: Goal[] = [];
+      
+      // Fetch module-wide shared
+      if (moduleWideOwnerIds.length > 0) {
+        const { data: moduleData } = await supabase
+          .from('goals')
+          .select('*')
+          .in('user_id', moduleWideOwnerIds)
+          .eq('is_archived', false);
+        if (moduleData) data = [...data, ...moduleData];
+      }
+
+      // Fetch specific shared
+      if (specificResourceIds.length > 0) {
+        const { data: specificData } = await supabase
+          .from('goals')
+          .select('*')
+          .in('id', specificResourceIds)
+          .eq('is_archived', false);
+        if (specificData) {
+          const existingIds = new Set(data.map(g => g.id));
+          const uniqueSpecific = specificData.filter(g => !existingIds.has(g.id));
+          data = [...data, ...uniqueSpecific];
         }
+      }
+
+      const sortedGoals = data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setGoals(sortedGoals);
+      
+      const goalIds = sortedGoals.map(g => g.id);
+      if (goalIds.length > 0) {
+        const { data: mData } = await supabase
+          .from('milestones')
+          .select('*')
+          .in('goal_id', goalIds)
+          .order('order_index', { ascending: true });
+        
+        if (mData) {
+          const mapped: Record<string, Milestone[]> = {};
+          mData.forEach(m => {
+            if (!mapped[m.goal_id]) mapped[m.goal_id] = [];
+            mapped[m.goal_id].push(m);
+          });
+          setMilestones(mapped);
+        }
+      } else {
+        setMilestones({});
       }
       setIsLoading(false);
       return;
@@ -441,6 +464,17 @@ export function GoalManager() {
         isOpen={isAccessModalOpen} 
         onClose={() => setIsAccessModalOpen(false)} 
         moduleName="goals" 
+        resourceId={null}
+      />
+      <AccessManagerModal 
+        isOpen={!!sharingResourceId}
+        onClose={() => {
+          setSharingResourceId(null);
+          setSharingResourceLabel('');
+        }}
+        moduleName="goals"
+        resourceId={sharingResourceId}
+        resourceLabel={sharingResourceLabel}
       />
 
       {!selectedGoal && (
@@ -540,6 +574,17 @@ export function GoalManager() {
                     </span>
                     {goal.user_id === localStorage.getItem('user_id') && (
                       <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSharingResourceId(goal.id);
+                            setSharingResourceLabel(goal.title);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-all"
+                          title="Share Goal"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
                         <button 
                           onClick={(e) => openEditGoalModal(goal, e)}
                           className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"

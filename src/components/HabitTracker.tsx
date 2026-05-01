@@ -57,6 +57,8 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
   const [showArchived, setShowArchived] = useState(false);
   const [showShared, setShowShared] = useState(false);
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [sharingResourceLabel, setSharingResourceLabel] = useState<string>('');
   const [commentingLog, setCommentingLog] = useState<{ date: string, habitId: string, comment: string } | null>(null);
 
   useEffect(() => {
@@ -79,32 +81,55 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
     if (!currentUser || currentUser === 'unknown') return;
     
     if (showShared) {
-      const { data: sharedKeys } = await supabase
-        .from('module_shares')
-        .select('shared_by')
+      const { data: sharedEntries } = await supabase
+        .from('resource_shares')
+        .select('shared_by, resource_id')
         .eq('module_name', 'habits')
         .eq('shared_with_solver_id', solverId);
       
-      if (!sharedKeys || sharedKeys.length === 0) {
+      if (!sharedEntries || sharedEntries.length === 0) {
         setHabits([]);
         setLogs([]);
         return;
       }
       
-      const ownerIds = sharedKeys.map(s => s.shared_by);
-      const { data: grabbedHabits } = await supabase
-        .from('habits')
-        .select('*')
-        .in('user_id', ownerIds)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
+      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
 
-      if (grabbedHabits) {
-        setHabits(grabbedHabits);
+      let data: Habit[] = [];
+      
+      // Fetch module-wide shared
+      if (moduleWideOwnerIds.length > 0) {
+        const { data: moduleData } = await supabase
+          .from('habits')
+          .select('*')
+          .in('user_id', moduleWideOwnerIds)
+          .eq('is_archived', false);
+        if (moduleData) data = [...data, ...moduleData];
+      }
+
+      // Fetch specific shared
+      if (specificResourceIds.length > 0) {
+        const { data: specificData } = await supabase
+          .from('habits')
+          .select('*')
+          .in('id', specificResourceIds)
+          .eq('is_archived', false);
+        if (specificData) {
+          const existingIds = new Set(data.map(h => h.id));
+          const uniqueSpecific = specificData.filter(h => !existingIds.has(h.id));
+          data = [...data, ...uniqueSpecific];
+        }
+      }
+
+      const finalHabits = data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setHabits(finalHabits);
+      
+      if (finalHabits.length > 0) {
         const { data: grabbedLogs } = await supabase
           .from('habit_logs')
           .select('*')
-          .in('habit_id', grabbedHabits.map(h => h.id));
+          .in('habit_id', finalHabits.map(h => h.id));
         if (grabbedLogs) setLogs(grabbedLogs);
       }
       return;
@@ -344,6 +369,17 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
         isOpen={isAccessModalOpen} 
         onClose={() => setIsAccessModalOpen(false)} 
         moduleName="habits" 
+        resourceId={null}
+      />
+      <AccessManagerModal 
+        isOpen={!!sharingResourceId}
+        onClose={() => {
+          setSharingResourceId(null);
+          setSharingResourceLabel('');
+        }}
+        moduleName="habits"
+        resourceId={sharingResourceId}
+        resourceLabel={sharingResourceLabel}
       />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -422,8 +458,20 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                     </button>
                   )}
                   {habit.user_id === localStorage.getItem('user_id') && (
-                    <button 
-                      onClick={(e) => toggleHabit(habit.id, e)}
+                    <>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSharingResourceId(habit.id);
+                          setSharingResourceLabel(habit.name);
+                        }}
+                        className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+                        title="Share Habit"
+                      >
+                        <Share2 className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={(e) => toggleHabit(habit.id, e)}
                       className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
                         isDoneToday ? "text-white animate-check" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
@@ -432,6 +480,7 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                     >
                       {isDoneToday ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
                     </button>
+                    </>
                   )}
                   {showArchived && habit.user_id === localStorage.getItem('user_id') && (
                     <button 

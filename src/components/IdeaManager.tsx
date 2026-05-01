@@ -38,6 +38,8 @@ export function IdeaManager() {
   const [showArchived, setShowArchived] = useState(false);
   const [showShared, setShowShared] = useState(false);
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [sharingResourceLabel, setSharingResourceLabel] = useState<string>('');
 
   // Detail/Edit Modal State
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -55,28 +57,49 @@ export function IdeaManager() {
     setIsLoading(true);
 
     if (showShared) {
-      const { data: sharedKeys } = await supabase
-        .from('module_shares')
-        .select('shared_by')
+      const { data: sharedEntries } = await supabase
+        .from('resource_shares')
+        .select('shared_by, resource_id')
         .eq('module_name', 'ideas')
         .eq('shared_with_solver_id', solverId);
       
-      if (!sharedKeys || sharedKeys.length === 0) {
+      if (!sharedEntries || sharedEntries.length === 0) {
         setIdeas([]);
         setIsLoading(false);
         return;
       }
       
-      const ownerIds = sharedKeys.map(s => s.shared_by);
-      const { data, error } = await supabase
-        .from('ideas')
-        .select('*')
-        .in('user_id', ownerIds)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
+      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
 
-      if (data) setIdeas(data);
-      if (error) console.error('Error fetching shared ideas:', error);
+      let data: Idea[] = [];
+      
+      // Fetch module-wide shared ideas
+      if (moduleWideOwnerIds.length > 0) {
+        const { data: moduleData } = await supabase
+          .from('ideas')
+          .select('*')
+          .in('user_id', moduleWideOwnerIds)
+          .eq('is_archived', false);
+        if (moduleData) data = [...data, ...moduleData];
+      }
+
+      // Fetch specific shared ideas
+      if (specificResourceIds.length > 0) {
+        const { data: specificData } = await supabase
+          .from('ideas')
+          .select('*')
+          .in('id', specificResourceIds)
+          .eq('is_archived', false);
+        if (specificData) {
+          // Avoid duplicates if already added via module-wide
+          const existingIds = new Set(data.map(i => i.id));
+          const uniqueSpecific = specificData.filter(i => !existingIds.has(i.id));
+          data = [...data, ...uniqueSpecific];
+        }
+      }
+
+      setIdeas(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       setIsLoading(false);
       return;
     }
@@ -365,6 +388,17 @@ export function IdeaManager() {
         isOpen={isAccessModalOpen} 
         onClose={() => setIsAccessModalOpen(false)} 
         moduleName="ideas" 
+        resourceId={null}
+      />
+      <AccessManagerModal 
+        isOpen={!!sharingResourceId}
+        onClose={() => {
+          setSharingResourceId(null);
+          setSharingResourceLabel('');
+        }}
+        moduleName="ideas"
+        resourceId={sharingResourceId}
+        resourceLabel={sharingResourceLabel}
       />
 
       {/* Header Section */}
@@ -546,6 +580,17 @@ export function IdeaManager() {
                       </button>
                       {idea.user_id === localStorage.getItem('user_id') && (
                         <>
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              setSharingResourceId(idea.id);
+                              setSharingResourceLabel(idea.title);
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="Share Idea"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleEditIdea(idea); }}
                             className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"

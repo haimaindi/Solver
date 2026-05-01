@@ -250,6 +250,8 @@ export function ReflectionManager() {
   const [showArchived, setShowArchived] = useState(false);
   const [showShared, setShowShared] = useState(false);
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [sharingResourceLabel, setSharingResourceLabel] = useState<string>('');
 
   useEffect(() => {
     fetchReflections();
@@ -261,26 +263,47 @@ export function ReflectionManager() {
     if (!currentUser || currentUser === 'unknown') return;
     
     if (showShared) {
-      const { data: sharedKeys } = await supabase
-        .from('module_shares')
-        .select('shared_by')
+      const { data: sharedEntries } = await supabase
+        .from('resource_shares')
+        .select('shared_by, resource_id')
         .eq('module_name', 'reflection')
         .eq('shared_with_solver_id', solverId);
 
-      if (!sharedKeys || sharedKeys.length === 0) {
+      if (!sharedEntries || sharedEntries.length === 0) {
         setReflections([]);
         return;
       }
 
-      const ownerIds = sharedKeys.map(s => s.shared_by);
-      const { data } = await supabase
-        .from('reflections')
-        .select('*')
-        .in('user_id', ownerIds)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
+      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
 
-      if (data) setReflections(data);
+      let data: Reflection[] = [];
+      
+      // Fetch module-wide shared
+      if (moduleWideOwnerIds.length > 0) {
+        const { data: moduleData } = await supabase
+          .from('reflections')
+          .select('*')
+          .in('user_id', moduleWideOwnerIds)
+          .eq('is_archived', false);
+        if (moduleData) data = [...data, ...moduleData];
+      }
+
+      // Fetch specific shared
+      if (specificResourceIds.length > 0) {
+        const { data: specificData } = await supabase
+          .from('reflections')
+          .select('*')
+          .in('id', specificResourceIds)
+          .eq('is_archived', false);
+        if (specificData) {
+          const existingIds = new Set(data.map(r => r.id));
+          const uniqueSpecific = specificData.filter(r => !existingIds.has(r.id));
+          data = [...data, ...uniqueSpecific];
+        }
+      }
+
+      setReflections(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       return;
     }
 
@@ -418,11 +441,22 @@ export function ReflectionManager() {
 
   return (
     <div className="space-y-6">
+      {/* Access Manager Modal */}
       <AccessManagerModal 
         isOpen={isAccessModalOpen}
         onClose={() => setIsAccessModalOpen(false)}
         moduleName="reflection"
-        moduleLabel="Reflection"
+        resourceId={null}
+      />
+      <AccessManagerModal 
+        isOpen={!!sharingResourceId}
+        onClose={() => {
+          setSharingResourceId(null);
+          setSharingResourceLabel('');
+        }}
+        moduleName="reflection"
+        resourceId={sharingResourceId}
+        resourceLabel={sharingResourceLabel}
       />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="text-left md:text-left">
@@ -684,6 +718,17 @@ export function ReflectionManager() {
                       <div className="flex gap-2">
                         {r.user_id === localStorage.getItem('user_id') && (
                           <>
+                            <button 
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 setSharingResourceId(r.id);
+                                 setSharingResourceLabel(r.title);
+                               }}
+                               className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                               title="Share Reflection"
+                             >
+                               <Share2 className="w-4 h-4" />
+                             </button>
                             <button 
                               onClick={(e) => handleEdit(r, e)}
                               className="p-2 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"

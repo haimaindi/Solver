@@ -47,6 +47,8 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
   const [showArchived, setShowArchived] = useState(false);
   const [showShared, setShowShared] = useState(false);
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
+  const [sharingResourceId, setSharingResourceId] = useState<string | null>(null);
+  const [sharingResourceLabel, setSharingResourceLabel] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   // Detail View State
@@ -97,28 +99,51 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
     }
     
     if (showShared) {
-      const { data: sharedKeys } = await supabase
-        .from('module_shares')
-        .select('shared_by')
+      const { data: sharedEntries } = await supabase
+        .from('resource_shares')
+        .select('shared_by, resource_id')
         .eq('module_name', 'todos')
         .eq('shared_with_solver_id', solverId);
       
-      if (!sharedKeys || sharedKeys.length === 0) {
+      if (!sharedEntries || sharedEntries.length === 0) {
         setTodos([]);
         setIsLoading(false);
         return;
       }
       
-      const ownerIds = sharedKeys.map(s => s.shared_by);
-      const { data } = await supabase
-        .from('todos')
-        .select('*')
-        .in('user_id', ownerIds)
-        .eq('is_archived', false)
-        .order('date', { ascending: false })
-        .order('target_time', { ascending: true });
+      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
 
-      if (data) setTodos(data);
+      let data: Todo[] = [];
+      
+      // Fetch module-wide shared
+      if (moduleWideOwnerIds.length > 0) {
+        const { data: moduleData } = await supabase
+          .from('todos')
+          .select('*')
+          .in('user_id', moduleWideOwnerIds)
+          .eq('is_archived', false);
+        if (moduleData) data = [...data, ...moduleData];
+      }
+
+      // Fetch specific shared
+      if (specificResourceIds.length > 0) {
+        const { data: specificData } = await supabase
+          .from('todos')
+          .select('*')
+          .in('id', specificResourceIds)
+          .eq('is_archived', false);
+        if (specificData) {
+          const existingIds = new Set(data.map(t => t.id));
+          const uniqueSpecific = specificData.filter(t => !existingIds.has(t.id));
+          data = [...data, ...uniqueSpecific];
+        }
+      }
+
+      setTodos(data.sort((a, b) => {
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return a.target_time.localeCompare(b.target_time);
+      }));
       setIsLoading(false);
       return;
     }
@@ -881,11 +906,22 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
 
   return (
     <div className="space-y-8">
+      {/* Access Manager Modal */}
       <AccessManagerModal 
         isOpen={isAccessModalOpen}
         onClose={() => setIsAccessModalOpen(false)}
         moduleName="todos"
-        moduleLabel="To Do"
+        resourceId={null}
+      />
+      <AccessManagerModal 
+        isOpen={!!sharingResourceId}
+        onClose={() => {
+          setSharingResourceId(null);
+          setSharingResourceLabel('');
+        }}
+        moduleName="todos"
+        resourceId={sharingResourceId}
+        resourceLabel={sharingResourceLabel}
       />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
