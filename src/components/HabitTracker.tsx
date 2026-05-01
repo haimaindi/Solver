@@ -17,13 +17,16 @@ import {
   AlertCircle,
   MessageSquare,
   X,
-  Archive
+  Archive,
+  Share2,
+  Users
 } from 'lucide-react';
 import { Habit, HabitLog, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, TextArea } from './UI';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, subMonths, addMonths, isToday, startOfToday, differenceInDays, parseISO } from 'date-fns';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
+import { AccessManagerModal } from './AccessManagerModal';
 
 const HABIT_COLORS = [
   { name: 'Blue', value: '#003399' },
@@ -52,11 +55,13 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
     color: '#003399'
   });
   const [showArchived, setShowArchived] = useState(false);
+  const [showShared, setShowShared] = useState(false);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [commentingLog, setCommentingLog] = useState<{ date: string, habitId: string, comment: string } | null>(null);
 
   useEffect(() => {
     fetchData();
-  }, [showArchived]);
+  }, [showArchived, showShared]);
 
   useEffect(() => {
     if (prefillHabitId && habits.length > 0) {
@@ -70,8 +75,41 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
 
   const fetchData = async () => {
     const currentUser = localStorage.getItem('user_id');
+    const solverId = localStorage.getItem('solver_id');
     if (!currentUser || currentUser === 'unknown') return;
     
+    if (showShared) {
+      const { data: sharedKeys } = await supabase
+        .from('module_shares')
+        .select('shared_by')
+        .eq('module_name', 'habits')
+        .eq('shared_with_solver_id', solverId);
+      
+      if (!sharedKeys || sharedKeys.length === 0) {
+        setHabits([]);
+        setLogs([]);
+        return;
+      }
+      
+      const ownerIds = sharedKeys.map(s => s.shared_by);
+      const { data: grabbedHabits } = await supabase
+        .from('habits')
+        .select('*')
+        .in('user_id', ownerIds)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+
+      if (grabbedHabits) {
+        setHabits(grabbedHabits);
+        const { data: grabbedLogs } = await supabase
+          .from('habit_logs')
+          .select('*')
+          .in('habit_id', grabbedHabits.map(h => h.id));
+        if (grabbedLogs) setLogs(grabbedLogs);
+      }
+      return;
+    }
+
     const [habitsRes, logsRes] = await Promise.all([
       supabase.from('habits').select('*').eq('user_id', currentUser).eq('is_archived', showArchived).order('created_at', { ascending: false }),
       supabase.from('habit_logs').select('*, habits!inner(user_id)').eq('habits.user_id', currentUser)
@@ -299,18 +337,26 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+
+      {/* Access Manager Modal */}
+      <AccessManagerModal 
+        isOpen={isAccessModalOpen} 
+        onClose={() => setIsAccessModalOpen(false)} 
+        moduleName="habits" 
+      />
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="text-left md:text-left">
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight flex items-center justify-start md:justify-start gap-3">
             <TrendingUp className="w-8 h-8 text-bca-blue" />
-            {showArchived ? 'Archived Habit' : 'Habit'}
+            {showShared ? 'Shared Habits' : (showArchived ? 'Archived Habits' : 'Habit')}
           </h2>
           <p className="text-slate-500 mt-1 font-medium">Consistency is the key to mastery. Track your progress daily.</p>
         </div>
         <div className="flex justify-end items-center gap-2">
           <button
-            onClick={() => setShowArchived(!showArchived)}
+            onClick={() => { setShowArchived(!showArchived); setShowShared(false); }}
             className={cn(
               "p-3 rounded-xl transition-colors shadow-sm",
               showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -319,7 +365,24 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
           >
             <Archive className="w-5 h-5" />
           </button>
-          {!showArchived && (
+          <button
+            onClick={() => { setShowShared(!showShared); setShowArchived(false); }}
+            className={cn(
+              "p-3 rounded-xl transition-colors shadow-sm",
+              showShared ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+            title={showShared ? "Show My Habits" : "Show Shared Habits"}
+          >
+            <Users className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setIsAccessModalOpen(true)}
+            className="p-3 rounded-xl transition-colors shadow-sm bg-gray-100 text-gray-600 hover:bg-gray-200"
+            title="Manage Access"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
+          {(!showArchived && !showShared) && (
             <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 shadow-lg shadow-bca-blue/20">
               <Plus className="w-4 h-4" />
               <span>Add New Habit</span>
@@ -350,7 +413,7 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                   <p className="text-xs text-slate-500 line-clamp-1">{habit.description}</p>
                 </div>
                 <div className="flex gap-2">
-                  {showArchived && (
+                  {showArchived && habit.user_id === localStorage.getItem('user_id') && (
                     <button 
                       onClick={(e) => handleToggleArchiveHabit(habit.id, habit.is_archived || false)}
                       className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-green-100 text-green-600 hover:bg-green-200"
@@ -358,17 +421,19 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                       <Archive className="w-5 h-5" />
                     </button>
                   )}
-                  <button 
-                    onClick={(e) => toggleHabit(habit.id, e)}
-                    className={cn(
-                      "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
-                      isDoneToday ? "text-white animate-check" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
-                    )}
-                    style={{ backgroundColor: isDoneToday ? habit.color : undefined }}
-                  >
-                    {isDoneToday ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                  </button>
-                  {showArchived && (
+                  {habit.user_id === localStorage.getItem('user_id') && (
+                    <button 
+                      onClick={(e) => toggleHabit(habit.id, e)}
+                      className={cn(
+                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                        isDoneToday ? "text-white animate-check" : "bg-slate-100 text-slate-300 hover:bg-slate-200"
+                      )}
+                      style={{ backgroundColor: isDoneToday ? habit.color : undefined }}
+                    >
+                      {isDoneToday ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                    </button>
+                  )}
+                  {showArchived && habit.user_id === localStorage.getItem('user_id') && (
                     <button 
                       onClick={(e) => deleteHabit(habit.id, e)}
                       className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-red-100 text-red-600 hover:bg-red-200"
@@ -442,18 +507,22 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => handleToggleArchiveHabit(selectedHabit.id, selectedHabit.is_archived)}
-                    className="p-2 text-slate-400 hover:text-amber-500 transition-colors"
-                  >
-                    <Archive className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={(e) => deleteHabit(selectedHabit.id, e)}
-                    className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  {selectedHabit.user_id === localStorage.getItem('user_id') && (
+                    <>
+                      <button 
+                        onClick={() => handleToggleArchiveHabit(selectedHabit.id, selectedHabit.is_archived)}
+                        className="p-2 text-slate-400 hover:text-amber-500 transition-colors"
+                      >
+                        <Archive className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={(e) => deleteHabit(selectedHabit.id, e)}
+                        className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
                   <button 
                     onClick={() => setSelectedHabit(null)}
                     className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
@@ -607,10 +676,11 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
 
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Your Thoughts / Notes</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Thoughts / Notes</label>
                     <TextArea 
-                      placeholder="How did it go today? Any obstacles or wins?"
+                      placeholder={selectedHabit.user_id === localStorage.getItem('user_id') ? "How did it go today? Any obstacles or wins?" : "No notes for today."}
                       value={commentingLog.comment}
+                      readOnly={selectedHabit.user_id !== localStorage.getItem('user_id')}
                       onChange={e => setCommentingLog({ ...commentingLog, comment: e.target.value })}
                       className="min-h-[150px] text-base"
                     />
@@ -618,7 +688,7 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                 </div>
 
                 <div className="flex flex-col gap-3 pt-2">
-                   {commentingLog && (
+                   {commentingLog && selectedHabit.user_id === localStorage.getItem('user_id') && (
                      <Button 
                        onClick={() => toggleHabit(commentingLog.habitId, undefined, commentingLog.date)}
                        variant="ghost"
@@ -633,8 +703,10 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                      </Button>
                    )}
                    <div className="grid grid-cols-2 gap-3">
-                     <Button variant="ghost" onClick={() => setCommentingLog(null)} className="h-12 rounded-xl font-bold">Cancel</Button>
-                     <Button onClick={handleSaveComment} className="h-12 rounded-xl font-bold shadow-lg shadow-bca-blue/20">Save Changes</Button>
+                     <Button variant="ghost" onClick={() => setCommentingLog(null)} className="h-12 rounded-xl font-bold">{selectedHabit.user_id === localStorage.getItem('user_id') ? 'Cancel' : 'Close'}</Button>
+                     {selectedHabit.user_id === localStorage.getItem('user_id') && (
+                       <Button onClick={handleSaveComment} className="h-12 rounded-xl font-bold shadow-lg shadow-bca-blue/20">Save Changes</Button>
+                     )}
                    </div>
                 </div>
               </div>

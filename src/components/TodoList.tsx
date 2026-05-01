@@ -21,7 +21,9 @@ import {
   Zap,
   ChevronDown,
   Pencil,
-  XCircle
+  XCircle,
+  Share2,
+  Users
 } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Todo, supabase } from '@/src/lib/supabase';
@@ -30,6 +32,7 @@ import { format, startOfToday, addDays, parseISO, isSameDay, isBefore } from 'da
 import { createPortal } from 'react-dom';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
+import { AccessManagerModal } from './AccessManagerModal';
 
 interface TodoListProps {
   prefillData?: { task: string; description: string; date: string } | null;
@@ -42,6 +45,8 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
   const [viewMode, setViewMode] = useState<'grid' | 'detail'>('grid');
   const [selectedDateStr, setSelectedDateStr] = useState(format(startOfToday(), 'yyyy-MM-dd'));
   const [showArchived, setShowArchived] = useState(false);
+  const [showShared, setShowShared] = useState(false);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Detail View State
@@ -56,7 +61,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
 
   useEffect(() => {
     fetchTodos();
-  }, [showArchived]);
+  }, [showArchived, showShared]);
 
   useEffect(() => {
     if (prefillTodoId && todos.length > 0) {
@@ -85,11 +90,39 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
   const fetchTodos = async () => {
     setIsLoading(true);
     const currentUser = localStorage.getItem('user_id');
+    const solverId = localStorage.getItem('solver_id');
     if (!currentUser || currentUser === 'unknown') {
       setIsLoading(false);
       return;
     }
     
+    if (showShared) {
+      const { data: sharedKeys } = await supabase
+        .from('module_shares')
+        .select('shared_by')
+        .eq('module_name', 'todos')
+        .eq('shared_with_solver_id', solverId);
+      
+      if (!sharedKeys || sharedKeys.length === 0) {
+        setTodos([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const ownerIds = sharedKeys.map(s => s.shared_by);
+      const { data } = await supabase
+        .from('todos')
+        .select('*')
+        .in('user_id', ownerIds)
+        .eq('is_archived', false)
+        .order('date', { ascending: false })
+        .order('target_time', { ascending: true });
+
+      if (data) setTodos(data);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('todos')
@@ -673,18 +706,23 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
-                         <Button 
-                            className="flex-1 h-12 rounded-2xl whitespace-nowrap px-4 font-bold flex items-center justify-center leading-none"
-                            onClick={() => {
-                               toggleTodo(viewingTodo);
-                               setViewingTodo(null);
-                            }}
-                         >
-                            <span className="truncate">{viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}</span>
-                         </Button>
+                         {viewingTodo.user_id === localStorage.getItem('user_id') && (
+                           <Button 
+                              className="flex-1 h-12 rounded-2xl whitespace-nowrap px-4 font-bold flex items-center justify-center leading-none"
+                              onClick={() => {
+                                 toggleTodo(viewingTodo);
+                                 setViewingTodo(null);
+                              }}
+                           >
+                              <span className="truncate">{viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}</span>
+                           </Button>
+                         )}
                          <Button 
                             variant="ghost" 
-                            className="h-12 rounded-2xl px-8"
+                            className={cn(
+                              "h-12 rounded-2xl px-8",
+                              viewingTodo.user_id !== localStorage.getItem('user_id') ? "flex-1" : ""
+                            )}
                             onClick={() => setViewingTodo(null)}
                          >
                             Close
@@ -737,7 +775,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                  items.map((todo, index) => {
                    const overdue = isOverdue(todo);
                    return (
-                     <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                     <Draggable key={todo.id} draggableId={todo.id} index={index} isDragDisabled={todo.user_id !== localStorage.getItem('user_id')}>
                         {(dragProvided, dragSnapshot) => {
                           const child = (
                             <div 
@@ -756,17 +794,23 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                                <div 
                                   onClick={() => setViewingTodo(todo)}
                                   className={cn(
-                                     "w-full bg-white p-2.5 rounded-xl border shadow-sm transition-all cursor-pointer hover:shadow-md flex items-start gap-2",
+                                     "w-full bg-white p-2.5 rounded-xl border shadow-sm transition-all flex items-start gap-2",
+                                     todo.user_id === localStorage.getItem('user_id') ? "cursor-pointer hover:shadow-md" : "cursor-default",
                                      todo.completed ? "opacity-60 grayscale border-slate-100 bg-slate-50/50" : 
                                      overdue ? "border-rose-100 ring-1 ring-rose-50" : "border-slate-100",
                                      dragSnapshot.isDragging ? "shadow-xl ring-2 ring-indigo-500/20" : ""
                                   )}
                                >
                                   <button 
-                                     onClick={(e) => { e.stopPropagation(); toggleTodo(todo); }}
+                                     onClick={(e) => { 
+                                       if (todo.user_id === localStorage.getItem('user_id')) {
+                                         e.stopPropagation(); toggleTodo(todo); 
+                                       }
+                                     }}
                                      className={cn(
                                         "w-5 h-5 rounded-full mt-0.5 flex-shrink-0 flex items-center justify-center border-2 transition-all",
-                                        todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200"
+                                        todo.completed ? "bg-green-500 border-green-500 text-white" : "border-slate-200",
+                                        todo.user_id !== localStorage.getItem('user_id') ? "opacity-70 cursor-default" : ""
                                      )}
                                   >
                                      {todo.completed && <Check className="w-3 h-3" />}
@@ -787,29 +831,31 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                                         {overdue && !todo.completed && (
                                            <span className="text-[8px] font-black text-rose-500 uppercase tracking-tighter">Overdue</span>
                                         )}
-                                        <div className="ml-auto flex items-center gap-1.5">
-                                           <button 
-                                              onClick={(e) => { e.stopPropagation(); copyTodo(todo); }}
-                                               className="p-1 text-slate-400 hover:text-bca-blue hover:bg-slate-50 rounded-lg transition-all"
-                                               title="Duplicate"
-                                            >
-                                               <Copy className="w-3.5 h-3.5" />
-                                            </button>
-                                            <button 
-                                               onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
-                                              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                              title="Edit"
-                                           >
-                                              <Pencil className="w-3.5 h-3.5" />
-                                           </button>
-                                           <button 
-                                              onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
-                                              className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                                              title="Delete"
-                                           >
-                                              <Trash2 className="w-3.5 h-3.5" />
-                                           </button>
-                                        </div>
+                                        {todo.user_id === localStorage.getItem('user_id') && (
+                                          <div className="ml-auto flex items-center gap-1.5">
+                                             <button 
+                                                onClick={(e) => { e.stopPropagation(); copyTodo(todo); }}
+                                                 className="p-1 text-slate-400 hover:text-bca-blue hover:bg-slate-50 rounded-lg transition-all"
+                                                 title="Duplicate"
+                                              >
+                                                 <Copy className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button 
+                                                 onClick={(e) => { e.stopPropagation(); handleEditTodo(todo); }}
+                                                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                title="Edit"
+                                             >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                             </button>
+                                             <button 
+                                                onClick={(e) => { e.stopPropagation(); deleteTodo(todo.id); }}
+                                                className="p-1 text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                                                title="Delete"
+                                             >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                             </button>
+                                          </div>
+                                        )}
                                      </div>
                                   </div>
                                </div>
@@ -835,25 +881,63 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
 
   return (
     <div className="space-y-8">
+      <AccessManagerModal 
+        isOpen={isAccessModalOpen}
+        onClose={() => setIsAccessModalOpen(false)}
+        moduleName="todos"
+        moduleLabel="To Do"
+      />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-            {showArchived ? 'Archived To Do' : 'To Do'}
+            {showShared ? 'Shared To Do' : showArchived ? 'Archived To Do' : 'To Do'}
           </h2>
           <p className="text-slate-500 mt-1">Strategic timeline management for your daily tasks.</p>
         </div>
         <div className="flex justify-end items-center gap-2">
-          <button 
-            onClick={() => setShowArchived(!showArchived)} 
-            className={cn(
-              "p-3 rounded-xl transition-all shadow-sm", 
-              showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            )}
-            title={showArchived ? "Show Active" : "Show Archived"}
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+             <button 
+                onClick={() => { setShowArchived(false); setShowShared(true); }}
+                className={cn(
+                   "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                   showShared ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                )}
+             >
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Shared</span>
+             </button>
+             <button 
+                onClick={() => { setShowArchived(true); setShowShared(false); }}
+                className={cn(
+                   "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                   showArchived && !showShared ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                )}
+             >
+                <Archive className="w-4 h-4" />
+                <span className="hidden sm:inline">Archived</span>
+             </button>
+             <button 
+                onClick={() => { setShowArchived(false); setShowShared(false); }}
+                className={cn(
+                   "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                   !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                )}
+             >
+                <LayoutGrid className="w-4 h-4" />
+                <span className="hidden sm:inline">My To Do</span>
+             </button>
+          </div>
+          
+          <Button 
+            onClick={() => setIsAccessModalOpen(true)}
+            variant="ghost"
+            title="Manage Access"
+            className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
           >
-            <Archive className="w-5 h-5" />
-          </button>
-          {!showArchived && (
+            <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
+          </Button>
+
+          {!showArchived && !showShared && (
             <Button 
               onClick={() => {
                 setSelectedDateStr(format(startOfToday(), 'yyyy-MM-dd'));
@@ -910,18 +994,22 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                       </p>
                     </div>
                     <div className="flex gap-1">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleBulkArchive(dateStr); }}
-                        className="p-1.5 hover:bg-amber-100 rounded-lg text-amber-600 transition-colors"
-                      >
-                        <Archive className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleBulkDelete(dateStr); }}
-                        className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {!showShared && (
+                        <>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleBulkArchive(dateStr); }}
+                            className="p-1.5 hover:bg-amber-100 rounded-lg text-amber-600 transition-colors"
+                          >
+                            <Archive className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleBulkDelete(dateStr); }}
+                            className="p-1.5 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 

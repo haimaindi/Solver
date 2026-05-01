@@ -19,11 +19,14 @@ import {
   CheckSquare,
   Palette,
   Pencil,
-  Archive
+  Archive,
+  Share2,
+  Users
 } from 'lucide-react';
 import { Reflection, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge } from './UI';
 import { ReflectionAdvisor } from './ReflectionAdvisor';
+import { AccessManagerModal } from './AccessManagerModal';
 import { format } from 'date-fns';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
@@ -245,15 +248,42 @@ export function ReflectionManager() {
   const [satisfaction, setSatisfaction] = useState(SATISFACTION_LEVELS[2]); // Default Neutral
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [showShared, setShowShared] = useState(false);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
   useEffect(() => {
     fetchReflections();
-  }, [showArchived]);
+  }, [showArchived, showShared]);
 
   const fetchReflections = async () => {
     const currentUser = localStorage.getItem('user_id');
+    const solverId = localStorage.getItem('solver_id');
     if (!currentUser || currentUser === 'unknown') return;
     
+    if (showShared) {
+      const { data: sharedKeys } = await supabase
+        .from('module_shares')
+        .select('shared_by')
+        .eq('module_name', 'reflection')
+        .eq('shared_with_solver_id', solverId);
+
+      if (!sharedKeys || sharedKeys.length === 0) {
+        setReflections([]);
+        return;
+      }
+
+      const ownerIds = sharedKeys.map(s => s.shared_by);
+      const { data } = await supabase
+        .from('reflections')
+        .select('*')
+        .in('user_id', ownerIds)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+
+      if (data) setReflections(data);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('reflections')
       .select('*')
@@ -388,26 +418,64 @@ export function ReflectionManager() {
 
   return (
     <div className="space-y-6">
+      <AccessManagerModal 
+        isOpen={isAccessModalOpen}
+        onClose={() => setIsAccessModalOpen(false)}
+        moduleName="reflection"
+        moduleLabel="Reflection"
+      />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="text-left md:text-left">
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-            {showArchived ? 'Archived Reflection' : 'Reflection'}
+            {showShared ? 'Shared Reflection' : showArchived ? 'Archived Reflection' : 'Reflection'}
           </h2>
           <p className="text-slate-500 mt-1">Document your learning journey and professional growth.</p>
         </div>
         {!isAdding && !selectedReflection && (
           <div className="flex justify-end items-center gap-2">
-              <button
-                onClick={() => setShowArchived(!showArchived)}
-                className={cn(
-                  "p-3 rounded-xl transition-colors shadow-sm",
-                  showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-                title={showArchived ? "Show Active Reflections" : "Show Archived Reflections"}
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                 <button 
+                    onClick={() => { setShowArchived(false); setShowShared(true); }}
+                    className={cn(
+                       "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                       showShared ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                    )}
+                 >
+                    <Users className="w-4 h-4" />
+                    <span className="hidden sm:inline">Shared</span>
+                 </button>
+                 <button 
+                    onClick={() => { setShowArchived(true); setShowShared(false); }}
+                    className={cn(
+                       "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                       showArchived && !showShared ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                    )}
+                 >
+                    <Archive className="w-4 h-4" />
+                    <span className="hidden sm:inline">Archived</span>
+                 </button>
+                 <button 
+                    onClick={() => { setShowArchived(false); setShowShared(false); }}
+                    className={cn(
+                       "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                       !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                    )}
+                 >
+                    <BookOpen className="w-4 h-4" />
+                    <span className="hidden sm:inline">My Reflection</span>
+                 </button>
+              </div>
+              
+              <Button 
+                onClick={() => setIsAccessModalOpen(true)}
+                variant="ghost"
+                title="Manage Access"
+                className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
               >
-                <Archive className="w-5 h-5" />
-              </button>
-              {!showArchived && (
+                <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
+              </Button>
+
+              {!showArchived && !showShared && (
                 <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
                   <Plus className="w-4 h-4" />
                   <span>New Reflection</span>
@@ -542,14 +610,16 @@ export function ReflectionManager() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 justify-end">
-                  <Button variant="ghost" onClick={(e) => handleEdit(selectedReflection, e)} className="p-2 text-bca-blue hover:bg-bca-blue/5">
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="danger" onClick={(e) => handleDelete(selectedReflection.id, e)} className="p-2">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
+                {selectedReflection.user_id === localStorage.getItem('user_id') && (
+                  <div className="flex items-center gap-2 justify-end">
+                    <Button variant="ghost" onClick={(e) => handleEdit(selectedReflection, e)} className="p-2 text-bca-blue hover:bg-bca-blue/5">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="danger" onClick={(e) => handleDelete(selectedReflection.id, e)} className="p-2">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 gap-8">
@@ -612,26 +682,30 @@ export function ReflectionManager() {
                     </div>
                     <div className="mt-4 flex justify-between items-center">
                       <div className="flex gap-2">
-                        <button 
-                          onClick={(e) => handleEdit(r, e)}
-                          className="p-2 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleToggleArchiveReflection(r.id, r.is_archived || false, e)}
-                          className={cn("p-2 rounded-lg transition-all", r.is_archived ? "text-green-600 hover:bg-green-50" : "text-amber-600 hover:bg-amber-50")}
-                          title={r.is_archived ? "Unarchive" : "Archive"}
-                        >
-                          <Archive className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(r.id, e)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {r.user_id === localStorage.getItem('user_id') && (
+                          <>
+                            <button 
+                              onClick={(e) => handleEdit(r, e)}
+                              className="p-2 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleToggleArchiveReflection(r.id, r.is_archived || false, e)}
+                              className={cn("p-2 rounded-lg transition-all", r.is_archived ? "text-green-600 hover:bg-green-50" : "text-amber-600 hover:bg-amber-50")}
+                              title={r.is_archived ? "Unarchive" : "Archive"}
+                            >
+                              <Archive className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => handleDelete(r.id, e)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-bca-blue group-hover:bg-bca-blue/5 transition-all">
                         <ChevronRight className="w-5 h-5" />

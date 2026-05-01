@@ -16,7 +16,9 @@ import {
   Zap,
   ChevronRight,
   Edit2,
-  Info
+  Info,
+  Share2,
+  Users
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase, Idea, Maturity, NextAction } from '@/src/lib/supabase';
@@ -24,6 +26,7 @@ import { GlassCard, Button, Input, Badge, TextArea, Select } from './UI';
 import Swal from 'sweetalert2';
 import { format, isAfter, parseISO } from 'date-fns';
 import { cn } from '@/src/lib/utils';
+import { AccessManagerModal } from './AccessManagerModal';
 
 export function IdeaManager() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -33,6 +36,8 @@ export function IdeaManager() {
   const [maturityFilter, setMaturityFilter] = useState<Maturity | 'All'>('All');
   const [actionFilter, setActionFilter] = useState<NextAction | 'All'>('All');
   const [showArchived, setShowArchived] = useState(false);
+  const [showShared, setShowShared] = useState(false);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
 
   // Detail/Edit Modal State
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
@@ -40,13 +45,42 @@ export function IdeaManager() {
 
   useEffect(() => {
     fetchIdeas();
-  }, [showArchived]);
+  }, [showArchived, showShared]);
 
   const fetchIdeas = async () => {
     const userId = localStorage.getItem('user_id');
+    const solverId = localStorage.getItem('solver_id');
     if (!userId) return;
 
     setIsLoading(true);
+
+    if (showShared) {
+      const { data: sharedKeys } = await supabase
+        .from('module_shares')
+        .select('shared_by')
+        .eq('module_name', 'ideas')
+        .eq('shared_with_solver_id', solverId);
+      
+      if (!sharedKeys || sharedKeys.length === 0) {
+        setIdeas([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const ownerIds = sharedKeys.map(s => s.shared_by);
+      const { data, error } = await supabase
+        .from('ideas')
+        .select('*')
+        .in('user_id', ownerIds)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+
+      if (data) setIdeas(data);
+      if (error) console.error('Error fetching shared ideas:', error);
+      setIsLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase
       .from('ideas')
       .select('*')
@@ -326,27 +360,65 @@ export function IdeaManager() {
 
   return (
     <div className="space-y-8">
+      {/* Access Manager Modal */}
+      <AccessManagerModal 
+        isOpen={isAccessModalOpen} 
+        onClose={() => setIsAccessModalOpen(false)} 
+        moduleName="ideas" 
+      />
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-            {showArchived ? 'Archived Ideas' : 'Idea Repository'}
+            {showShared ? 'Shared Ideas' : (showArchived ? 'Archived Ideas' : 'Idea Repository')}
           </h2>
-          <p className="text-slate-500 mt-1">Document, categorize, and never lose a brilliant spark again.</p>
+          <p className="text-slate-500 mt-1 font-medium">Document, categorize, and never lose a brilliant spark again.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex justify-end items-center gap-2">
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button 
+              onClick={() => { setShowArchived(false); setShowShared(true); }}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                showShared ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+              )}
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Shared</span>
+            </button>
+            <button 
+              onClick={() => { setShowArchived(true); setShowShared(false); }}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                showArchived && !showShared ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+              )}
+            >
+              <Archive className="w-4 h-4" />
+              <span className="hidden sm:inline">Archived</span>
+            </button>
+            <button 
+              onClick={() => { setShowArchived(false); setShowShared(false); }}
+              className={cn(
+                "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+              )}
+            >
+              <Lightbulb className="w-4 h-4" />
+              <span className="hidden sm:inline">My Ideas</span>
+            </button>
+          </div>
+
           <button
-            onClick={() => setShowArchived(!showArchived)}
-            className={cn(
-              "p-3 rounded-xl transition-all shadow-sm border",
-              showArchived ? "bg-amber-100 text-amber-700 border-amber-200" : "bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
-            )}
-            title={showArchived ? "Back to Active" : "View Archive"}
+            onClick={() => setIsAccessModalOpen(true)}
+            className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
+            title="Manage Access"
           >
-            <Archive className="w-5 h-5" />
+            <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
           </button>
-          {!showArchived && (
-            <Button onClick={handleAddIdea} className="h-11 px-6 flex items-center gap-2">
+
+          {(!showArchived && !showShared) && (
+            <Button onClick={handleAddIdea} className="h-11 px-6 flex items-center gap-2 shadow-lg shadow-bca-blue/20">
               <Plus className="w-4 h-4" />
               <span>Capture Idea</span>
             </Button>
@@ -355,7 +427,7 @@ export function IdeaManager() {
       </div>
 
       {/* Stats Quick View (Active only) */}
-      {!showArchived && (
+      {(!showArchived && !showShared) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <GlassCard className="p-4 border-l-4 border-emerald-500">
             <div className="flex items-center gap-3">
@@ -472,24 +544,28 @@ export function IdeaManager() {
                       >
                         <Info className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleEditIdea(idea); }}
-                        className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleToggleArchive(idea.id, idea.is_archived); }}
-                        className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
-                      >
-                        <Archive className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDelete(idea.id); }}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {idea.user_id === localStorage.getItem('user_id') && (
+                        <>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleEditIdea(idea); }}
+                            className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-bca-blue/5 rounded-lg transition-all"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleToggleArchive(idea.id, idea.is_archived); }}
+                            className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                          >
+                            <Archive className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleDelete(idea.id); }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 

@@ -34,7 +34,9 @@ import {
   Lightbulb,
   CheckCircle,
   Circle,
-  Trophy
+  Trophy,
+  Share2,
+  Users
 } from 'lucide-react';
 import { Problem, Status, RootCause, ActionPlan, Reflection, Habit, HabitLog, Todo, OwnedResource, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, Select, TextArea } from './components/UI';
@@ -49,6 +51,7 @@ import { AdminManager } from './components/AdminManager';
 import { ProblemAdvisor } from './components/ProblemAdvisor';
 import { IdeaManager } from './components/IdeaManager';
 import { GoalManager } from './components/GoalManager';
+import { AccessManagerModal } from './components/AccessManagerModal';
 import { cn } from '@/src/lib/utils';
 import { differenceInDays, parseISO, format, addDays, isWithinInterval } from 'date-fns';
 import { PROFILE_NAME } from './profile';
@@ -189,6 +192,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'All'>('All');
   const [showArchivedProblems, setShowArchivedProblems] = useState(false);
+  const [showSharedProblems, setShowSharedProblems] = useState(false);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [sessionData, setSessionData] = useState<any>(null);
   const [worldTime, setWorldTime] = useState<Date>(new Date());
@@ -225,7 +230,7 @@ export default function App() {
       fetchDashboardPlans();
       fetchTodayTasks();
     }
-  }, [isAuthenticated, view, showArchivedProblems]);
+  }, [isAuthenticated, view, showArchivedProblems, showSharedProblems]);
 
   useEffect(() => {
     // Mobile Gestures
@@ -266,7 +271,7 @@ export default function App() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [view, showArchivedProblems]);
+  }, [view, showArchivedProblems, showSharedProblems]);
 
   // Sidebar Body Scroll Lock
   useEffect(() => {
@@ -394,9 +399,29 @@ export default function App() {
       }
     }
 
+    let solverId = userData.solver_id;
+    if (!solverId) {
+      const generateSolverId = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < 7; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+      };
+      solverId = generateSolverId();
+      try {
+        await supabase.from('app_access').update({ solver_id: solverId }).eq('id', userData.id);
+      } catch (err) {
+        console.warn('Could not update solver_id, maybe column missing', err);
+      }
+      userData.solver_id = solverId;
+    }
+
     // Login success
     localStorage.setItem('solver_auth', 'true');
     localStorage.setItem('user_id', userData.id);
+    localStorage.setItem('solver_id', solverId);
     localStorage.setItem('user_name', userData.username || userData.code);
     localStorage.setItem('session_data', JSON.stringify(userData));
     setSessionData(userData);
@@ -421,6 +446,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('solver_auth');
     localStorage.removeItem('user_id');
+    localStorage.removeItem('solver_id');
     localStorage.removeItem('user_name');
     localStorage.removeItem('session_data');
     setSessionData(null);
@@ -443,7 +469,33 @@ export default function App() {
 
   const fetchProblems = async () => {
     const currentUser = localStorage.getItem('user_id');
+    const solverId = localStorage.getItem('solver_id');
     if (!isAuthenticated || !currentUser || currentUser === 'unknown') return;
+
+    if (showSharedProblems) {
+      const { data: sharedKeys } = await supabase
+        .from('module_shares')
+        .select('shared_by')
+        .eq('module_name', 'problems')
+        .eq('shared_with_solver_id', solverId);
+      
+      if (!sharedKeys || sharedKeys.length === 0) {
+        setProblems([]);
+        return;
+      }
+      
+      const ownerIds = sharedKeys.map(s => s.shared_by);
+      const { data, error } = await supabase
+        .from('problems')
+        .select('*')
+        .in('user_id', ownerIds)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+        
+      if (data) setProblems(data);
+      if (error) console.error('Error fetching shared problems:', error);
+      return;
+    }
 
     const { data, error } = await supabase
       .from('problems')
@@ -949,6 +1001,13 @@ export default function App() {
 
   return (
     <AuthGate isAuthenticated={isAuthenticated} onLogin={handleLogin}>
+      {/* Access Manager Modal for Problems */}
+      <AccessManagerModal 
+        isOpen={isAccessModalOpen} 
+        onClose={() => setIsAccessModalOpen(false)} 
+        moduleName="problems" 
+      />
+
       {/* Profile Modal */}
       <AnimatePresence>
         {showProfileModal && (
@@ -975,6 +1034,12 @@ export default function App() {
                     <div>
                       <h3 className="text-xl font-black text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Platform Account</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SolverID:</span>
+                        <code className="px-2 py-0.5 bg-slate-100 text-bca-blue font-mono font-bold text-[11px] rounded selection:bg-bca-blue/20">
+                          {localStorage.getItem('solver_id') || 'Unknown'}
+                        </code>
+                      </div>
                     </div>
                   </div>
                   <Button variant="ghost" onClick={() => setShowProfileModal(false)} className="p-1 -mr-2 hover:bg-slate-100 rounded-full">
@@ -1642,22 +1707,51 @@ export default function App() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    {showArchivedProblems ? 'Archived Problem' : 'Problem'}
+                    {showSharedProblems ? 'Shared Problems' : (showArchivedProblems ? 'Archived Problems' : 'Problems')}
                   </h2>
                   <p className="text-slate-500 mt-1">Detailed view of all documented engineering challenges.</p>
                 </div>
                 <div className="flex justify-end items-center gap-2">
+                  <div className="flex bg-slate-100 p-1 rounded-xl">
+                     <button 
+                        onClick={() => { setShowArchivedProblems(false); setShowSharedProblems(true); }}
+                        className={cn(
+                           "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                           showSharedProblems ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                        )}
+                     >
+                        <Users className="w-4 h-4" />
+                        <span className="hidden sm:inline">Shared</span>
+                     </button>
+                     <button 
+                        onClick={() => { setShowArchivedProblems(true); setShowSharedProblems(false); }}
+                        className={cn(
+                           "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                           showArchivedProblems && !showSharedProblems ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                        )}
+                     >
+                        <Archive className="w-4 h-4" />
+                        <span className="hidden sm:inline">Archived</span>
+                     </button>
+                     <button 
+                        onClick={() => { setShowArchivedProblems(false); setShowSharedProblems(false); }}
+                        className={cn(
+                           "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                           !showArchivedProblems && !showSharedProblems ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                        )}
+                     >
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="hidden sm:inline">My Problems</span>
+                     </button>
+                  </div>
                   <button
-                    onClick={() => setShowArchivedProblems(!showArchivedProblems)}
-                    className={cn(
-                      "p-3 rounded-xl transition-colors shadow-sm",
-                      showArchivedProblems ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    )}
-                    title={showArchivedProblems ? "Show Active Problems" : "Show Archived Problems"}
+                    onClick={() => setIsAccessModalOpen(true)}
+                    className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
+                    title="Manage Access"
                   >
-                    <Archive className="w-5 h-5" />
+                    <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
                   </button>
-                  {!showArchivedProblems && (
+                  {(!showArchivedProblems && !showSharedProblems) && (
                     <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
                       <Plus className="w-4 h-4" />
                       <span>New Problem</span>
@@ -1701,31 +1795,35 @@ export default function App() {
                     <div className="flex justify-between items-start mb-4">
                       <Badge variant={problem.status}>{problem.status}</Badge>
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleArchiveProblem(problem.id, problem.is_archived);
-                          }}
-                          className="p-1.5 text-amber-500 bg-amber-50 hover:bg-amber-100 rounded-md transition-all"
-                        >
-                          <Archive className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingProblem(problem);
-                            setView('edit');
-                          }}
-                          className="p-1.5 text-bca-blue bg-bca-blue/5 hover:bg-bca-blue/10 rounded-md transition-all"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={(e) => handleDeleteProblem(problem.id, e)}
-                          className="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {problem.user_id === localStorage.getItem('user_id') && (
+                          <>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleArchiveProblem(problem.id, problem.is_archived);
+                              }}
+                              className="p-1.5 text-amber-500 bg-amber-50 hover:bg-amber-100 rounded-md transition-all"
+                            >
+                              <Archive className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingProblem(problem);
+                                setView('edit');
+                              }}
+                              className="p-1.5 text-bca-blue bg-bca-blue/5 hover:bg-bca-blue/10 rounded-md transition-all"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={(e) => handleDeleteProblem(problem.id, e)}
+                              className="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">{problem.category}</span>
                       </div>
                     </div>

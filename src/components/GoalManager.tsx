@@ -15,7 +15,9 @@ import {
   Pencil,
   ArrowRight,
   ArrowLeft,
-  Archive
+  Archive,
+  Share2,
+  Users
 } from 'lucide-react';
 import { supabase, Goal, Milestone } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, TextArea, Select } from './UI';
@@ -23,6 +25,7 @@ import { format, parseISO } from 'date-fns';
 import Swal from 'sweetalert2';
 import { cn } from '@/src/lib/utils';
 import confetti from 'canvas-confetti';
+import { AccessManagerModal } from './AccessManagerModal';
 
 const CATEGORIES = ['Career', 'Financial', 'Health', 'Personal', 'Relationship', 'Spiritual'];
 
@@ -34,6 +37,8 @@ export function GoalManager() {
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | Partial<Milestone> | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [showShared, setShowShared] = useState(false);
+  const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Form State
@@ -46,12 +51,61 @@ export function GoalManager() {
 
   useEffect(() => {
     fetchGoals();
-  }, [showArchived]);
+  }, [showArchived, showShared]);
 
   const fetchGoals = async () => {
     setIsLoading(true);
     const userId = localStorage.getItem('user_id');
+    const solverId = localStorage.getItem('solver_id');
     if (!userId || userId === 'unknown') return;
+
+    if (showShared) {
+      const { data: sharedKeys } = await supabase
+        .from('module_shares')
+        .select('shared_by')
+        .eq('module_name', 'goals')
+        .eq('shared_with_solver_id', solverId);
+      
+      if (!sharedKeys || sharedKeys.length === 0) {
+        setGoals([]);
+        setMilestones({});
+        setIsLoading(false);
+        return;
+      }
+      
+      const ownerIds = sharedKeys.map(s => s.shared_by);
+      const { data: fetchedGoals, error } = await supabase
+        .from('goals')
+        .select('*')
+        .in('user_id', ownerIds)
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+
+      if (fetchedGoals) {
+        setGoals(fetchedGoals);
+        const goalIds = fetchedGoals.map(g => g.id);
+        if (goalIds.length > 0) {
+          const { data: mData } = await supabase
+            .from('milestones')
+            .select('*')
+            .in('goal_id', goalIds)
+            .order('order_index', { ascending: true });
+          
+          if (mData) {
+            const mapped: Record<string, Milestone[]> = {};
+            mData.forEach(m => {
+              if (!mapped[m.goal_id]) mapped[m.goal_id] = [];
+              mapped[m.goal_id].push(m);
+            });
+            setMilestones(mapped);
+          }
+        } else {
+          setMilestones({});
+        }
+      }
+      setIsLoading(false);
+      return;
+    }
 
     const { data: fetchedGoals, error } = await supabase
       .from('goals')
@@ -382,26 +436,63 @@ export function GoalManager() {
   return (
     <div className="space-y-6 pb-32 relative">
 
+      {/* Access Manager Modal */}
+      <AccessManagerModal 
+        isOpen={isAccessModalOpen} 
+        onClose={() => setIsAccessModalOpen(false)} 
+        moduleName="goals" 
+      />
+
       {!selectedGoal && (
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-left md:text-left">
             <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-              {showArchived ? 'Archived Goals' : 'Goals'}
+              {showShared ? 'Shared Goals' : (showArchived ? 'Archived Goals' : 'Goals')}
             </h2>
             <p className="text-slate-500 mt-1">Map your dreams into achievable milestones.</p>
           </div>
           <div className="flex justify-end items-center gap-2">
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+               <button 
+                  onClick={() => { setShowArchived(false); setShowShared(true); }}
+                  className={cn(
+                     "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                     showShared ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                  )}
+               >
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Shared</span>
+               </button>
+               <button 
+                  onClick={() => { setShowArchived(true); setShowShared(false); }}
+                  className={cn(
+                     "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                     showArchived && !showShared ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                  )}
+               >
+                  <Archive className="w-4 h-4" />
+                  <span className="hidden sm:inline">Archived</span>
+               </button>
+               <button 
+                  onClick={() => { setShowArchived(false); setShowShared(false); }}
+                  className={cn(
+                     "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                     !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                  )}
+               >
+                  <Trophy className="w-4 h-4" />
+                  <span className="hidden sm:inline">My Goals</span>
+               </button>
+            </div>
+
             <button
-              onClick={() => setShowArchived(!showArchived)}
-              className={cn(
-                "p-3 rounded-xl transition-colors shadow-sm",
-                showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              )}
-              title={showArchived ? "Show Active Goals" : "Show Archived Goals"}
+              onClick={() => setIsAccessModalOpen(true)}
+              className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
+              title="Manage Access"
             >
-              <Archive className="w-5 h-5" />
+              <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
             </button>
-            {!showArchived && (
+            {(!showArchived && !showShared) && (
               <Button onClick={() => {
                 setEditingGoalId(null);
                 setNewGoal({ title: '', category: 'Career', description: '', target_date: '' });
@@ -447,33 +538,35 @@ export function GoalManager() {
                     <span className="px-3 py-1 bg-white border border-slate-100 rounded-full text-[10px] sm:text-xs font-black text-slate-600 uppercase tracking-tighter shadow-sm">
                       {goal.category}
                     </span>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={(e) => openEditGoalModal(goal, e)}
-                        className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={async (e) => { 
-                          e.stopPropagation(); 
-                          const { error } = await supabase.from('goals').update({ is_archived: !goal.is_archived }).eq('id', goal.id);
-                          if (!error) {
-                            setGoals(goals.filter(g => g.id !== goal.id));
-                            Swal.fire({ title: goal.is_archived ? 'Goal Unarchived' : 'Goal Archived', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, backdrop: false });
-                          }
-                        }}
-                        className={cn("p-1.5 rounded-lg transition-all", goal.is_archived ? "text-amber-500 hover:bg-amber-50" : "text-slate-400 hover:text-amber-500 hover:bg-amber-50")}
-                      >
-                        <Archive className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
-                        className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {goal.user_id === localStorage.getItem('user_id') && (
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => openEditGoalModal(goal, e)}
+                          className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={async (e) => { 
+                            e.stopPropagation(); 
+                            const { error } = await supabase.from('goals').update({ is_archived: !goal.is_archived }).eq('id', goal.id);
+                            if (!error) {
+                              setGoals(goals.filter(g => g.id !== goal.id));
+                              Swal.fire({ title: goal.is_archived ? 'Goal Unarchived' : 'Goal Archived', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, backdrop: false });
+                            }
+                          }}
+                          className={cn("p-1.5 rounded-lg transition-all", goal.is_archived ? "text-amber-500 hover:bg-amber-50" : "text-slate-400 hover:text-amber-500 hover:bg-amber-50")}
+                        >
+                          <Archive className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   
                   <h3 className="text-lg font-black text-slate-900 leading-tight mb-2 uppercase tracking-tighter line-clamp-2">
@@ -544,16 +637,20 @@ export function GoalManager() {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Map the path to your goal</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button 
-                        onClick={(e) => openEditGoalModal(selectedGoal, e)}
-                        className="h-10 px-4 flex items-center gap-2 text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-sm transition-all shadow-sm"
-                        title="Edit Goal"
-                      >
-                        <Pencil className="w-4 h-4" /> Edit Goal
-                      </button>
-                      <Button onClick={() => setEditingMilestone({ title: '', target_date: '', description: '' })} className="h-10 px-4 flex items-center gap-2">
-                        <Plus className="w-4 h-4" /> Add
-                      </Button>
+                      {selectedGoal.user_id === localStorage.getItem('user_id') && (
+                        <>
+                          <button 
+                            onClick={(e) => openEditGoalModal(selectedGoal, e)}
+                            className="h-10 px-4 flex items-center gap-2 text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-sm transition-all shadow-sm"
+                            title="Edit Goal"
+                          >
+                            <Pencil className="w-4 h-4" /> Edit Goal
+                          </button>
+                          <Button onClick={() => setEditingMilestone({ title: '', target_date: '', description: '' })} className="h-10 px-4 flex items-center gap-2">
+                            <Plus className="w-4 h-4" /> Add
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -593,9 +690,10 @@ export function GoalManager() {
                                      initial={{ opacity: 0, scale: 0.9 }}
                                      animate={{ opacity: 1, scale: 1 }}
                                      key="finish"
-                                     onClick={(e) => openEditGoalModal(selectedGoal, e)}
+                                     onClick={(e) => selectedGoal.user_id === localStorage.getItem('user_id') && openEditGoalModal(selectedGoal, e)}
                                      className={cn(
-                                       "flex items-center gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border-2 relative shadow-sm cursor-pointer hover:shadow-md transition-all h-full",
+                                       "flex items-center gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border-2 relative shadow-sm transition-all h-full",
+                                       selectedGoal.user_id === localStorage.getItem('user_id') ? "cursor-pointer hover:shadow-md" : "",
                                        isOverdue ? "border-rose-300 bg-rose-50/50 hover:border-rose-400" : "border-indigo-200 bg-indigo-50/50 hover:border-indigo-300"
                                      )}
                                   >
@@ -633,22 +731,24 @@ export function GoalManager() {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.05 }}
                                 key={milestone.id}
-                                onClick={() => setEditingMilestone(milestone)}
+                                onClick={() => selectedGoal.user_id === localStorage.getItem('user_id') && setEditingMilestone(milestone)}
                                 className={cn(
-                                  "flex items-start gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border transition-all cursor-pointer group relative bg-white h-full",
-                                  milestone.is_completed ? "border-emerald-100 shadow-sm" : isOverdue ? "border-rose-300 shadow-md bg-rose-50/30 ring-1 ring-rose-100" : "border-slate-200 hover:border-bca-blue/30 hover:shadow-md"
+                                  "flex items-start gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border transition-all group relative bg-white h-full",
+                                  selectedGoal.user_id === localStorage.getItem('user_id') ? "cursor-pointer hover:border-bca-blue/30 hover:shadow-md" : "",
+                                  milestone.is_completed ? "border-emerald-100 shadow-sm" : isOverdue ? "border-rose-300 shadow-md bg-rose-50/30 ring-1 ring-rose-100" : "border-slate-200"
                                 )}
                               >
                                 <div className="relative z-10 shrink-0 bg-white group-hover:bg-transparent rounded-full sm:px-1">
                                   <button 
-                                    onClick={(e) => handleToggleMilestone(milestone, e)}
+                                    onClick={(e) => selectedGoal.user_id === localStorage.getItem('user_id') && handleToggleMilestone(milestone, e)}
                                     className={cn(
                                       "w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-full transition-all border-2",
                                       milestone.is_completed 
                                         ? "text-white bg-emerald-500 border-emerald-500" 
                                         : isOverdue 
                                           ? "text-rose-500 border-rose-300 bg-white hover:bg-rose-50"
-                                          : "text-slate-300 border-slate-200 bg-white hover:text-bca-blue hover:border-bca-blue/30"
+                                          : "text-slate-300 border-slate-200 bg-white hover:text-bca-blue hover:border-bca-blue/30",
+                                      selectedGoal.user_id !== localStorage.getItem('user_id') ? "opacity-70 cursor-default" : ""
                                     )}
                                   >
                                     {milestone.is_completed && <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />}
@@ -684,12 +784,14 @@ export function GoalManager() {
                                   )}
                                 </div>
 
-                                <button 
-                                  onClick={(e) => handleDeleteMilestone(milestone, e)}
-                                  className="absolute right-2 top-2 sm:right-4 sm:top-4 p-1.5 sm:p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                {selectedGoal.user_id === localStorage.getItem('user_id') && (
+                                  <button 
+                                    onClick={(e) => handleDeleteMilestone(milestone, e)}
+                                    className="absolute right-2 top-2 sm:right-4 sm:top-4 p-1.5 sm:p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
                               </motion.div>
                             );
                          };
