@@ -151,6 +151,7 @@ export function GoalManager() {
           showConfirmButton: false,
           timer: 3000,
           background: 'white',
+          backdrop: false,
           customClass: {
             popup: 'shadow-xl border border-slate-100 rounded-2xl'
           }
@@ -459,7 +460,7 @@ export function GoalManager() {
                           const { error } = await supabase.from('goals').update({ is_archived: !goal.is_archived }).eq('id', goal.id);
                           if (!error) {
                             setGoals(goals.filter(g => g.id !== goal.id));
-                            Swal.fire({ title: goal.is_archived ? 'Goal Unarchived' : 'Goal Archived', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+                            Swal.fire({ title: goal.is_archived ? 'Goal Unarchived' : 'Goal Archived', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, backdrop: false });
                           }
                         }}
                         className={cn("p-1.5 rounded-lg transition-all", goal.is_archived ? "text-amber-500 hover:bg-amber-50" : "text-slate-400 hover:text-amber-500 hover:bg-amber-50")}
@@ -696,7 +697,16 @@ export function GoalManager() {
                          return (
                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6 mt-4">
                              {allNodes.map((node, i) => (
-                               <div key={node.isFinish ? 'finish' : node.id} className="relative flex-none">
+                               <div key={node.isFinish ? 'finish' : node.id} className={cn(
+                                 "relative flex-none",
+                                 "sm:[&:nth-child(2n)_>_.path-line]:hidden",
+                                 "lg:[&:nth-child(2n)_>_.path-line]:block lg:[&:nth-child(3n)_>_.path-line]:hidden",
+                                 "xl:[&:nth-child(3n)_>_.path-line]:block xl:[&:nth-child(4n)_>_.path-line]:hidden",
+                                 "2xl:[&:nth-child(4n)_>_.path-line]:block 2xl:[&:nth-child(5n)_>_.path-line]:hidden"
+                               )}>
+                                 {i < allNodes.length - 1 && (
+                                   <div className="path-line hidden sm:block absolute top-[50%] left-[100%] w-4 lg:w-6 h-0 border-t-2 border-dashed border-slate-300 z-0" />
+                                 )}
                                  {renderNode(node, i)}
                                </div>
                              ))}
