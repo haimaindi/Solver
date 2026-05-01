@@ -144,12 +144,16 @@ export function GoalManager() {
         
         Swal.fire({
           title: editingGoalId ? 'Goal Updated!' : 'Goal Set!',
-          text: editingGoalId ? '' : "Every big journey begins with a small step.",
+          text: editingGoalId ? undefined : "Every big journey begins with a small step.",
           icon: 'success',
           toast: true,
           position: 'top-end',
           showConfirmButton: false,
-          timer: 3000
+          timer: 3000,
+          background: 'white',
+          customClass: {
+            popup: 'shadow-xl border border-slate-100 rounded-2xl'
+          }
         });
       }
     } catch (err: any) {
@@ -298,8 +302,12 @@ export function GoalManager() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="text-left">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Create New Goal</h2>
-            <p className="text-slate-500 mt-1">Set your sights on something meaningful.</p>
+            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+              {editingGoalId ? 'Edit Goal' : 'Create New Goal'}
+            </h2>
+            <p className="text-slate-500 mt-1">
+              {editingGoalId ? 'Update your target and focus.' : 'Set your sights on something meaningful.'}
+            </p>
           </div>
         </div>
 
@@ -393,7 +401,11 @@ export function GoalManager() {
               <Archive className="w-5 h-5" />
             </button>
             {!showArchived && (
-              <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
+              <Button onClick={() => {
+                setEditingGoalId(null);
+                setNewGoal({ title: '', category: 'Career', description: '', target_date: '' });
+                setIsAdding(true);
+              }} className="flex items-center gap-2 h-11 px-6">
                 <Plus className="w-4 h-4" />
                 <span>New Goal</span>
               </Button>
@@ -440,6 +452,19 @@ export function GoalManager() {
                         className="p-1.5 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"
                       >
                         <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={async (e) => { 
+                          e.stopPropagation(); 
+                          const { error } = await supabase.from('goals').update({ is_archived: !goal.is_archived }).eq('id', goal.id);
+                          if (!error) {
+                            setGoals(goals.filter(g => g.id !== goal.id));
+                            Swal.fire({ title: goal.is_archived ? 'Goal Unarchived' : 'Goal Archived', icon: 'success', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+                          }
+                        }}
+                        className={cn("p-1.5 rounded-lg transition-all", goal.is_archived ? "text-amber-500 hover:bg-amber-50" : "text-slate-400 hover:text-amber-500 hover:bg-amber-50")}
+                      >
+                        <Archive className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleDeleteGoal(goal.id); }}
@@ -506,42 +531,10 @@ export function GoalManager() {
               </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
-              <div className="w-full lg:w-1/3 flex flex-col gap-6">
-                <GlassCard className="p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 border-white/50">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-500 shadow-inner border border-indigo-100">
-                      <Target className="w-6 h-6" />
-                    </div>
-                    <button 
-                      onClick={(e) => openEditGoalModal(selectedGoal, e)}
-                      className="p-2 text-slate-400 hover:text-bca-blue hover:bg-slate-100 rounded-lg transition-all"
-                      title="Edit Goal"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4 leading-tight">
-                    {selectedGoal.title}
-                  </h2>
-                  <p className="text-sm font-medium text-slate-600 mb-6 leading-relaxed">
-                    {selectedGoal.description || "No description provided."}
-                  </p>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Target Date</span>
-                      <span className="text-sm font-bold text-slate-700">
-                        {selectedGoal.target_date ? format(parseISO(selectedGoal.target_date), 'MMM dd, yyyy') : 'No target'}
-                      </span>
-                    </div>
-                  </div>
-                </GlassCard>
-              </div>
-
-              <div className="w-full lg:w-2/3">
+            <div>
+              <div className="w-full">
                 <GlassCard className="p-6 sm:p-8">
-                  <div className="flex items-center justify-between mb-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
                       <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2">
                         <MapPin className="w-5 h-5 text-bca-blue" />
@@ -549,9 +542,18 @@ export function GoalManager() {
                       </h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Map the path to your goal</p>
                     </div>
-                    <Button onClick={() => setEditingMilestone({ title: '', target_date: '', description: '' })} className="h-10 px-4 flex items-center gap-2">
-                      <Plus className="w-4 h-4" /> Add
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => openEditGoalModal(selectedGoal, e)}
+                        className="h-10 px-4 flex items-center gap-2 text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-sm transition-all shadow-sm"
+                        title="Edit Goal"
+                      >
+                        <Pencil className="w-4 h-4" /> Edit Goal
+                      </button>
+                      <Button onClick={() => setEditingMilestone({ title: '', target_date: '', description: '' })} className="h-10 px-4 flex items-center gap-2">
+                        <Plus className="w-4 h-4" /> Add
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-6">
