@@ -585,23 +585,37 @@ export function GoalManager() {
 
                          const renderNode = (node: any, i: number) => {
                             if (node.isFinish) {
+                               const todayStr = new Date().toISOString().split('T')[0];
+                               const isOverdue = selectedGoal.target_date && selectedGoal.target_date < todayStr && getProgress(selectedGoal.id) < 100;
                                return (
                                   <motion.div 
                                      initial={{ opacity: 0, scale: 0.9 }}
                                      animate={{ opacity: 1, scale: 1 }}
                                      key="finish"
                                      onClick={(e) => openEditGoalModal(selectedGoal, e)}
-                                     className="flex items-center gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 relative shadow-sm cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all"
+                                     className={cn(
+                                       "flex items-center gap-3 sm:gap-5 p-4 lg:p-5 rounded-2xl border-2 relative shadow-sm cursor-pointer hover:shadow-md transition-all h-full",
+                                       isOverdue ? "border-rose-300 bg-rose-50/50 hover:border-rose-400" : "border-indigo-200 bg-indigo-50/50 hover:border-indigo-300"
+                                     )}
                                   >
                                     <div className="relative z-10 shrink-0 bg-transparent rounded-full sm:px-1">
-                                       <div className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-indigo-500 text-white shadow-md">
+                                       <div className={cn(
+                                         "w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white shadow-md",
+                                         isOverdue ? "bg-rose-500" : "bg-indigo-500"
+                                       )}>
                                            <Flag className="w-4 h-4 sm:w-5 sm:h-5" />
                                        </div>
                                     </div>
                                     <div className="flex-1 min-w-0 pr-2">
-                                       <p className="text-sm sm:text-base font-black text-indigo-900 leading-tight mb-1 uppercase tracking-tighter">Target: {node.description}</p>
+                                       <p className={cn(
+                                         "text-sm sm:text-base font-black leading-tight mb-1 uppercase tracking-tighter",
+                                         isOverdue ? "text-rose-900" : "text-indigo-900"
+                                       )}>Target: {node.description}</p>
                                        {node.target_date && (
-                                          <p className="text-[10px] font-bold text-indigo-700 mt-1 flex items-center gap-1.5 uppercase tracking-widest"><Calendar className="w-3 h-3"/> {format(parseISO(node.target_date), 'MMM dd, yyyy')}</p>
+                                          <p className={cn(
+                                            "text-[10px] font-bold mt-1 flex items-center gap-1.5 uppercase tracking-widest",
+                                            isOverdue ? "text-rose-700" : "text-indigo-700"
+                                          )}><Calendar className="w-3 h-3"/> {format(parseISO(node.target_date), 'MMM dd, yyyy')}</p>
                                        )}
                                     </div>
                                   </motion.div>
@@ -680,46 +694,13 @@ export function GoalManager() {
                          };
 
                          return (
-                           <>
-                             {/* Mobile Vertical View (< sm) */}
-                             <div className="sm:hidden relative">
-                               <div className="absolute left-[34px] xl:left-[39px] top-6 bottom-4 w-0.5 bg-slate-200 z-0" />
-                               <div className="space-y-4">
-                                 {allNodes.map((node, i) => renderNode(node, i))}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6 mt-4">
+                             {allNodes.map((node, i) => (
+                               <div key={node.isFinish ? 'finish' : node.id} className="relative flex-none">
+                                 {renderNode(node, i)}
                                </div>
-                             </div>
-
-                             {/* Desktop Snake View (>= sm) */}
-                             <div className="hidden sm:flex flex-col space-y-8 relative z-10 w-full">
-                               {rows.map((row, rIdx) => {
-                                 const isEven = rIdx % 2 === 0;
-                                 return (
-                                   <div key={rIdx} className={cn("flex w-full relative", isEven ? "flex-row" : "flex-row-reverse")}>
-                                     {row.map((node, cIdx) => (
-                                        <div key={node.id} className="w-1/2 px-2 lg:px-4 relative flex-none">
-                                           {renderNode(node, rIdx * 2 + cIdx)}
-                                        </div>
-                                     ))}
-                                     
-                                     {/* Horizontal Line within row */}
-                                     {row.length > 1 && (
-                                       <div className="absolute top-[50%] left-[25%] right-[25%] h-0 border-t-2 border-dashed border-slate-300 z-[-1]" />
-                                     )}
-
-                                     {/* Vertical Line to next row */}
-                                     {rIdx < rows.length - 1 && (
-                                       <div 
-                                         className={cn(
-                                           "absolute top-[50%] h-[calc(100%+2rem)] w-0 border-r-2 border-dashed border-slate-300 z-[-1]",
-                                           isEven ? "right-[25%]" : "left-[25%]"
-                                         )} 
-                                       />
-                                     )}
-                                   </div>
-                                 )
-                               })}
-                             </div>
-                           </>
+                             ))}
+                           </div>
                          );
                       })()}
                     </div>
