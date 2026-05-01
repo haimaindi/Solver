@@ -152,6 +152,8 @@ export interface Milestone {
   id: string;
   goal_id: string;
   title: string;
+  description?: string;
+  target_date?: string;
   is_completed: boolean;
   order_index: number;
   created_at: string;
