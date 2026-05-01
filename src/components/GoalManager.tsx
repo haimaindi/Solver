@@ -91,40 +91,43 @@ export function GoalManager() {
     if (e) e.preventDefault();
     if (!newGoal.title) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user) throw new Error('No valid session. Please log in again.');
 
-    const { data, error } = await supabase
-      .from('goals')
-      .insert([{
-        user_id: user.id,
-        title: newGoal.title,
-        category: newGoal.category,
-        description: newGoal.description,
-        target_date: newGoal.target_date || null
-      }])
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('goals')
+        .insert([{
+          user_id: user.id,
+          title: newGoal.title,
+          category: newGoal.category,
+          description: newGoal.description || null,
+          target_date: newGoal.target_date || null
+        }])
+        .select()
+        .single();
 
-    if (error) {
-      Swal.fire('Error', 'Failed to add goal', 'error');
-      return;
-    }
+      if (error) throw error;
 
-    if (data) {
-      setGoals([data, ...goals]);
-      setMilestones({ ...milestones, [data.id]: [] });
-      setIsAdding(false);
-      setNewGoal({ title: '', category: 'Career', description: '', target_date: '' });
-      Swal.fire({
-        title: 'Goal Set!',
-        text: "Every big journey begins with a small step.",
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000
-      });
+      if (data) {
+        setGoals([data, ...goals]);
+        setMilestones({ ...milestones, [data.id]: [] });
+        setIsAdding(false);
+        setNewGoal({ title: '', category: 'Career', description: '', target_date: '' });
+        Swal.fire({
+          title: 'Goal Set!',
+          text: "Every big journey begins with a small step.",
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      }
+    } catch (err: any) {
+      console.error('Goal creation failed:', err);
+      Swal.fire('Error', err.message || 'Failed to add goal', 'error');
     }
   };
 
@@ -343,16 +346,12 @@ export function GoalManager() {
           {isLoading ? (
             <div className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-sm">Loading Goals...</div>
           ) : goals.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-32 text-center">
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-slate-50 rounded-full">
-                <Target className="w-8 h-8 text-slate-300" />
+            <div className="col-span-full py-20 text-center">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="w-10 h-10 text-slate-200" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
-                No {showArchived ? 'archived ' : ''}goals yet
-              </h3>
-              <p className="text-slate-500 max-w-sm">
-                What's the next big thing you want to achieve?
-              </p>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">No {showArchived ? 'archived ' : ''}goals yet</h3>
+              <p className="text-slate-500">What's the next big thing you want to achieve?</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
