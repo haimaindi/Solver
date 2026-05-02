@@ -69,14 +69,30 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
     const myUserId = localStorage.getItem('user_id');
     setIsLoading(true);
 
-    // 1. Verify user exists and get username (support short ID or full ID)
-    const { data: userData, error: userError } = await supabase
+    // 1. Verify user exists. We fetch users and filter in JS to support "Short ID" reliably
+    // since 'id' column might be UUID and doesn't support 'ilike' directly without casting in Postgres.
+    const { data: usersData, error: usersError } = await supabase
       .from('app_access')
-      .select('id, username')
-      .or(`id.eq.${targetUid},id.ilike.${targetUid}%`)
-      .maybeSingle();
+      .select('id, username');
 
-    if (userError || !userData) {
+    if (usersError || !usersData) {
+      setIsLoading(false);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to connect to user database.',
+        icon: 'error',
+        customClass: { container: 'swal2-high-z' }
+      });
+      return;
+    }
+
+    // Find user by full ID or short ID (first segment)
+    const userData = usersData.find(u => 
+      u.id === targetUid || 
+      u.id.split('-')[0].toLowerCase() === targetUid.toLowerCase()
+    );
+
+    if (!userData) {
       setIsLoading(false);
       Swal.fire({
         title: 'Error',
