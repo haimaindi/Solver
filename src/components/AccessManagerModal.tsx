@@ -67,24 +67,37 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
     if (!targetUid) return;
     
     const myUserId = localStorage.getItem('user_id');
-    if (targetUid === myUserId) {
-       Swal.fire('Error', 'You cannot share with yourself', 'error');
-       return;
-    }
-
     setIsLoading(true);
 
-    // 1. Verify user exists and get username
+    // 1. Verify user exists and get username (support short ID or full ID)
     const { data: userData, error: userError } = await supabase
       .from('app_access')
-      .select('username')
-      .eq('id', targetUid)
+      .select('id, username')
+      .or(`id.eq.${targetUid},id.ilike.${targetUid}%`)
       .maybeSingle();
 
     if (userError || !userData) {
       setIsLoading(false);
-      Swal.fire('Error', 'User ID not found. Please verify the ID.', 'error');
+      Swal.fire({
+        title: 'Error',
+        text: 'User ID not found. Please verify the ID.',
+        icon: 'error',
+        customClass: { container: 'swal2-high-z' }
+      });
       return;
+    }
+
+    const finalTargetId = userData.id;
+
+    if (finalTargetId === myUserId) {
+       setIsLoading(false);
+       Swal.fire({
+         title: 'Error',
+         text: 'You cannot share with yourself',
+         icon: 'error',
+         customClass: { container: 'swal2-high-z' }
+       });
+       return;
     }
 
     // 2. Confirm share
@@ -94,7 +107,8 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Yes, Grant Access',
-      cancelButtonText: 'Cancel'
+      cancelButtonText: 'Cancel',
+      customClass: { container: 'swal2-high-z' }
     });
 
     if (!confirm.isConfirmed) {
@@ -102,22 +116,40 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       return;
     }
 
-    const currentUser = localStorage.getItem('user_id');
     const { error } = await supabase.from('resource_shares').insert([{
       module_name: moduleName,
       resource_id: resourceId,
-      shared_by: currentUser,
-      shared_with_solver_id: targetUid
+      shared_by: myUserId,
+      shared_with_solver_id: finalTargetId
     }]);
 
     if (error) {
        if (error.code === '23505') {
-          Swal.fire('Notice', 'Already shared with this User', 'info');
+          Swal.fire({
+            title: 'Notice',
+            text: 'Already shared with this User',
+            icon: 'info',
+            customClass: { container: 'swal2-high-z' }
+          });
        } else {
-          Swal.fire('Error', 'Failed to grant access', 'error');
+          Swal.fire({
+            title: 'Error',
+            text: 'Failed to grant access',
+            icon: 'error',
+            customClass: { container: 'swal2-high-z' }
+          });
        }
     } else {
-       Swal.fire({ title: 'Access Granted', icon: 'success', toast: true, backdrop: false, position: 'top-end', showConfirmButton: false, timer: 1500 });
+       Swal.fire({ 
+         title: 'Access Granted', 
+         icon: 'success', 
+         toast: true, 
+         backdrop: false, 
+         position: 'top-end', 
+         showConfirmButton: false, 
+         timer: 1500,
+         customClass: { container: 'swal2-high-z' }
+       });
        setNewUserId('');
        fetchShares();
     }
@@ -125,15 +157,41 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
   };
 
   const handleRevoke = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: 'Revoke Access?',
+      text: "User will no longer be able to see this content.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Revoke',
+      confirmButtonColor: '#ef4444',
+      customClass: { container: 'swal2-high-z' }
+    });
+
+    if (!confirm.isConfirmed) return;
+
     setIsLoading(true);
     const { error } = await supabase.from('resource_shares').delete().eq('id', id);
     if (!error) {
-      Swal.fire({ title: 'Access Revoked', icon: 'success', toast: true, backdrop: false, position: 'top-end', showConfirmButton: false, timer: 1500 });
+      Swal.fire({ 
+        title: 'Access Revoked', 
+        icon: 'success', 
+        toast: true, 
+        backdrop: false, 
+        position: 'top-end', 
+        showConfirmButton: false, 
+        timer: 1500,
+        customClass: { container: 'swal2-high-z' }
+      });
       fetchShares();
     } else {
-      Swal.fire('Error', 'Failed to revoke access', 'error');
-      setIsLoading(false);
+      Swal.fire({
+        title: 'Error',
+        text: 'Failed to revoke access',
+        icon: 'error',
+        customClass: { container: 'swal2-high-z' }
+      });
     }
+    setIsLoading(false);
   };
 
   if (!isOpen) return null;
@@ -210,7 +268,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
                             {usernames[share.shared_with_solver_id] || 'Unknown User'}
                           </span>
                           <code className="text-[9px] font-bold font-mono text-indigo-400 tracking-tighter">
-                            {share.shared_with_solver_id}
+                            {share.shared_with_solver_id.split('-')[0].toUpperCase()}
                           </code>
                         </div>
                       </div>

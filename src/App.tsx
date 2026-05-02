@@ -1030,9 +1030,9 @@ export default function App() {
                       <h3 className="text-xl font-black text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Platform Account</p>
                       <div className="mt-2 flex flex-col gap-1">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">User ID:</span>
-                        <code className="px-2 py-0.5 bg-slate-100 text-bca-blue font-mono font-bold text-[10px] rounded break-all">
-                          {localStorage.getItem('user_id') || 'Unknown'}
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Solver ID:</span>
+                        <code className="px-2 py-0.5 bg-slate-100 text-bca-blue font-mono font-bold text-[11px] rounded selection:bg-bca-blue/20">
+                          {localStorage.getItem('solver_id') || 'Unknown'}
                         </code>
                       </div>
                     </div>
@@ -1217,7 +1217,7 @@ export default function App() {
         <div className="hidden md:flex items-center gap-4">
             <div className="flex flex-col items-end">
               <span className="text-[14px] font-black text-slate-900 leading-none">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">ID: {localStorage.getItem('user_id')}</span>
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">ID: {localStorage.getItem('solver_id')}</span>
               {sessionData && (
                 <span className={cn(
                   "text-[10px] leading-none mt-1 font-bold",

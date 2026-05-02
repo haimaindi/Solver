@@ -230,3 +230,7 @@ body {
 .swal2-confirm {
   background-color: #003399 !important;
 }
+
+.swal2-high-z {
+  z-index: 100000 !important;
+}
