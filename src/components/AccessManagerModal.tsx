@@ -49,7 +49,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
     if (!newSolverId.trim()) return;
     
     const mySolverId = localStorage.getItem('solver_id');
-    if (newSolverId.trim().toUpperCase() === mySolverId?.toUpperCase()) {
+    if (newSolverId.trim() === mySolverId) {
        Swal.fire('Error', 'You cannot share with yourself', 'error');
        return;
     }
@@ -60,7 +60,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       module_name: moduleName,
       resource_id: resourceId,
       shared_by: currentUser,
-      shared_with_solver_id: newSolverId.trim().toUpperCase()
+      shared_with_solver_id: newSolverId.trim()
     }]);
 
     if (error) {
@@ -127,7 +127,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
               <Input
                 placeholder="Solver ID (e.g. A1B2c3D)"
                 value={newSolverId}
-                onChange={(e) => setNewSolverId(e.target.value.toUpperCase())}
+                onChange={(e) => setNewSolverId(e.target.value)}
                 className="font-mono text-sm bg-transparent border-transparent focus:ring-0"
                 maxLength={7}
               />
@@ -136,7 +136,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
                 disabled={isLoading || !newSolverId} 
                 className="bg-bca-blue hover:bg-bca-blue/90 text-white shadow-lg shadow-bca-blue/20 rounded-xl px-6"
               >
-                <Plus className="w-4 h-4 mr-2" /> Share
+                 Share
               </Button>
             </div>
 
@@ -183,9 +183,8 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
               <div className="absolute top-0 right-0 p-2 opacity-10">
                 <ShieldAlert className="w-12 h-12 text-indigo-600" />
               </div>
-              <p className="text-[11px] text-indigo-600 font-bold leading-relaxed relative z-10 uppercase tracking-tight">
-                Users with access can view this content in their "Shared" tab.
-                Access is strictly <span className="text-indigo-800 underline decoration-2 underline-offset-2">READ-ONLY</span>.
+              <p className="text-[11px] text-indigo-600 font-bold leading-relaxed relative z-10 tracking-tight">
+                Users with access can view this content in their "Shared" tab
               </p>
             </div>
           </GlassCard>

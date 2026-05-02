@@ -443,14 +443,6 @@ export function IdeaManager() {
             </button>
           </div>
 
-          <button
-            onClick={() => setIsAccessModalOpen(true)}
-            className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
-            title="Manage Access"
-          >
-            <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
-          </button>
-
           {(!showArchived && !showShared) && (
             <Button onClick={handleAddIdea} className="h-11 px-6 flex items-center gap-2 shadow-lg shadow-bca-blue/20">
               <Plus className="w-4 h-4" />
@@ -682,6 +674,18 @@ export function IdeaManager() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {selectedIdea.user_id === localStorage.getItem('user_id') && (
+                      <button 
+                         onClick={() => {
+                            setSharingResourceId(selectedIdea.id);
+                            setSharingResourceLabel(selectedIdea.title);
+                         }}
+                         className="p-2.5 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100 rounded-xl transition-all"
+                         title="Share Idea"
+                      >
+                         <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                      </button>
+                    )}
                     <button 
                       onClick={() => { setIsDetailOpen(false); handleEditIdea(selectedIdea); }}
                       className="p-2.5 text-bca-blue bg-bca-blue/5 hover:bg-bca-blue/10 rounded-xl transition-all flex items-center gap-2"

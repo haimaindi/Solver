@@ -1778,13 +1778,6 @@ export default function App() {
                         <span className="hidden sm:inline">My Problems</span>
                      </button>
                   </div>
-                  <button
-                    onClick={() => setIsAccessModalOpen(true)}
-                    className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
-                    title="Manage Access"
-                  >
-                    <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
-                  </button>
                   {(!showArchivedProblems && !showSharedProblems) && (
                     <Button onClick={() => setView('create')} className="h-11 px-6 flex items-center justify-center gap-2">
                       <Plus className="w-4 h-4" />
@@ -2159,6 +2152,16 @@ export default function App() {
                       <div className="flex items-center gap-3">
                          <Badge variant={selectedProblem.status}>{selectedProblem.status}</Badge>
                          <div className="flex items-center gap-1">
+                            <button 
+                               onClick={() => {
+                                 setSharingResourceId(selectedProblem.id);
+                                 setSharingResourceLabel(selectedProblem.title);
+                               }}
+                               className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                               title="Share Problem"
+                             >
+                               <Share2 className="w-3.5 h-3.5" />
+                             </button>
                             <button 
                               onClick={() => {
                                 setEditingProblem(selectedProblem);

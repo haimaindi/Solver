@@ -19,7 +19,8 @@ import {
   X,
   Archive,
   Share2,
-  Users
+  Users,
+  Zap
 } from 'lucide-react';
 import { Habit, HabitLog, supabase } from '@/src/lib/supabase';
 import { GlassCard, Button, Input, Badge, TextArea } from './UI';
@@ -391,33 +392,39 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
           <p className="text-slate-500 mt-1 font-medium">Consistency is the key to mastery. Track your progress daily.</p>
         </div>
         <div className="flex justify-end items-center gap-2">
-          <button
-            onClick={() => { setShowArchived(!showArchived); setShowShared(false); }}
-            className={cn(
-              "p-3 rounded-xl transition-colors shadow-sm",
-              showArchived ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            )}
-            title={showArchived ? "Show Active Habits" : "Show Archived Habits"}
-          >
-            <Archive className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => { setShowShared(!showShared); setShowArchived(false); }}
-            className={cn(
-              "p-3 rounded-xl transition-colors shadow-sm",
-              showShared ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            )}
-            title={showShared ? "Show My Habits" : "Show Shared Habits"}
-          >
-            <Users className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setIsAccessModalOpen(true)}
-            className="p-3 rounded-xl transition-colors shadow-sm bg-gray-100 text-gray-600 hover:bg-gray-200"
-            title="Manage Access"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+             <button 
+                onClick={() => { setShowArchived(false); setShowShared(true); }}
+                className={cn(
+                   "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                   showShared ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                )}
+             >
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Shared</span>
+             </button>
+             <button 
+                onClick={() => { setShowArchived(true); setShowShared(false); }}
+                className={cn(
+                   "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                   showArchived && !showShared ? "bg-white text-amber-600 shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                )}
+             >
+                <Archive className="w-4 h-4" />
+                <span className="hidden sm:inline">Archived</span>
+             </button>
+             <button 
+                onClick={() => { setShowArchived(false); setShowShared(false); }}
+                className={cn(
+                   "px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2",
+                   !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                )}
+             >
+                <Zap className="w-4 h-4" />
+                <span className="hidden sm:inline">My Habits</span>
+             </button>
+          </div>
+          
           {(!showArchived && !showShared) && (
             <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6 shadow-lg shadow-bca-blue/20">
               <Plus className="w-4 h-4" />
@@ -555,7 +562,19 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                     <TrendingUp className="w-6 h-6" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex bg-slate-100 p-1.5 rounded-2xl">
+                  {selectedHabit.user_id === localStorage.getItem('user_id') && (
+                    <button 
+                      onClick={() => {
+                        setSharingResourceId(selectedHabit.id);
+                        setSharingResourceLabel(selectedHabit.name);
+                      }}
+                      className="p-2 text-indigo-600 hover:text-indigo-700 transition-colors"
+                      title="Share Habit"
+                    >
+                      <Share2 className="w-5 h-5" />
+                    </button>
+                  )}
                   {selectedHabit.user_id === localStorage.getItem('user_id') && (
                     <>
                       <button 

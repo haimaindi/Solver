@@ -112,7 +112,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
       }
       
       const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
-      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id);
+      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id as string);
 
       let data: Todo[] = [];
       
@@ -126,17 +126,40 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         if (moduleData) data = [...data, ...moduleData];
       }
 
-      // Fetch specific shared
+      // Fetch specific shared (could be a single todo ID or a date string)
       if (specificResourceIds.length > 0) {
-        const { data: specificData } = await supabase
-          .from('todos')
-          .select('*')
-          .in('id', specificResourceIds)
-          .eq('is_archived', false);
-        if (specificData) {
-          const existingIds = new Set(data.map(t => t.id));
-          const uniqueSpecific = specificData.filter(t => !existingIds.has(t.id));
-          data = [...data, ...uniqueSpecific];
+        const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+        const dateShares = specificResourceIds.filter(isDate);
+        const idShares = specificResourceIds.filter(s => !isDate(s));
+
+        if (idShares.length > 0) {
+          const { data: specificData } = await supabase
+            .from('todos')
+            .select('*')
+            .in('id', idShares)
+            .eq('is_archived', false);
+          if (specificData) {
+            const existingIds = new Set(data.map(t => t.id));
+            const uniqueSpecific = specificData.filter(t => !existingIds.has(t.id));
+            data = [...data, ...uniqueSpecific];
+          }
+        }
+
+        if (dateShares.length > 0) {
+          // For dates, we must also ensure user_id matches the one who shared it
+          for (const share of sharedEntries.filter(s => s.resource_id && isDate(s.resource_id))) {
+            const { data: dateData } = await supabase
+              .from('todos')
+              .select('*')
+              .eq('user_id', share.shared_by)
+              .eq('date', share.resource_id as string)
+              .eq('is_archived', false);
+            if (dateData) {
+              const existingIds = new Set(data.map(t => t.id));
+              const uniqueDateData = dateData.filter(t => !existingIds.has(t.id));
+              data = [...data, ...uniqueDateData];
+            }
+          }
         }
       }
 
@@ -493,6 +516,19 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
             <div className="flex items-center gap-1">
               <Button onClick={() => goToDate(-1)} variant="ghost" className="p-2 aspect-square"><ChevronLeft className="w-5 h-5" /></Button>
               <Button onClick={() => goToDate(1)} variant="ghost" className="p-2 aspect-square"><ChevronRight className="w-5 h-5" /></Button>
+              {!showShared && (
+                <Button 
+                  onClick={() => {
+                    setSharingResourceId(selectedDateStr);
+                    setSharingResourceLabel(`Log: ${format(parseISO(selectedDateStr), 'MMM d, yyyy')}`);
+                  }}
+                  variant="ghost" 
+                  className="p-2 aspect-square text-indigo-600 hover:bg-indigo-50"
+                  title="Share Daily Log"
+                >
+                  <Share2 className="w-5 h-5" />
+                </Button>
+              )}
             </div>
             <Button 
               onClick={() => {
@@ -964,15 +1000,6 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
              </button>
           </div>
           
-          <Button 
-            onClick={() => setIsAccessModalOpen(true)}
-            variant="ghost"
-            title="Manage Access"
-            className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
-          >
-            <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
-          </Button>
-
           {!showArchived && !showShared && (
             <Button 
               onClick={() => {
@@ -1032,6 +1059,17 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                     <div className="flex gap-1">
                       {!showShared && (
                         <>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSharingResourceId(dateStr);
+                              setSharingResourceLabel(`Log: ${format(dateObj, 'MMM d, yyyy')}`);
+                            }}
+                            className="p-1.5 hover:bg-indigo-100 rounded-lg text-indigo-600 transition-colors"
+                            title="Share Daily Log"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleBulkArchive(dateStr); }}
                             className="p-1.5 hover:bg-amber-100 rounded-lg text-amber-600 transition-colors"

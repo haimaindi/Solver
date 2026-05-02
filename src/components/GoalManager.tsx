@@ -519,13 +519,6 @@ export function GoalManager() {
                </button>
             </div>
 
-            <button
-              onClick={() => setIsAccessModalOpen(true)}
-              className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
-              title="Manage Access"
-            >
-              <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
-            </button>
             {(!showArchived && !showShared) && (
               <Button onClick={() => {
                 setEditingGoalId(null);
@@ -685,6 +678,16 @@ export function GoalManager() {
                       {selectedGoal.user_id === localStorage.getItem('user_id') && (
                         <>
                           <button 
+                            onClick={() => {
+                              setSharingResourceId(selectedGoal.id);
+                              setSharingResourceLabel(selectedGoal.title);
+                            }}
+                            className="h-10 px-4 flex items-center gap-2 text-indigo-600 bg-white border border-slate-200 hover:bg-indigo-50 rounded-xl font-bold text-sm transition-all shadow-sm"
+                            title="Share Goal"
+                          >
+                            <Share2 className="w-4 h-4" /> Share
+                          </button>
+                          <button 
                             onClick={(e) => openEditGoalModal(selectedGoal, e)}
                             className="h-10 px-4 flex items-center gap-2 text-slate-500 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl font-bold text-sm transition-all shadow-sm"
                             title="Edit Goal"
@@ -719,7 +722,7 @@ export function GoalManager() {
                             return new Date(a.target_date).getTime() - new Date(b.target_date).getTime();
                          });
 
-                         const allNodes = [...sortedMilestones, { isFinish: true, id: 'finish_node', title: 'Goal Completed', description: selectedGoal.title, target_date: selectedGoal.target_date }];
+                         const allNodes: any[] = [...sortedMilestones, { isFinish: true, id: 'finish_node', title: 'Goal Completed', description: selectedGoal.title, target_date: selectedGoal.target_date }];
 
                          const rows = [];
                          for (let i = 0; i < allNodes.length; i += 2) {

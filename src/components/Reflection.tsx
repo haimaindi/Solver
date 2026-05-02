@@ -500,15 +500,6 @@ export function ReflectionManager() {
                  </button>
               </div>
               
-              <Button 
-                onClick={() => setIsAccessModalOpen(true)}
-                variant="ghost"
-                title="Manage Access"
-                className="w-11 h-11 p-0 flex items-center justify-center rounded-xl border border-slate-200 hover:border-bca-blue hover:text-bca-blue hover:bg-bca-blue/5 transition-all bg-white shadow-sm"
-              >
-                <Share2 className="w-5 h-5 text-slate-500 group-hover:text-bca-blue" />
-              </Button>
-
               {!showArchived && !showShared && (
                 <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 h-11 px-6">
                   <Plus className="w-4 h-4" />
@@ -646,6 +637,17 @@ export function ReflectionManager() {
                 </div>
                 {selectedReflection.user_id === localStorage.getItem('user_id') && (
                   <div className="flex items-center gap-2 justify-end">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => {
+                        setSharingResourceId(selectedReflection.id);
+                        setSharingResourceLabel(selectedReflection.title);
+                      }}
+                      className="p-2 text-indigo-600 hover:bg-indigo-50"
+                      title="Share Reflection"
+                    >
+                      <Share2 className="w-4 h-4" />
+                    </Button>
                     <Button variant="ghost" onClick={(e) => handleEdit(selectedReflection, e)} className="p-2 text-bca-blue hover:bg-bca-blue/5">
                       <Pencil className="w-4 h-4" />
                     </Button>
