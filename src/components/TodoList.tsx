@@ -474,8 +474,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
     return false;
   };
 
-  if (viewMode === 'detail') {
-    return (
+  const detailContent = (
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -768,11 +767,11 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                       <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
                          {viewingTodo.user_id === localStorage.getItem('user_id') && (
                            <Button 
-                              className="flex-1 h-12 rounded-2xl whitespace-nowrap px-4 font-bold flex items-center justify-center leading-none"
-                              onClick={() => {
-                                 toggleTodo(viewingTodo);
-                                 setViewingTodo(null);
-                              }}
+                               className="flex-1 h-12 rounded-2xl whitespace-nowrap px-4 font-bold flex items-center justify-center leading-none"
+                               onClick={() => {
+                                  toggleTodo(viewingTodo);
+                                  setViewingTodo(null);
+                               }}
                            >
                               <span className="truncate">{viewingTodo.completed ? 'Mark Uncomplete' : 'Mark Complete'}</span>
                            </Button>
@@ -780,8 +779,8 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                          <Button 
                             variant="ghost" 
                             className={cn(
-                              "h-12 rounded-2xl px-8",
-                              viewingTodo.user_id !== localStorage.getItem('user_id') ? "flex-1" : ""
+                               "h-12 rounded-2xl px-8",
+                               viewingTodo.user_id !== localStorage.getItem('user_id') ? "flex-1" : ""
                             )}
                             onClick={() => setViewingTodo(null)}
                          >
@@ -794,8 +793,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
            )}
         </AnimatePresence>
       </div>
-    );
-  }
+  );
 
   function renderMatrixColumn(id: string, title: string, desc: string, styles: string, textStyle: string, dotStyle: string, items: Todo[]) {
     // Verified edit
@@ -940,7 +938,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
       {/* Access Manager Modal */}
       <AccessManagerModal 
         isOpen={isAccessModalOpen}
@@ -958,7 +956,10 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         resourceId={sharingResourceId}
         resourceLabel={sharingResourceLabel}
       />
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+      {viewMode === 'detail' ? detailContent : (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             {showShared ? 'Shared To Do' : showArchived ? 'Archived To Do' : 'To Do'}
@@ -1119,6 +1120,8 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
           })
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

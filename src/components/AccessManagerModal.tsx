@@ -15,6 +15,7 @@ interface AccessManagerModalProps {
 
 export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = null, resourceLabel }: AccessManagerModalProps) {
   const [shares, setShares] = useState<any[]>([]);
+  const [usernames, setUsernames] = useState<Record<string, string>>({});
   const [newUserId, setNewUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,31 +42,77 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
 
     const { data } = await query.order('created_at', { ascending: false });
     
-    if (data) setShares(data);
+    if (data) {
+      setShares(data);
+      // Fetch usernames for these IDs
+      const uids = data.map(s => s.shared_with_solver_id);
+      if (uids.length > 0) {
+        const { data: usersData } = await supabase
+          .from('app_access')
+          .select('id, username')
+          .in('id', uids);
+        
+        if (usersData) {
+          const map: Record<string, string> = {};
+          usersData.forEach(u => map[u.id] = u.username);
+          setUsernames(prev => ({ ...prev, ...map }));
+        }
+      }
+    }
     setIsLoading(false);
   };
 
   const handleShare = async () => {
-    if (!newUserId.trim()) return;
+    const targetUid = newUserId.trim();
+    if (!targetUid) return;
     
     const myUserId = localStorage.getItem('user_id');
-    if (newUserId.trim() === myUserId) {
+    if (targetUid === myUserId) {
        Swal.fire('Error', 'You cannot share with yourself', 'error');
        return;
     }
 
     setIsLoading(true);
+
+    // 1. Verify user exists and get username
+    const { data: userData, error: userError } = await supabase
+      .from('app_access')
+      .select('username')
+      .eq('id', targetUid)
+      .maybeSingle();
+
+    if (userError || !userData) {
+      setIsLoading(false);
+      Swal.fire('Error', 'User ID not found. Please verify the ID.', 'error');
+      return;
+    }
+
+    // 2. Confirm share
+    const confirm = await Swal.fire({
+      title: 'Confirm Share',
+      html: `Do you want to share access with:<br/><b class="text-bca-blue text-lg">${userData.username}</b>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Grant Access',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!confirm.isConfirmed) {
+      setIsLoading(false);
+      return;
+    }
+
     const currentUser = localStorage.getItem('user_id');
     const { error } = await supabase.from('resource_shares').insert([{
       module_name: moduleName,
       resource_id: resourceId,
       shared_by: currentUser,
-      shared_with_solver_id: newUserId.trim()
+      shared_with_solver_id: targetUid
     }]);
 
     if (error) {
        if (error.code === '23505') {
-          Swal.fire('Notice', 'Already shared with this User ID', 'info');
+          Swal.fire('Notice', 'Already shared with this User', 'info');
        } else {
           Swal.fire('Error', 'Failed to grant access', 'error');
        }
@@ -125,7 +172,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
 
             <div className="flex flex-col gap-3 mb-8 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
               <Input
-                placeholder="User ID (UUID)"
+                placeholder="User ID"
                 value={newUserId}
                 onChange={(e) => setNewUserId(e.target.value)}
                 className="font-mono text-[11px] bg-transparent border-transparent focus:ring-0"
@@ -158,8 +205,11 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
                         <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
                           <Users className="w-4 h-4 text-slate-400" />
                         </div>
-                        <div>
-                          <code className="text-[10px] font-black font-mono text-bca-blue tracking-tighter">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-slate-800 tracking-tight">
+                            {usernames[share.shared_with_solver_id] || 'Unknown User'}
+                          </span>
+                          <code className="text-[9px] font-bold font-mono text-indigo-400 tracking-tighter">
                             {share.shared_with_solver_id}
                           </code>
                         </div>
