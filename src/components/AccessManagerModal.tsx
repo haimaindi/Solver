@@ -28,10 +28,12 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
     if (!currentUser) return;
     setIsLoading(true);
 
-    // Normalize resourceId for date-based modules (todos) to avoid UUID 400 errors
+    // Normalize resourceId for non-UUID strings (like dates) to avoid UUID 400 errors
     let normalizedResourceId = resourceId;
-    if (moduleName === 'todos' && resourceId && /^\d{4}-\d{2}-\d{2}$/.test(resourceId)) {
-      normalizedResourceId = `${resourceId.replace(/-/g, '')}-0000-0000-0000-000000000000`;
+    if (resourceId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceId)) {
+      // If it's a date or other string, convert to a UUID-compatible format
+      const clean = resourceId.replace(/[^a-zA-Z0-9]/g, '').padEnd(32, '0');
+      normalizedResourceId = `${clean.substring(0, 8)}-${clean.substring(8, 12)}-${clean.substring(12, 16)}-${clean.substring(16, 20)}-${clean.substring(20, 32)}`;
     }
     
     let query = supabase
@@ -140,10 +142,11 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       return;
     }
 
-    // Normalize resourceId for todos module
+    // Normalize resourceId for insertion
     let normalizedResourceId = resourceId;
-    if (moduleName === 'todos' && resourceId && /^\d{4}-\d{2}-\d{2}$/.test(resourceId)) {
-      normalizedResourceId = `${resourceId.replace(/-/g, '')}-0000-0000-0000-000000000000`;
+    if (resourceId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resourceId)) {
+      const clean = resourceId.replace(/[^a-zA-Z0-9]/g, '').padEnd(32, '0');
+      normalizedResourceId = `${clean.substring(0, 8)}-${clean.substring(8, 12)}-${clean.substring(12, 16)}-${clean.substring(16, 20)}-${clean.substring(20, 32)}`;
     }
 
     const { error } = await supabase.from('resource_shares').insert([{
