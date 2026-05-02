@@ -7,6 +7,7 @@ import {
   CheckCircle2, 
   Circle, 
   Clock, 
+  ListTodo, 
   ChevronLeft, 
   ChevronRight, 
   LayoutGrid,
@@ -1007,7 +1008,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
                    !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
                 )}
              >
-                <LayoutGrid className="w-4 h-4" />
+                <ListTodo className="w-4 h-4" />
                 <span className="hidden sm:inline">My To Do</span>
              </button>
           </div>

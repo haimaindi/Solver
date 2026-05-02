@@ -419,7 +419,7 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
                    !showArchived && !showShared ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
                 )}
              >
-                <Zap className="w-4 h-4" />
+                <TrendingUp className="w-4 h-4" />
                 <span className="hidden sm:inline">My Habits</span>
              </button>
           </div>

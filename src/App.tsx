@@ -1740,7 +1740,7 @@ export default function App() {
                            !showArchivedProblems && !showSharedProblems ? "bg-white text-bca-blue shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
                         )}
                      >
-                        <AlertCircle className="w-4 h-4" />
+                        <Puzzle className="w-4 h-4" />
                         <span className="hidden sm:inline">My Problems</span>
                      </button>
                   </div>
