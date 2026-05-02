@@ -191,7 +191,7 @@ export function AdminManager() {
                       </div>
                       <div>
                         <div className="font-bold text-slate-900">{user.username || 'Unnamed User'}</div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID: {user.id.slice(0, 8)}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID: {user.id.split('-')[0]}</div>
                       </div>
                     </div>
                   </td>

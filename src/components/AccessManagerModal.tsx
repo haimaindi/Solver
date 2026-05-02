@@ -265,10 +265,10 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
                         </div>
                         <div className="flex flex-col">
                           <span className="text-sm font-black text-slate-800 tracking-tight">
-                            {usernames[share.shared_with_solver_id] || 'Unknown User'}
+                            {usernames[share.shared_with_solver_id] || `User ${share.shared_with_solver_id.split('-')[0].toUpperCase()}`}
                           </span>
                           <code className="text-[9px] font-bold font-mono text-indigo-400 tracking-tighter">
-                            {share.shared_with_solver_id.split('-')[0].toUpperCase()}
+                            SOLVER-{share.shared_with_solver_id.split('-')[0].toUpperCase()}
                           </code>
                         </div>
                       </div>

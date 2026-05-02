@@ -325,6 +325,8 @@ export default function App() {
 
       // 3. Update local session state
       localStorage.setItem('session_data', JSON.stringify(data));
+      localStorage.setItem('user_id', data.id);
+      localStorage.setItem('solver_id', data.id.split('-')[0].toUpperCase());
       setSessionData(data);
       setIsAuthenticated(true);
     } else {
@@ -387,6 +389,7 @@ export default function App() {
     // Login success
     localStorage.setItem('solver_auth', 'true');
     localStorage.setItem('user_id', userData.id);
+    localStorage.setItem('solver_id', userData.id.split('-')[0].toUpperCase());
     localStorage.setItem('user_name', userData.username || userData.code);
     localStorage.setItem('session_data', JSON.stringify(userData));
     setSessionData(userData);
@@ -411,6 +414,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('solver_auth');
     localStorage.removeItem('user_id');
+    localStorage.removeItem('solver_id');
     localStorage.removeItem('user_name');
     localStorage.removeItem('session_data');
     setSessionData(null);
