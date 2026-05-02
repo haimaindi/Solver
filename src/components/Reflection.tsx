@@ -259,7 +259,6 @@ export function ReflectionManager() {
 
   const fetchReflections = async () => {
     const currentUser = localStorage.getItem('user_id');
-    const solverId = localStorage.getItem('solver_id');
     if (!currentUser || currentUser === 'unknown') return;
     
     if (showShared) {
@@ -267,7 +266,7 @@ export function ReflectionManager() {
         .from('resource_shares')
         .select('shared_by, resource_id')
         .eq('module_name', 'reflection')
-        .eq('shared_with_solver_id', solverId);
+        .eq('shared_with_solver_id', currentUser);
 
       if (!sharedEntries || sharedEntries.length === 0) {
         setReflections([]);

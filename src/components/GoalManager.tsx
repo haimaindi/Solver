@@ -58,7 +58,6 @@ export function GoalManager() {
   const fetchGoals = async () => {
     setIsLoading(true);
     const userId = localStorage.getItem('user_id');
-    const solverId = localStorage.getItem('solver_id');
     if (!userId || userId === 'unknown') return;
 
     if (showShared) {
@@ -66,7 +65,7 @@ export function GoalManager() {
         .from('resource_shares')
         .select('shared_by, resource_id')
         .eq('module_name', 'goals')
-        .eq('shared_with_solver_id', solverId);
+        .eq('shared_with_solver_id', userId);
       
       if (!sharedEntries || sharedEntries.length === 0) {
         setGoals([]);

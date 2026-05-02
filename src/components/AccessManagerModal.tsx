@@ -15,7 +15,7 @@ interface AccessManagerModalProps {
 
 export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = null, resourceLabel }: AccessManagerModalProps) {
   const [shares, setShares] = useState<any[]>([]);
-  const [newSolverId, setNewSolverId] = useState('');
+  const [newUserId, setNewUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -46,10 +46,10 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
   };
 
   const handleShare = async () => {
-    if (!newSolverId.trim()) return;
+    if (!newUserId.trim()) return;
     
-    const mySolverId = localStorage.getItem('solver_id');
-    if (newSolverId.trim() === mySolverId) {
+    const myUserId = localStorage.getItem('user_id');
+    if (newUserId.trim() === myUserId) {
        Swal.fire('Error', 'You cannot share with yourself', 'error');
        return;
     }
@@ -60,18 +60,18 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       module_name: moduleName,
       resource_id: resourceId,
       shared_by: currentUser,
-      shared_with_solver_id: newSolverId.trim()
+      shared_with_solver_id: newUserId.trim()
     }]);
 
     if (error) {
        if (error.code === '23505') {
-          Swal.fire('Notice', 'Already shared with this Solver ID', 'info');
+          Swal.fire('Notice', 'Already shared with this User ID', 'info');
        } else {
           Swal.fire('Error', 'Failed to grant access', 'error');
        }
     } else {
        Swal.fire({ title: 'Access Granted', icon: 'success', toast: true, backdrop: false, position: 'top-end', showConfirmButton: false, timer: 1500 });
-       setNewSolverId('');
+       setNewUserId('');
        fetchShares();
     }
     setIsLoading(false);
@@ -93,7 +93,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
@@ -123,20 +123,19 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
               </Button>
             </div>
 
-            <div className="flex gap-2 mb-8 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+            <div className="flex flex-col gap-3 mb-8 p-1.5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
               <Input
-                placeholder="Solver ID (e.g. A1B2c3D)"
-                value={newSolverId}
-                onChange={(e) => setNewSolverId(e.target.value)}
-                className="font-mono text-sm bg-transparent border-transparent focus:ring-0"
-                maxLength={7}
+                placeholder="User ID (UUID)"
+                value={newUserId}
+                onChange={(e) => setNewUserId(e.target.value)}
+                className="font-mono text-[11px] bg-transparent border-transparent focus:ring-0"
               />
               <Button 
                 onClick={handleShare} 
-                disabled={isLoading || !newSolverId} 
-                className="bg-bca-blue hover:bg-bca-blue/90 text-white shadow-lg shadow-bca-blue/20 rounded-xl px-6"
+                disabled={isLoading || !newUserId} 
+                className="bg-bca-blue hover:bg-bca-blue/90 text-white shadow-lg shadow-bca-blue/20 rounded-xl px-6 h-10"
               >
-                 Share
+                 Grant Access
               </Button>
             </div>
 
@@ -160,7 +159,7 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
                           <Users className="w-4 h-4 text-slate-400" />
                         </div>
                         <div>
-                          <code className="text-sm font-black font-mono text-bca-blue tracking-wider">
+                          <code className="text-[10px] font-black font-mono text-bca-blue tracking-tighter">
                             {share.shared_with_solver_id}
                           </code>
                         </div>

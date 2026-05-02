@@ -78,7 +78,6 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
 
   const fetchData = async () => {
     const currentUser = localStorage.getItem('user_id');
-    const solverId = localStorage.getItem('solver_id');
     if (!currentUser || currentUser === 'unknown') return;
     
     if (showShared) {
@@ -86,7 +85,7 @@ export function HabitTracker({ prefillHabitId, onPrefillHandled }: HabitTrackerP
         .from('resource_shares')
         .select('shared_by, resource_id')
         .eq('module_name', 'habits')
-        .eq('shared_with_solver_id', solverId);
+        .eq('shared_with_solver_id', currentUser);
       
       if (!sharedEntries || sharedEntries.length === 0) {
         setHabits([]);

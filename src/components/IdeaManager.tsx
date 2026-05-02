@@ -61,7 +61,7 @@ export function IdeaManager() {
         .from('resource_shares')
         .select('shared_by, resource_id')
         .eq('module_name', 'ideas')
-        .eq('shared_with_solver_id', solverId);
+        .eq('shared_with_solver_id', userId);
       
       if (!sharedEntries || sharedEntries.length === 0) {
         setIdeas([]);
@@ -648,111 +648,103 @@ export function IdeaManager() {
       {/* Detail / View Modal */}
       <AnimatePresence>
         {isDetailOpen && selectedIdea && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-2 sm:p-4">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
               onClick={() => setIsDetailOpen(false)}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-xl max-h-[95vh] flex flex-col"
+              className="relative w-full max-w-xl flex flex-col"
             >
-              <GlassCard className="flex flex-col h-full shadow-2xl border-white/20 overflow-hidden">
-                <div className="flex justify-between items-center p-4 sm:p-8 border-b border-slate-100 bg-white/50 backdrop-blur-md">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-bca-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-bca-blue/20">
-                      <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6" />
+              <GlassCard className="flex flex-col shadow-2xl border-none overflow-hidden rounded-[40px] bg-white">
+                <div className="flex justify-between items-center p-8 border-b border-slate-50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-bca-blue rounded-2xl flex items-center justify-center text-white shadow-xl shadow-bca-blue/20">
+                      <Lightbulb className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tighter line-clamp-1">Idea Vision</h3>
-                      <p className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">The architecture of your thought</p>
+                      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Idea Vision</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Strategic Thought Blueprint</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {selectedIdea.user_id === localStorage.getItem('user_id') && (
                       <button 
-                         onClick={() => {
-                            setSharingResourceId(selectedIdea.id);
-                            setSharingResourceLabel(selectedIdea.title);
-                         }}
-                         className="p-2.5 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100 rounded-xl transition-all"
-                         title="Share Idea"
+                        onClick={() => {
+                          setSharingResourceId(selectedIdea.id);
+                          setSharingResourceLabel(selectedIdea.title);
+                        }}
+                        className="p-2 text-indigo-600 hover:bg-slate-100 rounded-full transition-colors"
+                        title="Share Idea"
                       >
-                         <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <Share2 className="w-6 h-6" />
                       </button>
                     )}
-                    <button 
-                      onClick={() => { setIsDetailOpen(false); handleEditIdea(selectedIdea); }}
-                      className="p-2.5 text-bca-blue bg-bca-blue/5 hover:bg-bca-blue/10 rounded-xl transition-all flex items-center gap-2"
-                      title="Refine Idea"
-                    >
-                      <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Refine</span>
-                    </button>
                     <button onClick={() => setIsDetailOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400">
-                      <X className="w-5 h-5" />
+                      <X className="w-6 h-6" />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
-                  <div className="space-y-6 sm:space-y-8 pb-4">
-                    <div className="space-y-1">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Idea Heading</label>
-                       <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tighter leading-tight">{selectedIdea.title}</h2>
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar max-h-[60vh]">
+                  <div className="space-y-8">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Spark Title</label>
+                       <h2 className="text-2xl font-black text-slate-900 tracking-tighter leading-tight bg-slate-50 p-4 rounded-2xl border border-slate-100">{selectedIdea.title}</h2>
                     </div>
 
-                    <div className="space-y-1">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Insights & Context</label>
-                       <div className="text-sm sm:text-base text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50/50 p-4 sm:p-6 rounded-3xl border border-slate-100 italic">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Insights & Deep Context</label>
+                       <div className="text-base text-slate-600 leading-relaxed whitespace-pre-wrap bg-slate-50/50 p-6 rounded-3xl border border-slate-100 italic">
                         {selectedIdea.description || 'No detailed context provided for this spark.'}
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Maturity</label>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Maturity Level</label>
                          <div className="flex items-center gap-2 mt-1">
                             <span className={cn(
-                              "px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-tighter",
-                              selectedIdea.maturity === 'Mature' ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"
+                              "px-5 py-2 rounded-xl text-xs font-black uppercase tracking-tighter shadow-sm",
+                              selectedIdea.maturity === 'Mature' ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"
                             )}>
                               {selectedIdea.maturity}
                             </span>
                          </div>
                       </div>
-                      <div className="space-y-1">
-                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Action</label>
-                         <div className="flex items-center gap-2 mt-1 px-4 py-1.5 bg-bca-blue/5 border border-bca-blue/10 rounded-full w-fit">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Next Stategic Step</label>
+                         <div className="flex items-center gap-2 mt-1 px-5 py-2 bg-bca-blue text-white rounded-xl shadow-lg shadow-bca-blue/20">
                             {getActionIcon(selectedIdea.next_action)}
-                            <span className="text-[10px] sm:text-xs font-black text-bca-blue uppercase tracking-tighter">{selectedIdea.next_action}</span>
+                            <span className="text-xs font-black uppercase tracking-tighter">{selectedIdea.next_action}</span>
                          </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 bg-slate-50/80 rounded-3xl border border-slate-100 mt-4 gap-4">
-                      <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-slate-400 shadow-sm border border-slate-100">
-                           <Clock className="w-5 h-5" />
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-6 bg-slate-900 rounded-3xl mt-4 gap-4 text-white">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white backdrop-blur-md">
+                           <Clock className="w-6 h-6" />
                          </div>
                          <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Captured On</span>
-                            <span className="text-xs font-bold text-slate-700">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Birth of Idea</span>
+                            <span className="text-sm font-black">{format(new Date(selectedIdea.created_at), 'MMMM dd, yyyy')}</span>
                          </div>
                       </div>
                       {selectedIdea.remind_at && (
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm border border-emerald-100">
-                            <Calendar className="w-5 h-5" />
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 backdrop-blur-md">
+                            <Calendar className="w-6 h-6" />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Scheduled Recall</span>
-                            <span className="text-xs font-black text-emerald-700 uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
+                            <span className="text-[10px] font-black text-emerald-400/50 uppercase tracking-widest leading-none mb-1">Strategic Recall</span>
+                            <span className="text-sm font-black uppercase">{format(parseISO(selectedIdea.remind_at), 'MMM dd, yyyy')}</span>
                           </div>
                         </div>
                       )}
@@ -760,9 +752,24 @@ export function IdeaManager() {
                   </div>
                 </div>
 
-                <div className="p-4 sm:p-6 bg-slate-50/50 border-t border-slate-100 flex gap-3">
-                  <Button type="button" variant="secondary" onClick={() => setIsDetailOpen(false)} className="w-full h-11 sm:h-12 uppercase font-black text-[10px] sm:text-[11px] tracking-widest border-slate-200">
-                    Close Vision
+                <div className="p-8 bg-slate-50 flex gap-4">
+                  {selectedIdea.user_id === localStorage.getItem('user_id') && (
+                    <Button 
+                      onClick={() => {
+                        setIsDetailOpen(false);
+                        handleEditIdea(selectedIdea);
+                      }}
+                      className="flex-1 h-16 rounded-2xl font-black uppercase tracking-widest text-[11px] border-2 border-bca-blue text-bca-blue bg-white hover:bg-bca-blue hover:text-white transition-all shadow-xl shadow-bca-blue/5"
+                    >
+                      Refine Spark
+                    </Button>
+                  )}
+                  <Button 
+                    variant="secondary" 
+                    onClick={() => setIsDetailOpen(false)} 
+                    className="flex-1 h-16 rounded-2xl font-black uppercase tracking-widest text-[11px] bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+                  >
+                    Dismiss
                   </Button>
                 </div>
               </GlassCard>

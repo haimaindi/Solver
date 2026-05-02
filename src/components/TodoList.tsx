@@ -92,7 +92,6 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
   const fetchTodos = async () => {
     setIsLoading(true);
     const currentUser = localStorage.getItem('user_id');
-    const solverId = localStorage.getItem('solver_id');
     if (!currentUser || currentUser === 'unknown') {
       setIsLoading(false);
       return;
@@ -103,7 +102,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         .from('resource_shares')
         .select('shared_by, resource_id')
         .eq('module_name', 'todos')
-        .eq('shared_with_solver_id', solverId);
+        .eq('shared_with_solver_id', currentUser);
       
       if (!sharedEntries || sharedEntries.length === 0) {
         setTodos([]);

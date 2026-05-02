@@ -383,47 +383,10 @@ export default function App() {
     }
 
     const userData = data[0];
-
-    // Check expiration
-    const worldNow = await fetchWorldTime();
-      
-    if (!userData.is_unlimited) {
-      const end = new Date(userData.end_date + 'T00:00:00Z');
-
-      if (worldNow >= end) {
-        Swal.fire({
-          title: 'Access Expired',
-          text: `Your access expired on ${format(end, 'dd/MM/yyyy')}. Please contact administrator.`,
-          icon: 'error',
-          confirmButtonText: 'OK'
-        });
-        return;
-      }
-    }
-
-    let solverId = userData.solver_id;
-    if (!solverId) {
-      const generateSolverId = () => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-        for (let i = 0; i < 7; i++) {
-          result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
-      };
-      solverId = generateSolverId();
-      try {
-        await supabase.from('app_access').update({ solver_id: solverId }).eq('id', userData.id);
-      } catch (err) {
-        console.warn('Could not update solver_id, maybe column missing', err);
-      }
-      userData.solver_id = solverId;
-    }
-
+    
     // Login success
     localStorage.setItem('solver_auth', 'true');
     localStorage.setItem('user_id', userData.id);
-    localStorage.setItem('solver_id', solverId);
     localStorage.setItem('user_name', userData.username || userData.code);
     localStorage.setItem('session_data', JSON.stringify(userData));
     setSessionData(userData);
@@ -448,7 +411,6 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('solver_auth');
     localStorage.removeItem('user_id');
-    localStorage.removeItem('solver_id');
     localStorage.removeItem('user_name');
     localStorage.removeItem('session_data');
     setSessionData(null);
@@ -471,7 +433,6 @@ export default function App() {
 
   const fetchProblems = async () => {
     const currentUser = localStorage.getItem('user_id');
-    const solverId = localStorage.getItem('solver_id');
     if (!isAuthenticated || !currentUser || currentUser === 'unknown') return;
 
     if (showSharedProblems) {
@@ -479,7 +440,7 @@ export default function App() {
         .from('resource_shares')
         .select('shared_by, resource_id')
         .eq('module_name', 'problems')
-        .eq('shared_with_solver_id', solverId);
+        .eq('shared_with_solver_id', currentUser);
       
       if (!sharedEntries || sharedEntries.length === 0) {
         setProblems([]);
@@ -1068,10 +1029,10 @@ export default function App() {
                     <div>
                       <h3 className="text-xl font-black text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</h3>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Platform Account</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">SolverID:</span>
-                        <code className="px-2 py-0.5 bg-slate-100 text-bca-blue font-mono font-bold text-[11px] rounded selection:bg-bca-blue/20">
-                          {localStorage.getItem('solver_id') || 'Unknown'}
+                      <div className="mt-2 flex flex-col gap-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">User ID:</span>
+                        <code className="px-2 py-0.5 bg-slate-100 text-bca-blue font-mono font-bold text-[10px] rounded break-all">
+                          {localStorage.getItem('user_id') || 'Unknown'}
                         </code>
                       </div>
                     </div>
@@ -1255,17 +1216,18 @@ export default function App() {
         
         <div className="hidden md:flex items-center gap-4">
             <div className="flex flex-col items-end">
-              <span className="text-[13px] font-bold text-slate-900 leading-tight">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
+              <span className="text-[14px] font-black text-slate-900 leading-none">{localStorage.getItem('user_name') || PROFILE_NAME}</span>
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">ID: {localStorage.getItem('user_id')}</span>
               {sessionData && (
                 <span className={cn(
-                  "text-[10px] leading-none mt-0.5",
+                  "text-[10px] leading-none mt-1 font-bold",
                   (sessionData.is_unlimited || (sessionData.end_date && 
                     new Date(sessionData.end_date + 'T00:00:00Z').getTime() - worldTime.getTime() > 7 * 24 * 60 * 60 * 1000
                   )) ? "text-emerald-600" : "text-rose-600"
                 )}>
                   {sessionData.is_unlimited ? 'Unlimited Access' : 
                     (new Date(sessionData.end_date + 'T00:00:00Z') < worldTime ? 'Has expired' :
-                    `Expired at ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy')}`)}
+                    `Expires: ${format(new Date(sessionData.end_date + 'T00:00:00Z'), 'dd/MM/yyyy')}`)}
                 </span>
               )}
             </div>
