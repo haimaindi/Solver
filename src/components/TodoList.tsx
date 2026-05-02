@@ -109,9 +109,21 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
         setIsLoading(false);
         return;
       }
+
+      // Map sharedEntries to resolve normalized date UUIDs back to date strings
+      const mappedSharedEntries = sharedEntries.map(s => {
+        const rid = s.resource_id as string;
+        if (rid && /^\d{8}-0000-0000-0000-000000000000$/.test(rid)) {
+          const yyyy = rid.substring(0, 4);
+          const mm = rid.substring(4, 6);
+          const dd = rid.substring(6, 8);
+          return { ...s, resource_id: `${yyyy}-${mm}-${dd}` };
+        }
+        return s;
+      });
       
-      const moduleWideOwnerIds = sharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
-      const specificResourceIds = sharedEntries.filter(s => s.resource_id).map(s => s.resource_id as string);
+      const moduleWideOwnerIds = mappedSharedEntries.filter(s => !s.resource_id).map(s => s.shared_by);
+      const specificResourceIds = mappedSharedEntries.filter(s => s.resource_id).map(s => s.resource_id as string);
 
       let data: Todo[] = [];
       
@@ -146,7 +158,7 @@ export function TodoList({ prefillData, prefillTodoId, onPrefillHandled }: TodoL
 
         if (dateShares.length > 0) {
           // For dates, we must also ensure user_id matches the one who shared it
-          for (const share of sharedEntries.filter(s => s.resource_id && isDate(s.resource_id))) {
+          for (const share of mappedSharedEntries.filter(s => s.resource_id && isDate(s.resource_id))) {
             const { data: dateData } = await supabase
               .from('todos')
               .select('*')

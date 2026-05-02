@@ -27,6 +27,12 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
     const currentUser = localStorage.getItem('user_id');
     if (!currentUser) return;
     setIsLoading(true);
+
+    // Normalize resourceId for date-based modules (todos) to avoid UUID 400 errors
+    let normalizedResourceId = resourceId;
+    if (moduleName === 'todos' && resourceId && /^\d{4}-\d{2}-\d{2}$/.test(resourceId)) {
+      normalizedResourceId = `${resourceId.replace(/-/g, '')}-0000-0000-0000-000000000000`;
+    }
     
     let query = supabase
       .from('resource_shares')
@@ -34,8 +40,8 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       .eq('module_name', moduleName)
       .eq('shared_by', currentUser);
 
-    if (resourceId) {
-      query = query.eq('resource_id', resourceId);
+    if (normalizedResourceId) {
+      query = query.eq('resource_id', normalizedResourceId);
     } else {
       query = query.is('resource_id', null);
     }
@@ -87,10 +93,12 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
     }
 
     // Find user by full ID or short ID (first segment)
-    const userData = usersData.find(u => 
-      u.id === targetUid || 
-      u.id.split('-')[0].toLowerCase() === targetUid.toLowerCase()
-    );
+    const userData = usersData.find(u => {
+      const fullId = u.id.toLowerCase();
+      const inputId = targetUid.toLowerCase();
+      const shortId = u.id.split('-')[0].toLowerCase();
+      return fullId === inputId || shortId === inputId;
+    });
 
     if (!userData) {
       setIsLoading(false);
@@ -132,9 +140,15 @@ export function AccessManagerModal({ isOpen, onClose, moduleName, resourceId = n
       return;
     }
 
+    // Normalize resourceId for todos module
+    let normalizedResourceId = resourceId;
+    if (moduleName === 'todos' && resourceId && /^\d{4}-\d{2}-\d{2}$/.test(resourceId)) {
+      normalizedResourceId = `${resourceId.replace(/-/g, '')}-0000-0000-0000-000000000000`;
+    }
+
     const { error } = await supabase.from('resource_shares').insert([{
       module_name: moduleName,
-      resource_id: resourceId,
+      resource_id: normalizedResourceId,
       shared_by: myUserId,
       shared_with_solver_id: finalTargetId
     }]);
